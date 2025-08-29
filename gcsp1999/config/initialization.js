@@ -206,7 +206,7 @@
     // 依赖检测更新
     if (getMyVar("require_url_update", "0") == "0") {
         try {
-            let update_url = getGitHub(["update.json"], 0, 1);
+            let update_url = getGitHub(["config", "update.json"]);
             let _json1 = require(update_url);
             let _json2 = JSON.parse(fetch(update_url).replace(/^\(|\)$/g, ""));
             let records = [];
@@ -214,8 +214,8 @@
                 let _ver1 = (_json1[_key] || {}).version || 0;
                 let _ver2 = (_json2[_key] || {}).version || 0;
                 if (_ver1 < _ver2) { // 删除缓存
-                    deleteCache(getGitHub([_key], 0, 1));
-                    if (_key == "image.js") require(getGitHub([_key]));
+                    deleteCache(getGitHub(["config", _key], 0, 1));
+                    if (_key == "image.js") require(getGitHub(["config", _key]));
                     let record = {
                         "title": _key,
                         "records": (_json2[_key] || {}).records || []

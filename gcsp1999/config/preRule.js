@@ -15,8 +15,9 @@ function _getPath(Paths, fileType, run) {
     }
 }
 
-function getGitHub(Paths, fileType, run) {
-    return _getPath(["config"].concat(Paths), fileType, run);
+function getGitHub(Paths, re) {
+    let GitHubUrl = "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/" + Paths.join("/");
+    return re === true ? require(GitHubUrl) : GitHubUrl;
 }
 
 function _getPlatform(platform) {
@@ -25,8 +26,8 @@ function _getPlatform(platform) {
 }
 
 const rule_id = "gcsp1999";
-require(getGitHub(["global.js"], 0, 1));
-require(getGitHub(["initialization.js"], 0, 1));
+getGitHub(["config", "global.js"], true);
+getGitHub(["config", "initialization.js"], true);
 
 
 let is_down = getMyVar('music_down', '0') == '1';
@@ -194,7 +195,7 @@ if (themeType_TwoSwitch) {
                 ArtistObj = _getPlatform(platform).getExploreArtistList();
                 storage0.putMyVar(platform + "_iArt", ArtistObj);
             }
-            ArtistObj = $.require(getGitHub(["ClassTab.js"], 0, 1), ArtistObj);
+            ArtistObj = $.require(getGitHub(["config", "ClassTab.js"]), ArtistObj);
             var ArtistUrl = ArtistObj.getBaseUrl();
 
             function getArtistListDetails() {
@@ -601,7 +602,7 @@ function getThemeData(themeType) {
 
         case "search":
         case "collection":
-            require(getGitHub([themeType + ".js"], 0, 1));
+            getGitHub(["config", themeType + ".js"], true);
             break;
         case "executeThemeIndex":
             let t_type = getParam('t_type', '');
