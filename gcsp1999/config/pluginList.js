@@ -1,0 +1,271 @@
+getTopImage({
+    url: "hiker://empty",
+});
+d.push({
+    title: "新增插件",
+    url: "toast://完善中" || "editFile://" + "hiker://files/rules/Thomas/gcsp1999/example.js",
+    col_type: 'text_2',
+    extra: {
+        pageTitle: "新插件"
+    }
+});
+d.push({
+    title: '分享选中',
+    col_type: 'text_2',
+    url: "toast://完善中"
+});
+d.push({
+    col_type: 'line'
+});
+
+
+
+// 确定使用的插件
+let enableds = _getPath(["plugin", "enableds.json"]) || {};
+
+// 代理劫持的插件
+let hijacking = _getPath(["plugin", "hijacking.json"]) || {};
+
+// 精简的插件信息
+let detailp = _getPath(["plugin", "details.json"], "_cache", 1);
+let details = JSON.parse(readFile(detailp) || "[]") || [];
+
+
+// 准备分享的插件
+let selectp = _getPath(["plugin", "selects.json"], "_cache", 1);
+let selects = JSON.parse(readFile(selectp) || "[]") || [];
+
+
+
+if (details.length == 0) d.push({
+    title: Rich(Color("没有插件数据").bold().big()),
+    desc: Rich("去导入".small()),
+    url: 'hiker://empty',
+    col_type: 'text_center_1',
+    extra: {
+        lineVisible: false
+    }
+});
+else details.map((_, i) => {
+    let _id = _.platform;
+    let isH = hijacking[_id];
+    let isS = selects.indexOf(_id) != -1;
+
+    d.push({
+        title: (isS ? Color(_.title) : _.title).bold(),
+        desc: _.type || "未知",
+        url: $("#noLoading#").lazyRule((_, i, hObj, eObj) => {
+            require(config.preRule);
+            const hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
+            hikerPop.selectCenterIcon({
+                iconList: [{
+                    title: "更新插件",
+                    icon: getImageUrl("update.svg")
+                }, {
+                    title: "编辑插件",
+                    icon: getImageUrl("edit.svg")
+                }, {
+                    title: "分享插件",
+                    icon: getImageUrl("share.svg")
+                }, {
+                    title: "解析管理",
+                    icon: getImageUrl("proxy.svg")
+                }, {
+                    title: "卸载插件",
+                    icon: getImageUrl("uninstall.svg")
+                }, {
+                    title: "用户变量",
+                    icon: getImageUrl("account.svg")
+                }, {
+                    title: "资源导入",
+                    icon: getImageUrl("import.svg")
+                }, hObj, eObj, {
+                    title: "位置排序",
+                    icon: getImageUrl("sorted.svg")
+                }],
+                title: _.title + "(" + _.version + ")",
+                extraMenu: new hikerPop.IconExtraMenu(() => {
+                    if (Array.isArray(_.description) && _.description.length)
+                        hikerPop.updateRecordsBottom(_.description);
+                    else
+                        return "toast://没有简介";
+                }),
+                columns: 2,
+                // position: 0,
+                click(a) {
+                    switch (a) {
+                        case '更新插件':
+                            return _.srcUrl ? "toast://完善中" : "toast://该插件不支持在线更新";
+                            break;
+                        case '编辑插件':
+                            return "editFile://" + _getPath(["plugin", "plugins", _.platform + ".js"], 0, 1);
+                            break;
+                        case '分享插件':
+                            return getShareText([_getPath(["plugin", "plugins", _.platform + ".js"], 0, 1)], "plugin");
+                            break;
+                        case '解析管理':
+                            return _.platformProxy ? buildUrl("hiker://page/home", {
+                                p: "nopage",
+                                t: "proxyList",
+                                s: "#immersiveTheme##noHistory##noRecordHistory#",
+                                platform: _.platform,
+                                pageTitle: _.title + " - 解析管理"
+                            }) : "toast://该插件不支持解析代理";
+                            break;
+                        case '卸载插件':
+
+                            refreshPage(false);
+                            return "hiker://empty";
+                            break;
+                        case '用户变量':
+                            if (Array.isArray(_.userVariables) && _.userVariables.length) {
+                                let SettingItem = hikerPop.selectBottomSettingMenu.SettingItem;
+                                let options = [SettingItem("登录"), SettingItem()];
+                                let hintMap = {};
+                                _.userVariables.map(__ => {
+                                    hintMap[__.key] = __.hint;
+                                    let tit = __.name + "\r\n" + __.key;
+                                    let val = getItem(_.platform + "@userVariables@" + __.key, "") || __.hint;
+                                    options.push(SettingItem(tit, val));
+                                });
+                                hikerPop.selectBottomSettingMenu({
+                                    options,
+                                    click(s, officeItem, change) {
+                                        if ("登录" == s) return "toast://完善中";
+                                        let [_title, _key] = s.split("\r\n");
+                                        let _key2 = _.platform + "@userVariables@" + _key;
+                                        hikerPop.inputAutoRow({
+                                            hint: hintMap[_key],
+                                            title: _title,
+                                            defaultValue: getItem(_key2, ""),
+                                            //hideCancel: true,
+                                            noAutoSoft: true, //不自动打开输入法
+                                            confirm(text) {
+                                                setItem(_key2, text);
+                                                officeItem.setDesc(text || hintMap[_key]);
+                                                return "toast://保存了\n" + text;
+                                            },
+                                            cancel() {
+                                                return "toast://取消";
+                                            }
+                                        });
+                                        change();
+                                    },
+                                    onDismiss() {
+                                        refreshPage(false);
+                                    }
+                                });
+                            } else {
+                                return "toast://该插件没有写用户变量";
+                            }
+                            break;
+                        case '资源导入':
+
+                            return "hiker://empty";
+                            break;
+                        case '取消劫持':
+                            let hijackp = _getPath(["plugin", "hijacking.json"], 0, 1);
+                            let hijacks = JSON.parse(readFile(hijackp) || "{}") || {};
+                            delete hijacks[_.platform];
+                            saveFile(hijackp, JSON.stringify(hijacks));
+                            refreshPage();
+                            return "hiker://empty";
+                            break;
+                        case '劫持代理':
+                            let hijackd = _getPath(["plugin", "details.json"], "_cache", 1);
+                            let hijackm = JSON.parse(readFile(hijackd) || "[]") || [];
+                            hijackm.splice(i, 1);
+                            return $(hijackm, 2, '使用 [选择的插件] 解析资源').select((set, list, _platform) => {
+                                let i = list.map(_ => _.title).indexOf(input);
+                                let data = JSON.parse(readFile(set) || "{}") || {};
+                                data[_platform] = list[i].platform;
+                                saveFile(set, JSON.stringify(data, 0, 1));
+                                refreshPage();
+                                return "hiker://empty";
+                            }, _getPath(["plugin", "hijacking.json"], 0, 1), hijackm, _.platform);
+                            break;
+                        case '选中插件':
+                        case '取消选中':
+                            let selectp = _getPath(["plugin", "selects.json"], "_cache", 1);
+                            let selects = JSON.parse(readFile(selectp) || "[]") || [];
+                            let selecti = selects.indexOf(_.platform);
+                            if (selecti == -1) {
+                                selects.push(_.platform);
+                            } else {
+                                selects.splice(selecti, 1);
+                            }
+                            saveFile(selectp, JSON.stringify(selects));
+                            refreshPage(false);
+                            return "hiker://empty";
+                            break;
+                        case '位置排序':
+                            let detailp = _getPath(["plugin", "details.json"], "_cache", 1);
+                            let details = JSON.parse(readFile(detailp) || "[]") || [];
+                            details.splice(i, 1);
+                            return $(details.concat({
+                                title: '最后面'
+                            }), 2, '插件移动到').select((set, list, i1, set2) => {
+                                let i2
+                                if (input == '最后面') {
+                                    i2 = list.length;
+                                } else {
+                                    i2 = list.map(_ => _.title).indexOf(input);
+                                }
+                                let data = JSON.parse(readFile(set) || "[]") || [];
+                                let i3 = data[i1];
+                                data.splice(i1, 1);
+                                data.splice(i2, 0, i3);
+                                saveFile(set, JSON.stringify(data, 0, 1));
+                                let data2 = data.map(_ => _.platform + ".js");
+                                saveFile(set2, JSON.stringify(data2));
+                                refreshPage();
+                                return "toast://更改成功";
+                            }, detailp, details, i, _getPath(["plugin", "arrangement.json"], 0, 1));
+                            return "hiker://empty";
+                            break;
+                    }
+                    return "hiker://empty";
+                }
+            });
+            return "hiker://empty";
+        }, _, i, isH ? {
+            title: "取消劫持",
+            icon: getImageUrl("unhijack.svg")
+        } : {
+            title: "劫持代理",
+            icon: getImageUrl("hijack.svg")
+        }, isS ? {
+            title: "取消选中",
+            icon: getImageUrl("unselected.svg")
+        } : {
+            title: "选中插件",
+            icon: getImageUrl("selected.svg")
+        }),
+        col_type: 'avatar',
+        pic_url: _.icon
+    });
+    d.push({
+        title: [
+            "标识: " + (isH ? "<s>" + _id + "</s> " + isH : _id),
+            "版本: " + (_.version || "0"),
+            "作者: " + (_.author || "未知")
+        ].join("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;").small(),
+        url: $('#noLoading#').lazyRule((_id) => {
+            require(config.preRule);
+            let enableds = _getPath(["plugin", "enableds.json"]) || {};
+            enableds[_id] = !enableds[_id];
+            saveFile(_getPath(["plugin", "enableds.json"], 0, 1), JSON.stringify(enableds));
+            refreshPage(false);
+            return 'hiker://empty';
+        }, _id),
+        col_type: 'text_icon',
+        pic_url: getImageUrl(enableds[_id] ? "open.svg" : "shut.svg"),
+        extra: {
+            lineVisible: false
+        }
+    });
+    d.push({
+        col_type: 'line'
+    });
+});
+setResult(d);
