@@ -16,7 +16,7 @@ function _getPath(Paths, fileType, run) {
 }
 
 function getGitHub(Paths, re) {
-    let GitHubUrl = "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/" + Paths.join("/");
+    let GitHubUrl = getItem("ghproxy", "") + "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/" + Paths.join("/");
     return re === true ? require(GitHubUrl) : GitHubUrl;
 }
 
