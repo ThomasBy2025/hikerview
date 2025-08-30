@@ -16,7 +16,7 @@ function _getPath(Paths, fileType, run) {
 }
 
 function getGitHub(Paths, re) {
-    let GitHubUrl = getItem("ghproxy", "") + "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/" + Paths.join("/");
+    let GitHubUrl = config.ghproxy + Paths.join("/");
     return re === true ? require(GitHubUrl) : GitHubUrl;
 }
 
@@ -26,13 +26,20 @@ function _getPlatform(platform) {
 }
 
 const rule_id = "gcsp1999";
+let is_down = getMyVar('music_down', '0') == '1';
+let themeType = getParam('t', '');
 getGitHub(["config", "global.js"], true);
 getGitHub(["config", "initialization.js"], true);
 
+// 本地文件夹操作
+function getDirectory(path) {
+    return getGitHub(["config", "Flie.js"], true);
+}
 
-let is_down = getMyVar('music_down', '0') == '1';
-let themeType = getParam('t', '');
-let themeType_TwoSwitch = 0;
+
+
+
+let themeType_TwoSwitch = false;
 switch (themeType) {
     case "search":
     case "searchFind":
@@ -45,7 +52,7 @@ switch (themeType) {
     case "getTopLists":
     case "getRecommendSheetsByTag":
     case "getArtistListDetails":
-        themeType_TwoSwitch = 1;
+        themeType_TwoSwitch = true;
 
         let platformPath1 = _getPath(["plugin", themeType + ".json"], "_cache", 1);
         let platformAll = JSON.parse(readFile(platformPath1) || "[]") || [];
@@ -116,314 +123,313 @@ switch (themeType) {
         } = getThemeType(themeType);
         break;
 }
-if (themeType_TwoSwitch) {
-    switch (themeType) {
-        case "search":
-            s_types.unshift("热搜");
-            var s_query = function(s_t2) {
-                try {
-                    if (/https?\:\/\//.test(s_t2)) {
-                        let s_t2_1 = !/antiserver.kuwo.cn/i.test(s_t2) && JSON.parse(fetch(s_t2, {
-                            redirect: false,
-                            onlyHeaders: true,
-                            timeout: 5000
-                        })).headers.location || "";
-                        return s_t2_1[0].split("/").length > 4 ? s_t2_1[0] : s_t2;
-                    }
-                } catch (noFetch) {};
-                return s_t2;
-            }(String(getMyVar('s_query', '')).replace(/^[\s\S]*?(https?\:\/\/[^\n\r]+)[\s\S]*/i, '$1').split(/\s+\@QQ音乐/i)[0]);
-
-            // 搜索内容是 链接 / 数字(酷狗码) 时调用
-            if (/https?\:\/\//.test(s_query) || Number(s_query)) {
-                for (let s_platform of ["wy"]) {
-                    s_platform = _getPlatform(s_platform).import_url(s_query);
-                    if (s_platform) {
-                        platform = s_platform.platform;
-                        s_query = [s_platform];
-                        s_type = ["单曲", "单曲", "歌单", "排行", "专辑", "歌手"][s_platform.type];
-                        putMyVar("platform", platform);
-                        putMyVar("s_type", s_type);
-                        break;
-                    }
+if (themeType_TwoSwitch) switch (themeType) {
+    case "search":
+        s_types.unshift("热搜");
+        var s_query = function(s_t2) {
+            try {
+                if (/https?\:\/\//.test(s_t2)) {
+                    let s_t2_1 = !/antiserver.kuwo.cn/i.test(s_t2) && JSON.parse(fetch(s_t2, {
+                        redirect: false,
+                        onlyHeaders: true,
+                        timeout: 5000
+                    })).headers.location || "";
+                    return s_t2_1[0].split("/").length > 4 ? s_t2_1[0] : s_t2;
                 }
-                if (!Array.isArray(s_query) && !Number(s_query)) s_query = [];
-            }
+            } catch (noFetch) {};
+            return s_t2;
+        }(String(getMyVar('s_query', '')).replace(/^[\s\S]*?(https?\:\/\/[^\n\r]+)[\s\S]*/i, '$1').split(/\s+\@QQ音乐/i)[0]);
 
-            function getSearchTypes(_json) {
-                if (((_json || {}).type || "").match("聚合")) {
-                    d.push(Object.assign({
-                        title: "搜索类型",
-                        url: $(s_types.map(title => {
-                            if (title == s_type)
-                                title = Rich(Color(title).bold());
-                            return title
-                        }), 2, '选择搜索类型').select((s_type) => {
-                            if (!input.match(s_type)) {
-                                clearMyVar('isEnd_page');
-                                putMyVar('s_type', input);
-                                refreshPage();
-                            }
-                            return 'hiker://empty';
-                        }, s_type),
-                        img: $.require('image?rule=歌词适配')(s_type),
-                        col_type: 'icon_small_3'
-                    }, _json || {}));
-                } else {
-                    s_types.map((name, ii) => {
-                        d.push(Object.assign({
-                            title: Rich(Color(name, s_type != name && "Gray").bold()),
-                            url: $('#noLoading#').lazyRule((s_type) => {
-                                clearMyVar('isEnd_page');
-                                putMyVar('s_type', s_type);
-                                refreshPage();
-                                return 'hiker://empty';
-                            }, name),
-                            col_type: 'scroll_button',
-                        }, _json || {}));
-                    });
-                    d.push({
-                        col_type: "blank_block"
-                    });
+        // 搜索内容是 链接 / 数字(酷狗码) 时调用
+        if (/https?\:\/\//.test(s_query) || Number(s_query)) {
+            for (let s_platform of ["wy"]) {
+                s_platform = _getPlatform(s_platform).import_url(s_query);
+                if (s_platform) {
+                    platform = s_platform.platform;
+                    s_query = [s_platform];
+                    s_type = ["单曲", "单曲", "歌单", "排行", "专辑", "歌手"][s_platform.type];
+                    putMyVar("platform", platform);
+                    putMyVar("s_type", s_type);
+                    break;
                 }
             }
-            break;
-        case "getArtistListDetails":
-            if (!platformAll.length) break;
-            let ArtistObj = storage0.getMyVar(platform + "_iArt");
-            if (ArtistObj == "") {
-                ArtistObj = _getPlatform(platform).getExploreArtistList();
-                storage0.putMyVar(platform + "_iArt", ArtistObj);
-            }
-            ArtistObj = $.require(getGitHub(["config", "ClassTab.js"]), ArtistObj);
-            var ArtistUrl = ArtistObj.getBaseUrl();
+            if (!Array.isArray(s_query) && !Number(s_query)) s_query = [];
+        }
 
-            function getArtistListDetails() {
-                return ArtistObj.load(d);
-            }
-            break;
-        case "getTopLists":
-            if (!platformAll.length) break;
-            let TopLists = storage0.getMyVar(platform + "_iTop");
-            if (platform && TopLists == "") {
-                TopLists = _getPlatform(platform).getTopLists();
-                storage0.putMyVar(platform + "_iTop", TopLists);
-            }
-            let TopIndex = Number(getMyVar('TopIndex', '0'));
-            let TopTitles = TopLists.map(_ => _.title);
-            let TopTitle = TopTitles[TopIndex];
-            var TopList = [];
-
-            function getTopLists(_json) {
-                if (((_json || {}).type || "").match("聚合")) {
-                    d.push(Object.assign({
-                        title: "榜单切换",
-                        url: $(TopTitles.map((title, ii) => {
-                            if (TopIndex == ii)
-                                title = Rich(Color(title).bold());
-                            return title + "\r\n" + ii;
-                        }), 2, '榜单分类选择').select(() => {
-                            let index = input.split("\r\n")[1];
-                            putMyVar('TopIndex', index);
+        function getSearchTypes(_json) {
+            if (((_json || {}).type || "").match("聚合")) {
+                d.push(Object.assign({
+                    title: "搜索类型",
+                    url: $(s_types.map(title => {
+                        if (title == s_type)
+                            title = Rich(Color(title).bold());
+                        return title
+                    }), 2, '选择搜索类型').select((s_type) => {
+                        if (!input.match(s_type)) {
                             clearMyVar('isEnd_page');
+                            putMyVar('s_type', input);
                             refreshPage();
-                            return 'hiker://empty';
-                        }),
-                        img: $.require('image?rule=歌词适配')(TopTitle),
-                        col_type: 'icon_small_3'
-                    }, _json || {}));
-                    TopList = TopLists[TopIndex].data;
-                } else if (((_json || {}).type || "").match("独立")) {
-                    TopTitles.map((name, ii) => {
-                        d.push(Object.assign({
-                            title: Rich(Color(name, TopIndex != ii && "Gray").bold()),
-                            url: $('#noLoading#').lazyRule((index) => {
-                                putMyVar('TopIndex', index);
-                                clearMyVar('isEnd_page');
-                                refreshPage();
-                                return 'hiker://empty';
-                            }, ii + ""),
-                            col_type: 'scroll_button',
-                        }, _json || {}));
-                    });
-                    d.push({
-                        col_type: "blank_block"
-                    });
-                    TopList = TopLists[TopIndex].data;
-                } else {
-                    TopLists.map(({
-                        title,
-                        data
-                    }) => {
-                        d.push({
-                            title: Rich(title.fontcolor('#555555').bold().big()),
-                            col_type: "text_1",
-                            url: "hiker://empty",
-                            extra: {
-                                lineVisible: false
-                            }
-                        });
-                        data.map(Extra);
-                    });
-                    TopList = [];
-                }
-            }
-            break;
-        case "getRecommendSheetsByTag":
-            if (!platformAll.length) break;
-            let SheetTags = storage0.getMyVar(platform + "_iTag");
-            if (SheetTags == "") {
-                SheetTags = _getPlatform(platform).getRecommendSheetTags();
-                storage0.putMyVar(platform + "_iTag", SheetTags);
-            }
-            let SheetGroups = SheetTags.map(_ => _.title);
-            let GroupIndex = Number(getMyVar('GroupIndex', '0'));
-            let GroupTitle = SheetGroups[GroupIndex];
-            let SheetSorts = SheetTags[GroupIndex].data.map(_ => _.title);
-            let SortIndex = Number(getMyVar('SortIndex', '0'));
-            let SortTitle = SheetSorts[SortIndex];
-            var SheetTag = SheetTags[GroupIndex].data[SortIndex].id;
-
-            function getRecommendSheetsByTag() {
-                d.push({
-                    title: Rich((
-                        GroupIndex == 0 ? Color(SheetTags[0].data[0].title, SortIndex != 0 && "Gray") : Color(SortTitle)
-                    ).bold()),
-                    url: $("#noLoading#").lazyRule((platform, isOne) => {
-                        if (isOne) {
-                            putMyVar('GroupIndex', '0');
-                            putMyVar('SortIndex', '0');
-                            refreshPage();
-                            return 'hiker://empty';
                         }
-                        const hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
-                        let FlexSection = hikerPop.FlexMenuBottom.FlexSection;
-                        let SheetTags = storage0.getMyVar(platform + "_iTag");
-                        let GroupIndex = getMyVar('GroupIndex', '0');
-                        let SortIndex = getMyVar('SortIndex', '0');
-                        let pop = hikerPop.FlexMenuBottom({
-                            extraInputBox: false,
-                            sections: SheetTags.map((_, a) => {
-                                let list = _.data.map((_, b) => "““””" + _.title.fontcolor((GroupIndex == a && SortIndex == b) ? '#FA7298' : 'Gray').bold());
-                                return new FlexSection("““””" + _.title.fontcolor('#666666').big().bold(), list);
-                            }),
-                            title: "推荐歌单",
-                            click(button, GroupIndex, SortIndex) {
-                                putMyVar('GroupIndex', GroupIndex);
-                                putMyVar('SortIndex', SortIndex);
-                                pop.dismiss();
-                                refreshPage();
-                                return 'hiker://empty';
-                            },
-                            longClick(button, GroupIndex, SortIndex) {
-                                putMyVar('GroupIndex', GroupIndex);
-                                putMyVar('SortIndex', SortIndex);
-                                pop.dismiss();
-                                refreshPage();
-                                return 'hiker://empty';
-                            }
-                        });
-                        return "hiker://empty";
-                    }, platform, SheetTags.length === 1),
-                    col_type: "scroll_button"
-                });
-                SheetTags[0].data.slice(1).map((_, ii) => {
-                    ii = ii + 1;
-                    d.push({
-                        title: Rich((Color(_.title, GroupIndex == 0 ? (SortIndex != ii && "Gray") : "Gray")).bold()),
-                        url: $('#noLoading#').lazyRule((index) => {
-                            putMyVar('SortIndex', index);
-                            putMyVar('GroupIndex', '0');
+                        return 'hiker://empty';
+                    }, s_type),
+                    img: $.require('image?rule=歌词适配')(s_type),
+                    col_type: 'icon_small_3'
+                }, _json || {}));
+            } else {
+                s_types.map((name, ii) => {
+                    d.push(Object.assign({
+                        title: Rich(Color(name, s_type != name && "Gray").bold()),
+                        url: $('#noLoading#').lazyRule((s_type) => {
                             clearMyVar('isEnd_page');
+                            putMyVar('s_type', s_type);
                             refreshPage();
                             return 'hiker://empty';
-                        }, ii + ""),
+                        }, name),
                         col_type: 'scroll_button',
-                    });
+                    }, _json || {}));
                 });
                 d.push({
                     col_type: "blank_block"
                 });
             }
+        }
+        break;
+    case "getArtistListDetails":
+        if (!platforms.length) break;
+        let ArtistObj = storage0.getMyVar(platform + "_iArt");
+        if (ArtistObj == "") {
+            ArtistObj = _getPlatform(platform).getExploreArtistList();
+            storage0.putMyVar(platform + "_iArt", ArtistObj);
+        }
+        ArtistObj = $.require(getGitHub(["config", "ClassTab.js"]), ArtistObj);
+        var ArtistUrl = ArtistObj.getBaseUrl();
 
-            function getSheetGroups(_json) {
-                if (((_json || {}).type || "").match("聚合")) {
+        function getArtistListDetails() {
+            return ArtistObj.load(d);
+        }
+        break;
+    case "getTopLists":
+        if (!platforms.length) break;
+        let TopLists = storage0.getMyVar(platform + "_iTop");
+        if (platform && TopLists == "") {
+            TopLists = _getPlatform(platform).getTopLists();
+            storage0.putMyVar(platform + "_iTop", TopLists);
+        }
+        let TopIndex = Number(getMyVar('TopIndex', '0'));
+        let TopTitles = TopLists.map(_ => _.title);
+        let TopTitle = TopTitles[TopIndex];
+        var TopList = [];
+
+        function getTopLists(_json) {
+            if (((_json || {}).type || "").match("聚合")) {
+                d.push(Object.assign({
+                    title: "榜单切换",
+                    url: $(TopTitles.map((title, ii) => {
+                        if (TopIndex == ii)
+                            title = Rich(Color(title).bold());
+                        return title + "\r\n" + ii;
+                    }), 2, '榜单分类选择').select(() => {
+                        let index = input.split("\r\n")[1];
+                        putMyVar('TopIndex', index);
+                        clearMyVar('isEnd_page');
+                        refreshPage();
+                        return 'hiker://empty';
+                    }),
+                    img: $.require('image?rule=歌词适配')(TopTitle),
+                    col_type: 'icon_small_3'
+                }, _json || {}));
+                TopList = TopLists[TopIndex].data;
+            } else if (((_json || {}).type || "").match("独立")) {
+                TopTitles.map((name, ii) => {
                     d.push(Object.assign({
-                        title: "大类切换",
-                        url: $(SheetGroups.map((title, ii) => {
-                            if (GroupIndex == ii)
-                                title = Rich(Color(title).bold());
-                            return title + "\r\n" + ii;
-                        }), 2, '主要分类选择').select(() => {
-                            let index = input.split("\r\n")[1];
+                        title: Rich(Color(name, TopIndex != ii && "Gray").bold()),
+                        url: $('#noLoading#').lazyRule((index) => {
+                            putMyVar('TopIndex', index);
+                            clearMyVar('isEnd_page');
+                            refreshPage();
+                            return 'hiker://empty';
+                        }, ii + ""),
+                        col_type: 'scroll_button',
+                    }, _json || {}));
+                });
+                d.push({
+                    col_type: "blank_block"
+                });
+                TopList = TopLists[TopIndex].data;
+            } else {
+                TopLists.map(({
+                    title,
+                    data
+                }) => {
+                    d.push({
+                        title: Rich(title.fontcolor('#555555').bold().big()),
+                        col_type: "text_1",
+                        url: "hiker://empty",
+                        extra: {
+                            lineVisible: false
+                        }
+                    });
+                    data.map(Extra);
+                });
+                TopList = [];
+            }
+        }
+        break;
+    case "getRecommendSheetsByTag":
+        if (!platforms.length) break;
+        let SheetTags = storage0.getMyVar(platform + "_iTag");
+        if (SheetTags == "") {
+            SheetTags = _getPlatform(platform).getRecommendSheetTags();
+            storage0.putMyVar(platform + "_iTag", SheetTags);
+        }
+        let SheetGroups = SheetTags.map(_ => _.title);
+        let GroupIndex = Number(getMyVar('GroupIndex', '0'));
+        let GroupTitle = SheetGroups[GroupIndex];
+        let SheetSorts = SheetTags[GroupIndex].data.map(_ => _.title);
+        let SortIndex = Number(getMyVar('SortIndex', '0'));
+        let SortTitle = SheetSorts[SortIndex];
+        var SheetTag = SheetTags[GroupIndex].data[SortIndex].id;
+
+        function getRecommendSheetsByTag() {
+            d.push({
+                title: Rich((
+                    GroupIndex == 0 ? Color(SheetTags[0].data[0].title, SortIndex != 0 && "Gray") : Color(SortTitle)
+                ).bold()),
+                url: $("#noLoading#").lazyRule((platform, isOne) => {
+                    if (isOne) {
+                        putMyVar('GroupIndex', '0');
+                        putMyVar('SortIndex', '0');
+                        refreshPage();
+                        return 'hiker://empty';
+                    }
+                    const hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
+                    let FlexSection = hikerPop.FlexMenuBottom.FlexSection;
+                    let SheetTags = storage0.getMyVar(platform + "_iTag");
+                    let GroupIndex = getMyVar('GroupIndex', '0');
+                    let SortIndex = getMyVar('SortIndex', '0');
+                    let pop = hikerPop.FlexMenuBottom({
+                        extraInputBox: false,
+                        sections: SheetTags.map((_, a) => {
+                            let list = _.data.map((_, b) => "““””" + _.title.fontcolor((GroupIndex == a && SortIndex == b) ? '#FA7298' : 'Gray').bold());
+                            return new FlexSection("““””" + _.title.fontcolor('#666666').big().bold(), list);
+                        }),
+                        title: "推荐歌单",
+                        click(button, GroupIndex, SortIndex) {
+                            putMyVar('GroupIndex', GroupIndex);
+                            putMyVar('SortIndex', SortIndex);
+                            pop.dismiss();
+                            refreshPage();
+                            return 'hiker://empty';
+                        },
+                        longClick(button, GroupIndex, SortIndex) {
+                            putMyVar('GroupIndex', GroupIndex);
+                            putMyVar('SortIndex', SortIndex);
+                            pop.dismiss();
+                            refreshPage();
+                            return 'hiker://empty';
+                        }
+                    });
+                    return "hiker://empty";
+                }, platform, SheetTags.length === 1),
+                col_type: "scroll_button"
+            });
+            SheetTags[0].data.slice(1).map((_, ii) => {
+                ii = ii + 1;
+                d.push({
+                    title: Rich((Color(_.title, GroupIndex == 0 ? (SortIndex != ii && "Gray") : "Gray")).bold()),
+                    url: $('#noLoading#').lazyRule((index) => {
+                        putMyVar('SortIndex', index);
+                        putMyVar('GroupIndex', '0');
+                        clearMyVar('isEnd_page');
+                        refreshPage();
+                        return 'hiker://empty';
+                    }, ii + ""),
+                    col_type: 'scroll_button',
+                });
+            });
+            d.push({
+                col_type: "blank_block"
+            });
+        }
+
+        function getSheetGroups(_json) {
+            if (((_json || {}).type || "").match("聚合")) {
+                d.push(Object.assign({
+                    title: "大类切换",
+                    url: $(SheetGroups.map((title, ii) => {
+                        if (GroupIndex == ii)
+                            title = Rich(Color(title).bold());
+                        return title + "\r\n" + ii;
+                    }), 2, '主要分类选择').select(() => {
+                        let index = input.split("\r\n")[1];
+                        putMyVar('GroupIndex', index);
+                        clearMyVar('isEnd_page');
+                        clearMyVar('SortIndex');
+                        refreshPage();
+                        return 'hiker://empty';
+                    }),
+                    img: $.require('image?rule=歌词适配')(GroupTitle),
+                    col_type: 'icon_small_3'
+                }, _json || {}));
+            } else {
+                SheetGroups.map((name, ii) => {
+                    d.push(Object.assign({
+                        title: Rich(Color(name, GroupIndex != ii && "Gray").bold()),
+                        url: $('#noLoading#').lazyRule((index) => {
                             putMyVar('GroupIndex', index);
                             clearMyVar('isEnd_page');
                             clearMyVar('SortIndex');
                             refreshPage();
                             return 'hiker://empty';
-                        }),
-                        img: $.require('image?rule=歌词适配')(GroupTitle),
-                        col_type: 'icon_small_3'
+                        }, ii + ""),
+                        col_type: 'scroll_button',
                     }, _json || {}));
-                } else {
-                    SheetGroups.map((name, ii) => {
-                        d.push(Object.assign({
-                            title: Rich(Color(name, GroupIndex != ii && "Gray").bold()),
-                            url: $('#noLoading#').lazyRule((index) => {
-                                putMyVar('GroupIndex', index);
-                                clearMyVar('isEnd_page');
-                                clearMyVar('SortIndex');
-                                refreshPage();
-                                return 'hiker://empty';
-                            }, ii + ""),
-                            col_type: 'scroll_button',
-                        }, _json || {}));
-                    });
-                    d.push({
-                        col_type: "blank_block"
-                    });
-                }
+                });
+                d.push({
+                    col_type: "blank_block"
+                });
             }
+        }
 
-            function getSheetSorts(_json) {
-                if (((_json || {}).type || "").match("聚合")) {
+        function getSheetSorts(_json) {
+            if (((_json || {}).type || "").match("聚合")) {
+                d.push(Object.assign({
+                    title: "小类切换",
+                    url: $(SheetSorts.map((title, ii) => {
+                        if (SortIndex == ii)
+                            title = Rich(Color(title).bold());
+                        return title + "\r\n" + ii;
+                    }), 2, '次要分类选择').select(() => {
+                        let index = input.split("\r\n")[1];
+                        putMyVar('SortIndex', index);
+                        clearMyVar('isEnd_page');
+                        refreshPage();
+                        return 'hiker://empty';
+                    }),
+                    img: $.require('image?rule=歌词适配')(SortTitle),
+                    col_type: 'icon_small_3'
+                }, _json || {}));
+            } else {
+                SheetSorts.map((name, ii) => {
                     d.push(Object.assign({
-                        title: "小类切换",
-                        url: $(SheetSorts.map((title, ii) => {
-                            if (SortIndex == ii)
-                                title = Rich(Color(title).bold());
-                            return title + "\r\n" + ii;
-                        }), 2, '次要分类选择').select(() => {
-                            let index = input.split("\r\n")[1];
+                        title: Rich(Color(name, SortIndex != ii && "Gray").bold()),
+                        url: $('#noLoading#').lazyRule((index) => {
                             putMyVar('SortIndex', index);
                             clearMyVar('isEnd_page');
                             refreshPage();
                             return 'hiker://empty';
-                        }),
-                        img: $.require('image?rule=歌词适配')(SortTitle),
-                        col_type: 'icon_small_3'
+                        }, ii + ""),
+                        col_type: 'scroll_button',
                     }, _json || {}));
-                } else {
-                    SheetSorts.map((name, ii) => {
-                        d.push(Object.assign({
-                            title: Rich(Color(name, SortIndex != ii && "Gray").bold()),
-                            url: $('#noLoading#').lazyRule((index) => {
-                                putMyVar('SortIndex', index);
-                                clearMyVar('isEnd_page');
-                                refreshPage();
-                                return 'hiker://empty';
-                            }, ii + ""),
-                            col_type: 'scroll_button',
-                        }, _json || {}));
-                    });
-                    d.push({
-                        col_type: "blank_block"
-                    });
-                }
+                });
+                d.push({
+                    col_type: "blank_block"
+                });
             }
-            break;
-    }
+        }
+        break;
 }
+
 
 
 
@@ -444,6 +450,9 @@ function getThemeType(themeType) {
         theme_Index = theme_Data.indexOf(theme_Info);
         theme_Item = ((_getPath(["theme", themeType2, "themes", theme_Id]) || {}).data || []).filter(_ => _.open && (!_.page || page == 1));
     } catch (e) {}
+
+
+
     if (theme_Info.plugins && theme_Info.plugins.length) { // 待完善
         log("主题有插件依赖: " + JSON.stringify(theme_Info.plugins));
     }
@@ -476,7 +485,8 @@ function selectThemePop(themeType) {
                 p: "nopage",
                 t: "themeList",
                 s: "#immersiveTheme##noRefresh##noHistory##noRecordHistory#",
-                t_type: themeType2
+                t_type: themeType2,
+                rule: MY_RULE.title
             });
         }),
         columns: 1,
@@ -501,7 +511,7 @@ function getThemeData(themeType) {
         case "getMusicSheetInfo":
         case "getAlbumInfo":
         case "getArtistWorks":
-            if (platformAll && !platformAll.length) {
+            if (platforms && !platforms.length) {
                 if (page == 1) {
                     getTopImage({
                         url: "hiker://empty"
@@ -567,6 +577,7 @@ function getThemeData(themeType) {
                             p: "fypage",
                             t: "search",
                             s: "#immersiveTheme##noHistory##noRecordHistory#",
+                            rule: MY_RULE.title
                         });
                     }, MY_KEYWORD, s_type),
                     extra: {
@@ -599,6 +610,7 @@ function getThemeData(themeType) {
         case "pluginList":
         case "proxyList":
         case "collectionList":
+        case "putImportCode":
 
         case "search":
         case "collection":
@@ -649,6 +661,7 @@ function getColType(_json) {
                             p: "fypage",
                             t: "search",
                             s: "#immersiveTheme##noHistory##noRecordHistory#",
+                            rule: MY_RULE.title
                         });
                     }, themeType == "search", s_type),
                     col_type: "input",
@@ -668,6 +681,7 @@ function getColType(_json) {
                         p: "fypage",
                         t: "getRecommendSheetsByTag",
                         s: "#immersiveTheme##noHistory##noRecordHistory#",
+                        rule: MY_RULE.title,
                         id: "SheetTag"
                     }),
                     col_type: "icon_5",
@@ -685,6 +699,7 @@ function getColType(_json) {
                         p: "nopage",
                         t: "getTopLists",
                         s: "#immersiveTheme##noHistory##noRecordHistory#",
+                        rule: MY_RULE.title,
                         id: "TopList"
                     }),
                     col_type: "icon_5",
@@ -702,6 +717,7 @@ function getColType(_json) {
                         p: "fypage",
                         t: "getArtistListDetails",
                         s: "#immersiveTheme##noHistory##noRecordHistory#",
+                        rule: MY_RULE.title,
                         id: "ArtistUrl"
                     }),
                     col_type: "icon_5",
@@ -733,7 +749,8 @@ function getColType(_json) {
                     url: buildUrl("hiker://page/home", {
                         p: "nopage",
                         t: "pluginList",
-                        s: "#immersiveTheme##noRefresh##noHistory##noRecordHistory#"
+                        s: "#immersiveTheme##noRefresh##noHistory##noRecordHistory#",
+                        rule: MY_RULE.title
                     }),
                     col_type: "icon_5",
                     extra: {
@@ -748,7 +765,8 @@ function getColType(_json) {
                     url: "toast://完善中~" || buildUrl("hiker://page/home", {
                         p: "nopage",
                         t: "ruleInstall",
-                        s: "#immersiveTheme##noHistory##noRecordHistory#"
+                        s: "#immersiveTheme##noHistory##noRecordHistory#",
+                        rule: MY_RULE.title
                     }),
                     col_type: "icon_5"
                 }
@@ -772,7 +790,8 @@ function getColType(_json) {
                     url: buildUrl("hiker://page/home", {
                         p: "nopage",
                         t: "collectionList",
-                        s: "#immersiveTheme##noHistory##noRecordHistory#"
+                        s: "#immersiveTheme##noHistory##noRecordHistory#",
+                        rule: MY_RULE.title
                     }),
                     col_type: "icon_5"
                 }
@@ -788,6 +807,7 @@ function getColType(_json) {
                             p: "fypage",
                             t: "search",
                             s: "#immersiveTheme##noHistory##noRecordHistory#",
+                            rule: MY_RULE.title
                         });
                     }),
                     pic_url: "hiker://images/icon2",
@@ -859,14 +879,14 @@ const Extra = (_, _extra, run) => {
                 title: "★ 收藏" + _type + " ★",
                 js: $.toString((_) => {
                     require(config.preRule);
-                    return putCollectionData(_);
+                    return setCollectionData(_);
                 }, _)
             }, {
-                title: "✩ 复制链接 ✩",
-                js: $.toString((a, b, c) => {
+                title: "✩ 分享" + _type + " ✩",
+                js: $.toString((_) => {
                     require(config.preRule);
-                    return _getPlatform(a).share_url(b, c);
-                }, _.platform, _.type, _.id)
+                    return getShareText(_, "collection");
+                }, _)
             }],
         }
     }, isExtra ? _extra : {});
@@ -888,6 +908,7 @@ const Extra = (_, _extra, run) => {
         p: isMedia ? "nopage" : "fypage",
         t: ["getMediaSource", "getMediaSource", "getMusicSheetInfo", "getTopListDetail", "getAlbumInfo", "getArtistWorks", "getUserInfo", "getProgramInfo", "getRadio", "getVideo", "getLyric", "getMusicComments"][_.type] || _.type || "",
         s: isMedia ? "#noHistory##noRecordHistory#" : "#immersiveTheme#",
+        rule: MY_RULE.title,
         platform: _.platform,
         id: _.id + "",
     });
@@ -897,7 +918,7 @@ const Extra = (_, _extra, run) => {
             return getQuality(musicItem, is_down);
         }, _, is_down);
         json.extra.longClick.unshift({
-            title: "★ 下载歌曲 ★",
+            title: "★ 下载资源 ★",
             js: $.toString((url) => {
                 return url;
             }, _url || _url3(true))
@@ -963,7 +984,14 @@ function getDataExtra(platform, tag, type) {
 
 
 function getCollectionItems(c_json, isPop) {
-    let collectionItems = _getPath(_getPath(["collection", "details.json"], "_cache", 1)) || []
+    let collectionItems = _getPath(_getPath(["collection", "details.json"], "_cache", 1)) || [];
+    if (collectionItems.length == 0 && !isPop && c_json != undefined) {
+        d.push({
+            title: "没有本地收藏",
+            url: "hiker://empty",
+            col_type: "text_center_1"
+        });
+    }
     return collectionItems.map(it => {
         it.type = ["免费", "会员", "歌单", "榜单", "专辑", "歌手", "用户", "电台", "播客", "视频", "歌词", "评论"][it.type] || "未知";
         it.path = encodeURIComponent(it.path);
@@ -972,7 +1000,8 @@ function getCollectionItems(c_json, isPop) {
                 p: "nopage",
                 t: "collection",
                 path: it.path,
-                s: "#immersiveTheme##noHistory##noRecordHistory#"
+                s: "#immersiveTheme##noHistory##noRecordHistory#",
+                rule: MY_RULE.title
             }) : $("hiker://empty").lazyRule((path) => {
                 setPageParams({
                     path
@@ -1035,8 +1064,14 @@ function getQuality(musicItem, down) {
         }
         return $(arr1, 1, '选择下载音质').select((musicItem, arr1) => {
             let quality = arr1.indexOf(input);
+            MY_URL = "";
             require(config.preRule);
-            return getMedia(musicItem, quality, "0");
+            try {
+                let playUrl = JSON.parse(getMedia(musicItem, quality, "0"));
+                return "download://" + (playUrl.url || playUrl.urls[0] || playUrl.audioUrls[0]);
+            } catch (e) {
+                return "toast://解析失败";
+            }
         }, musicItem, arr1);
     } else {
         let typeCache = {}
@@ -1113,47 +1148,6 @@ function getMedia(musicItem, quality, mediaType) {
 
 
 
-function getImportCode([Desc, Type, text]) {
-    let enTypes = Type.split("+");
-    for (let enType of enTypes) {
-        switch (enType) {
-            case 'Paste':
-                text = parsePaste(text);
-                break;
-            case 'base64Encode':
-                text = base64Decode(text);
-                break;
-            case 'PrivateJS':
-            case 'aesEncode':
-                text = aesDecode('hk6666666109', text);
-                break;
-            case 'KuwoDES':
-
-                break;
-            case 'rsaEncrypt':
-
-                break;
-        }
-    }
-    text = base64Decode(text);
-    let json = JSON.parse(text);
-    if (json.paths) {
-        for (let i in json.paths) {
-            saveFile(json.paths[i], json.codes[i]);
-        }
-        clearMyVar(json.type + 'Initialization');
-        refreshPage();
-        toast("导入成功");
-    } else {
-        let type = json.type;
-        if (type == "theme") { // 主题元素
-        } else if (type == "plugin") { // 插件的用户变量
-        } else if (type == "proxy") { // 解析待定
-        } else if (type == "collection") { // 收藏元素，这个常用
-            return setCollectionData(json.code);
-        }
-    }
-}
 
 function getShareText(input, type, len) {
     let arr = getPastes();
@@ -1164,6 +1158,7 @@ function getShareText(input, type, len) {
     return $(arr, 2, '选择分享格式').select((code, type, len) => {
         try {
             let isObj = typeof code === 'object' && !Array.isArray(code);
+            if (isObj) return "toast://元素分享完善中";
             let json = {};
             if (isObj) {
                 json = {
@@ -1181,7 +1176,7 @@ function getShareText(input, type, len) {
             // isObj = {};
             let text = base64Encode(JSON.stringify(json));
 
-            let group = "Text";
+            let group = "getCode";
             if (input == "复制链接") {
                 if (isObj) {
                     if (isObj.platform == "userlist") {
@@ -1195,7 +1190,7 @@ function getShareText(input, type, len) {
                 group = "shareUrl";
             } else if (input != "明文口令") {
                 text = sharePaste(text, input);
-                group = "Paste";
+                group += "+parsePaste";
             }
             let type2 = {
                 theme: "主题",
@@ -1213,7 +1208,7 @@ function getShareText(input, type, len) {
                 }
                 desc = type3 + type2 + "「" + isObj.title + "」";
             }
-            return "copy://歌词适配" + type2 + "口令，打开海阔即可导入\n" + desc + "￥" + group + "￥" + text + '@import=js:$.require("import?rule=歌词适配");';
+            return "copy://歌词适配" + type2 + "口令，打开海阔即可导入\n" + desc + "￥" + group + "￥" + text + '@import=js:$.require("import?rule=歌词适配")(input.split("￥"));';
         } catch (err) {
             return "toast://分享失败";
         }
@@ -1224,6 +1219,7 @@ function getShareText(input, type, len) {
 function setCollectionGroup(input, path, title) {
     switch (input) {
         case '更新资源':
+            return "toast://完善中";
             break;
         case '合并分组':
             break;
@@ -1280,65 +1276,61 @@ function setCollectionGroup(input, path, title) {
     return "hiker://empty";
 }
 
-function setCollectionData(musicItem) {
+function setCollectionData(musicItem, run) {
     let hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
     let isMedia = ["0", "1", "8", "9", "10"].indexOf(musicItem.type) != -1;
     let detailp = _getPath(["collection", "details.json"], "_cache", 1);
-    let options = (_getPath(detailp) || []).map(_ => ({
+    let iconList = (_getPath(detailp) || []).map(_ => ({
         title: _.title + '\r\n' + _.path,
         icon: _.icon
     }));
-    let pop = hikerPop.selectCenter({
-        options: options.concat([{
-            title: isMedia ? "新分组" : "最后面",
-            icon: "hiker://images/添加"
-        }]),
-        columns: 2,
+    let isBack = run === true;
+    if (!isMedia) {
+        return "toast://分组收藏完善中，可以先在线收藏";
+    }
+    let pop = hikerPop.selectCenterIcon({
+        iconList,
         title: "请选择资源位置",
-        // position: 2,
+        extraMenu: new hikerPop.IconExtraMenu(() => {
+            hikerPop.inputTwoRow({
+                titleHint: "新组名称",
+                titleDefault: "",
+                urlHint: "新组封面",
+                urlDefault: "",
+                noAutoSoft: true, //不自动打开输入法
+                title: "新组信息",
+                //hideCancel: true,
+                confirm(input, icon) {
+                    if (!input.trim()) return "toast://组名不能为空";
+                    let t = new Date().getTime();
+                    let _ = {
+                        "platform": "userlist",
+                        "id": t + "",
+                        "type": "2",
+                        "title": input,
+                        "icon": icon || "hiker://images/icon1",
+                        "musicList": [musicItem]
+                    }
+                    let path = "hiker://files/rules/Thomas/gcsp1999/collection/collections/userlist_" + t + ".json";
+                    saveFile(path, JSON.stringify(_));
+                    clearMyVar('collectionInitialization');
+                    isBack && back(true);
+                    return "toast://导入歌曲成功";
+                },
+                cancel() {
+                    return "hiker://empty";
+                    // return "toast://你取消了";
+                }
+            });
+            return "hiker://empty";
+        }),
+        columns: 2,
+        // position: 0,
         click(input) {
             let [title, path] = input.split("\r\n");
-            if (!isMedia) {
-                return "toast://完善中";
-            }
-            if ('新分组' == title && !path) {
-                hikerPop.inputTwoRow({
-                    titleHint: "新组名称",
-                    titleDefault: "",
-                    urlHint: "新组封面",
-                    urlDefault: "",
-                    noAutoSoft: true, //不自动打开输入法
-                    title: "新组信息",
-                    //hideCancel: true,
-                    confirm(input, icon) {
-                        if (!input.trim()) return "toast://组名不能为空";
-                        let t = new Date().getTime();
-                        let _ = {
-                            "platform": "userlist",
-                            "id": t + "",
-                            "type": "2",
-                            "title": input,
-                            "icon": icon || "hiker://images/icon1",
-                            "musicList": [musicItem]
-                        }
-                        let path = "hiker://files/rules/Thomas/gcsp1999/collection/collections/userlist_" + t + ".json";
-                        saveFile(path, JSON.stringify(_));
-                        clearMyVar('collectionInitialization');
-                        refreshPage();
-                        return "toast://导入歌曲成功";
-                    },
-                    cancel() {
-                        return "hiker://empty";
-                        // return "toast://你取消了";
-                    }
-                });
-                return "hiker://empty";
-            }
-
-            // 保存歌曲数据
             let zy = JSON.parse(readFile(path) || "{}") || {};
-            let zu = (zy.musicList || []).map((_, i) => _.title + '\r\n' + i + _.platform + _.id);
-            return $(zu.concat("最后面"), 2, '请选择资源位置').select((zy, zu, path, musicItem) => {
+            let zu = (zy.musicList || []).map((_, i) => _.title + '\r\n' + i);
+            return $(zu.concat("最后面"), 2, '请选择资源位置').select((zy, zu, path, musicItem, isBack) => {
                 let i;
                 if ("最后面" == input) {
                     i = zu.length;
@@ -1348,10 +1340,16 @@ function setCollectionData(musicItem) {
                 zy.musicList.splice(i, 0, musicItem);
                 saveFile(path, JSON.stringify(zy));
                 clearMyVar('collectionInitialization');
-                refreshPage();
+                isBack && back(true);
                 return "toast://导入歌曲成功";
-            }, zy, zu, path, musicItem);
-        },
+            }, zy, zu, path, musicItem, isBack);
+        }
     });
     return "hiker://empty";
+}
+
+
+
+function getLastChapterRule() {
+    setResult("");
 }

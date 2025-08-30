@@ -1,7 +1,7 @@
 js:
-getTopImage({
-    url: "hiker://empty"
-});
+    getTopImage({
+        url: "hiker://empty"
+    });
 d.push({
     title: '新增解析',
     col_type: 'text_2',
@@ -93,8 +93,12 @@ if (jx_list.length == 0) {
                                 return getShareText([_.path], "proxy");
                                 break;
                             case '删除解析':
-                                refreshPage(false);
-                                return "hiker://empty";
+                                return $("确定删除解析 " + _.title + " 吗？\n此操作不可逆，请谨慎选择。").confirm((path) => {
+                                    deleteFile(path);
+                                    clearMyVar("proxyInitialization");
+                                    refreshPage();
+                                    return "hiker://empty";
+                                }, _.path);
                                 break;
                             case '测试解析':
                                 return "toast://完善中";

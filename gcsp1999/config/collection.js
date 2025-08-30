@@ -1,4 +1,6 @@
-getTopImage();
+getTopImage({
+    url: "hiker://empty"
+});
 d.push(getDownData());
 d.push({
     title: "导入歌单".bold(),

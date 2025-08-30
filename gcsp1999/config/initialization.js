@@ -61,6 +61,7 @@
                 description: plugin.description || "",
                 platformProxy: plugin.platformProxy,
                 userVariables: plugin.userVariables,
+                import_url: plugin.import_url && true
                 // 登录相关还没写 - 完善中
             };
             if (plugin.search) {
@@ -119,6 +120,7 @@
                     "platform": proxyObj.platform, // 隶属插件标识
                     "url": proxyObj.url, // 解析标识
                     "title": proxyObj.title, // 解析名称
+                    "author": proxyObj.author || "佚名", // 解析作者
                     "icon": proxyObj.icon || "", // 解析封面
                     "type": proxyObj.type || "未知", // 解析分组
                     "desc": proxyObj.desc || [], // 解析简介
@@ -154,6 +156,7 @@
             details.push({
                 path: cPath,
                 title: cObj.title,
+                author: cObj.author,
                 icon: cObj.icon,
                 type: cObj.type || "2",
                 worksNum: cObj.musicList.length
@@ -189,7 +192,6 @@
                     "path": theme,
                     "title": themeObj.title,
                     "icon": themeObj.icon || "",
-
                     "author": themeObj.author || "佚名",
                     "plugins": themeObj.plugins || []
                 });
@@ -202,9 +204,8 @@
 
 
 
-
-    // 依赖检测更新
     if (getMyVar("require_url_update", "0") == "0") {
+        log("检测并更新依赖");
         try {
             let update_url = getGitHub(["config", "update.json"]);
             let _json1 = require(update_url);
@@ -212,10 +213,11 @@
             let records = [];
             for (let _key in _json2) {
                 let _ver1 = (_json1[_key] || {}).version || 0;
-                let _ver2 = (_json2[_key] || {}).version || 0;
+                let _ver2 = (_json2[_key] || {}).version || 1;
                 if (_ver1 < _ver2) { // 删除缓存
+                    showLoading('更新依赖_' + _key);
                     deleteCache(getGitHub(["config", _key], 0, 1));
-                    if (_key == "image.js") require(getGitHub(["config", _key]));
+                    if (_key == "image.js") getGitHub(["config", _key], true);
                     let record = {
                         "title": _key,
                         "records": (_json2[_key] || {}).records || []
@@ -231,9 +233,30 @@
                 hikerPop.updateRecordsBottom(records);
             }
         } catch (e) {
-            log("更新失败: " + e)
+            log("失败: " + e)
         }
+        hideLoading();
         putMyVar("require_url_update", "1");
-        log("检测更新结束");
+    }
+
+
+
+    // 通过依赖检测规则是否更新
+    // 只在首页检测，子页面MY_RULE的version是0
+    if (themeType == "home" && MY_RULE.version < 20250901) {
+        confirm({
+            title: '更新提示',
+            content: '检测到你的规则版本小于服务器版本，是否立即更新？',
+            confirm: $.toString((rule_url) => {
+                for (let i = 1; i < 4; i++) {
+                    try {
+                        return fetch(rule_url);
+                    } catch (e) {
+                        log("更新失败: " + i)
+                    }
+                }
+                return "toast://网络异常，无法更新";
+            }, getGitHub(["home_rule.hiker"]))
+        });
     }
 })();

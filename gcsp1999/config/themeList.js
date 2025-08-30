@@ -7,6 +7,7 @@ theme_Id = _getPath(["theme", themeType2, "select.txt"], "rules");
 getTopImage({
     url: "hiker://empty"
 });
+
 [{
     title: "首页",
     key: "home"
@@ -37,7 +38,7 @@ getTopImage({
 
 d.push({
     title: Rich(Color("新增", "#3399cc").bold()),
-    url: MY_URL.replace("themeList", "themeEdit&t_id=NEW_THEME") + "#noHistory##noRecordHistory#",
+    url: MY_URL.replace("themeList", "themeEdit&t_id=NEW_THEME").replace("&s=", "&s=#noHistory##noRecordHistory#"),
     col_type: 'text_4',
     extra: {
         pageTitle: "新" + {
@@ -64,43 +65,64 @@ theme_Data.map((_, i) => {
         desc: "ID: " + _.path.replace(".json", ""),
         pic_url: _.icon,
         col_type: "icon_1_left_pic",
-        url: $(["分享", "编辑", "删除", "启用", /*"排序", "预览"*/ ], 2, '主题操作').select((themeType2, i, MY_URL, isSelect) => {
+        url: $("#noLoading#").lazyRule((themeType2, i, MY_URL, isSelect) => {
             require(config.preRule);
             let theme_Path = _getPath(["theme", themeType2, "details.json"], "_cache", 1);
             let theme_Data = _getPath(theme_Path) || [];
             let hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
             let path = _getPath(["theme", themeType2, "themes", ""], 0, 1);
             let _ = theme_Data[i];
-            switch (input) {
-                case '分享':
-                    return getShareText([_getPath(["theme", themeType2, "themes", _.path], 0, 1)], "theme");
-                    break;
-                case '编辑':
-                    return MY_URL.replace("themeList", "themeEdit&t_id=" + _.path) + "#noHistory##noRecordHistory#";
-                    break;
-                case '删除':
-                    return $("确定删除主题 " + _.title + " 吗？\n此操作不可逆，请谨慎选择。").confirm((path, isOne, isSelect) => {
-                        if (isOne) return "toast://至少要保留一个主题吧";
-                        deleteFile(path);
-                        if (isSelect) deleteFile(path.replace("themes/", "select.txt"));
-                        clearMyVar("themeInitialization");
-                        refreshPage();
-                        return "hiker://empty";
-                    }, path + _.path, theme_Data.length === 1, isSelect);
-                    break;
-                case '启用':
-                    saveFile(path.replace("themes/", "select.txt"), _.path);
-                    refreshPage(false);
+            hikerPop.selectCenterIcon({
+                iconList: [{
+                    title: "分享主题",
+                    icon: getImageUrl("share.svg")
+                }, {
+                    title: "编辑主题",
+                    icon: getImageUrl("edit.svg")
+                }, {
+                    title: "删除主题",
+                    icon: getImageUrl("uninstall.svg")
+                }, {
+                    title: "启用主题",
+                    icon: getImageUrl("selected.svg")
+                }],
+                title: "主题操作",
+                columns: 2,
+                // position: 0,
+                click(a) {
+                    switch (a) {
+                        case '分享主题':
+                            return getShareText([_getPath(["theme", themeType2, "themes", _.path], 0, 1)], "theme");
+                            break;
+                        case '编辑主题':
+                            return MY_URL.replace("themeList", "themeEdit&t_id=" + _.path).replace("&s=", "&s=#noHistory##noRecordHistory#");
+                            break;
+                        case '删除主题':
+                            return $("确定删除主题 " + _.title + " 吗？\n此操作不可逆，请谨慎选择。").confirm((path, isOne, isSelect) => {
+                                if (isOne) return "toast://至少要保留一个主题吧";
+                                deleteFile(path);
+                                if (isSelect) deleteFile(path.replace("themes/", "select.txt"));
+                                clearMyVar("themeInitialization");
+                                refreshPage();
+                                return "hiker://empty";
+                            }, path + _.path, theme_Data.length === 1, isSelect);
+                            break;
+                        case '启用主题':
+                            saveFile(path.replace("themes/", "select.txt"), _.path);
+                            refreshPage(false);
+                            return 'hiker://empty';
+                            break;
+                        case '排序':
+                            return 'hiker://empty';
+                            break;
+                        case '预览':
+                            return 'hiker://empty';
+                            break;
+                    }
                     return 'hiker://empty';
-                    break;
-                case '排序':
-                    return MY_URL.replace("themeList", themeType2) + "#noHistory##noRecordHistory#";
-                    break;
-                case '预览':
-                    return MY_URL.replace("themeList", themeType2) + "#noHistory##noRecordHistory#";
-                    break;
-            }
-            return 'hiker://empty';
+                }
+            });
+            return "hiker://empty";
         }, themeType2, i, MY_URL, isSelect),
         extra: {
             pageTitle: _.title
