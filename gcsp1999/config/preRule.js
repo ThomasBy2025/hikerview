@@ -512,6 +512,7 @@ function getThemeData(themeType) {
         case "getMusicSheetInfo":
         case "getAlbumInfo":
         case "getArtistWorks":
+        case "getProgramInfo":
             if (platforms && !platforms.length) {
                 if (page == 1) {
                     getTopImage({
@@ -624,7 +625,7 @@ function getThemeData(themeType) {
             executeThemeIndex(t_type, t_id, t_index);
             break;
         default:
-            _getPlatform(platform)[themeType]();
+            _getPlatform(getParam('platform') || platform)[themeType]();
             // $.require(themeType + 2);
             break;
     }
@@ -763,7 +764,13 @@ function getColType(_json) {
                 _json2 = {
                     title: "‘‘’’设置".bold(),
                     pic_url: "hiker://images/rule_type_tool",
-                    url: "toast://完善中~" || buildUrl("hiker://page/home", {
+                    url: $("#noLoading#").lazyRule((url1, len1) => {
+                        if (len1 != 23) {
+                            require(config.preRule);
+                            require(url1);
+                        }
+                        return "toast://图标已下载~";
+                    }, getGitHub(["config", "image.js"]), readDir(_getPath(["image"], 0, 1)).length) || buildUrl("hiker://page/home", {
                         p: "nopage",
                         t: "ruleInstall",
                         s: "#immersiveTheme##noHistory##noRecordHistory#",
@@ -1123,7 +1130,7 @@ function getMedia(musicItem, quality, mediaType) {
             mediaItem = mediaPlatform.getMediaSource(musicItem, Quality);
         }
     } catch (e) {}
-    if (!mediaItem && isMedia && mediaType != "0" && (mediaItem.vid || mediaItem.rid)) { // 获取视频链接
+    if (!mediaItem && isMedia && mediaType != "0" && (musicItem.vid || musicItem.rid)) { // 获取视频链接
         try {
             if (musicItem.vid) {
                 mediaItem = mediaPlatform.getVideo(musicItem, Quality);
@@ -1135,11 +1142,14 @@ function getMedia(musicItem, quality, mediaType) {
     if (!mediaItem && isMedia) { // 调用解析执行
         try {
             let proxyPaths = _getPath(_getPath(["proxy", musicItem.platform, Quality + ".json"], "_cache", 1)) || [];
+            let enableds = _getPath(["proxy", musicItem.platform, "open.json"]) || {};
             for (let proxyPath of proxyPaths) {
-                try {
-                    mediaItem = $.require(proxyPath).getMediaSource(musicItem, Quality);
-                } catch (e) {}
-                if (mediaItem) break;
+                if (enableds[proxyPath]) {
+                    try {
+                        mediaItem = $.require(proxyPath).getMediaSource(musicItem, Quality);
+                    } catch (e) {}
+                    if (mediaItem) break;
+                }
             }
         } catch (e) {}
     }
