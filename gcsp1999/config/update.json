@@ -21,10 +21,10 @@
         ]
     },
     "preRule.js": {
-        "version": 20250902,
+        "version": 20250903,
         "records": [
             "““更新””: 云端链接",
-            "‘‘优化’’: getMedia"
+            "‘‘优化’’: 临时修改程序设置接口为下载图标"
         ]
     },
     "pluginList.js": {
