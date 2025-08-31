@@ -3,7 +3,7 @@
 
 let proxyObj = {
     "platform": "debug", // 隶属插件标识
-    "url": "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/proxyExample.js", // 解析标识
+    "srcUrl": "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/proxyExample.js", // 解析标识
     "title": "解析示例", // 解析名称
     "author": "Thomas喲", // 解析作者
     "icon": "hiker://images/icon_xiutan", // 解析封面
