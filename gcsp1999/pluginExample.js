@@ -7,6 +7,8 @@ function formatMusicItem(_) {
         type: "0" || "1",
         /* 标识 */
         id, // #songId
+        /* 标识2 - 优先获取✩ */
+        mid, // #mediaHash
         /* 曲名 */
         title,
         /* 作者 */
@@ -26,8 +28,8 @@ function formatMusicItem(_) {
         /* 其他 */ // 支持自定义
         albumId, //专辑id
         artistId, //歌手id
-        videoId, //视频id
-        // radioId, //播客id
+        vid, //视频id video
+        rid, //播客id radio
     }
 }
 // 格式化播客信息
@@ -60,6 +62,8 @@ function formatSheetItem(_) {
         type: "2",
         /* 歌单id */
         id,
+        /* 标识2 - 优先获取✩ */
+        mid,
         /* 标题 */
         title,
         /* 作者 */
@@ -107,6 +111,8 @@ function formatArtistItem(_) {
         type: "5",
         /* 歌手id */
         id,
+        /* 标识2 - 优先获取✩ */
+        mid,
         /* 歌手名称 */
         title,
         /* 作者名称 */
@@ -138,6 +144,8 @@ function formatComment(_) {
         platform: platformObj.platform,
         // 评论ID
         id,
+        /* 标识2 - 优先获取✩ */
+        mid,
         // 用户名
         nickName,
         // 头像
@@ -325,7 +333,7 @@ let platformObj = {
         let url = "播放链接实现"
         if (url != "") {
             if (mediaType == "down") {
-                return url;
+                return {url};
             } else {
                 return {
                     urls: [url],
