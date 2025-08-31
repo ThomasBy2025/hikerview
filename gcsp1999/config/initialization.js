@@ -119,7 +119,7 @@
                 }
                 proxyQ.details.push({
                     "platform": proxyObj.platform, // 隶属插件标识
-                    "url": proxyObj.url, // 解析标识
+                    "srcUrl": proxyObj.srcUrl, // 解析标识
                     "title": proxyObj.title, // 解析名称
                     "author": proxyObj.author || "佚名", // 解析作者
                     "icon": proxyObj.icon || "", // 解析封面

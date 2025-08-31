@@ -2,16 +2,39 @@ getTopImage({
     url: "hiker://empty"
 });
 d.push({
-    title: "新增插件",
-    url: $("#noLoading#").lazyRule((url1, url2) => {
+    title: "新增解析",
+    url: $("#noLoading#").lazyRule((url1, url2, url3) => {
         if (!fileExist(url1)) {
             saveFile(url1, fetch(url2));
         }
-        return "editFile://" + url1;
-    }, _getPath(["proxyExample.js"], "_cache", 1), getGitHub(["proxyExample.js"])),
+        return "editFile://" + url1 + "@js=" + $.toString((url3) => {
+            input = "file://" + input;
+            let {
+                platform,
+                srcUrl
+            } = $.require(input);
+            if (platform && srcUrl) {
+                url3 = url3.replace("#platform#", platform) + md5(srcUrl) + '.js';
+                saveFile(url3, readFile(input));
+                deleteFile(input);
+                clearMyVar('proxyInitialization');
+                refreshPage();
+                return 'toast://保存成功';
+            } else {
+                return 'toast://参数异常';
+            }
+        }, url3);
+    }, _getPath(["proxyExample.js"], "_cache", 1), getGitHub(["proxyExample.js"]), _getPath(["proxy", getParam("platform", "#platform#"), "proxys", ""], 0, 1)),
     col_type: 'text_2',
     extra: {
-        pageTitle: "新插件"
+        pageTitle: "新解析",
+        longClick: [{
+            title: '删除缓存',
+            js: $.toString((url) => {
+                deleteFile(url);
+                return 'toast://删除成功'
+            }, _getPath(["proxyExample.js"], "_cache", 1))
+        }]
     }
 });
 d.push({
@@ -22,6 +45,7 @@ d.push({
         // 准备分享的解析
         let selectp = _getPath(["proxy", "selects.json"], "_cache", 1);
         let selects = JSON.parse(readFile(selectp) || "[]") || [];
+        selects = selects.filter(p => fileExist(p));
         if (selects.length === 0) return "toast://没有选中的解析";
         return getShareText(selects, "proxy");
     }),
@@ -170,7 +194,7 @@ if (jx_list.length == 0) {
             })
         });
         d.push({
-            title: [_.platform, _.type, _.url].join("┃"),
+            title: [_.platform, _.type, _.srcUrl].join("┃"),
             url: $('#noLoading#').lazyRule((jx_platform, _id) => {
                 require(config.preRule);
                 let enableds = _getPath(["proxy", jx_platform, "open.json"]) || {};

@@ -3,15 +3,30 @@ getTopImage({
 });
 d.push({
     title: "新增插件",
-    url: $("#noLoading#").lazyRule((url1, url2) => {
+    url: $("#noLoading#").lazyRule((url1, url2, url3) => {
         if (!fileExist(url1)) {
             saveFile(url1, fetch(url2));
         }
-        return "editFile://" + url1;
-    }, _getPath(["pluginExample.js"], "_cache", 1), getGitHub(["pluginExample.js"])),
+        return "editFile://" + url1 + "@js=" + $.toString((url3) => {
+            input = "file://" + input;
+            url3 += $.require(input).platform + '.js';
+            saveFile(url3, readFile(input));
+            deleteFile(input);
+            clearMyVar('pluginInitialization');
+            refreshPage();
+            return 'toast://保存成功';
+        }, url3);
+    }, _getPath(["pluginExample.js"], "_cache", 1), getGitHub(["pluginExample.js"]), _getPath(["plugin", "plugins", ""], 0, 1)),
     col_type: 'text_2',
     extra: {
-        pageTitle: "新插件"
+        pageTitle: "新插件",
+        longClick: [{
+            title: '删除缓存',
+            js: $.toString((url) => {
+                deleteFile(url);
+                return 'toast://删除成功';
+            }, _getPath(["pluginExample.js"], "_cache", 1))
+        }]
     }
 });
 d.push({
@@ -22,10 +37,11 @@ d.push({
         // 准备分享的插件
         let selectp = _getPath(["plugin", "selects.json"], "_cache", 1);
         let selects = JSON.parse(readFile(selectp) || "[]") || [];
-        if (selects.length === 0) return "toast://没有选中的插件";
         selects = selects.map(platform => {
             return _getPath(["plugin", "plugins", platform + ".js"], 0, 1);
         });
+        selects = selects.filter(p => fileExist(p));
+        if (selects.length === 0) return "toast://没有选中的插件";
         return getShareText(selects, "plugin");
     }),
 });
