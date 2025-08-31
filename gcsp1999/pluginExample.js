@@ -174,8 +174,8 @@ let platformObj = {
     type: "示例", // 插件分类☆ 随便写：视频 / 音频 / 其他
     author: "Thomas喲", // 插件作者
     version: "2025.09.01", // 插件版本
-    icon: "", //插件封面☆
-    srcUrl: "", // 在线链接
+    icon: "hiker://images/icon_plugin", //插件封面☆
+    srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/pluginExample.js", // 在线链接
     description: [{ // 更新内容/简介☆
         "title": "2025.09.01",
         "records": [
