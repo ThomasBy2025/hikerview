@@ -1,16 +1,30 @@
-js:
-    getTopImage({
-        url: "hiker://empty"
-    });
+getTopImage({
+    url: "hiker://empty"
+});
 d.push({
-    title: '新增解析',
+    title: "新增插件",
+    url: $("#noLoading#").lazyRule((url1, url2) => {
+        if (!fileExist(url1)) {
+            saveFile(url1, fetch(url2));
+        }
+        return "editFile://" + url1;
+    }, _getPath(["proxyExample.js"], "_cache", 1), getGitHub(["proxyExample.js"])),
     col_type: 'text_2',
-    url: "toast://完善中"
+    extra: {
+        pageTitle: "新插件"
+    }
 });
 d.push({
     title: '分享选中',
     col_type: 'text_2',
-    url: "toast://完善中"
+    url: $("#noLoading#").lazyRule(() => {
+        require(config.preRule);
+        // 准备分享的解析
+        let selectp = _getPath(["proxy", "selects.json"], "_cache", 1);
+        let selects = JSON.parse(readFile(selectp) || "[]") || [];
+        if (selects.length === 0) return "toast://没有选中的解析";
+        return getShareText(selects, "proxy");
+    }),
 });
 d.push({
     col_type: 'line'

@@ -61,6 +61,7 @@
                 description: plugin.description || "",
                 platformProxy: plugin.platformProxy,
                 userVariables: plugin.userVariables,
+                supportedSearchType: Array.isArray(plugin.supportedSearchType) ? plugin.supportedSearchType : ["单曲", "歌单", "专辑", "歌手", "视频", "歌词", "电台", "播客"],
                 import_url: plugin.import_url && true
                 // 登录相关还没写 - 完善中
             };

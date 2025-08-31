@@ -125,6 +125,7 @@ switch (themeType) {
 }
 if (themeType_TwoSwitch) switch (themeType) {
     case "search":
+        s_types = platformItem.supportedSearchType || s_types;
         s_types.unshift("热搜");
         var s_query = function(s_t2) {
             try {
@@ -910,7 +911,7 @@ const Extra = (_, _extra, run) => {
         s: isMedia ? "#noHistory##noRecordHistory#" : "#immersiveTheme#",
         rule: MY_RULE.title,
         platform: _.platform,
-        id: _.id + "",
+        id: String(_.mid || _.id),
     });
     if (isMedia) {
         let _url3 = (is_down) => $(_url2).lazyRule((musicItem, is_down) => {
@@ -1062,6 +1063,7 @@ function getQuality(musicItem, down) {
             }
             arr1.push(ns[i] + size);
         }
+        if (qs.length === 0) arr1 = [musicItem.title + ' - ' + musicItem.artist];
         return $(arr1, 1, '选择下载音质').select((musicItem, arr1) => {
             let quality = arr1.indexOf(input);
             MY_URL = "";
@@ -1091,6 +1093,8 @@ function getQuality(musicItem, down) {
                 i--;
             } while (0 < i && i < 4);
         }
+        // 异常
+        return getMedia(musicItem, 0, "3");
     }
 }
 
@@ -1100,10 +1104,35 @@ function getMedia(musicItem, quality, mediaType) {
     }
     let Quality = ["low", "standard", "high", "super"][quality];
     let mediaItem;
+    let mediaPlatform = {
+        getMediaSource: () => false,
+        getLyric: () => false,
+        getVideo: () => false,
+        getRadio: () => false,
+    };
+    let isMedia = musicItem.type != 8 && musicItem.type != 9;
     try {
-        mediaItem = _getPlatform(musicItem.platform).getMediaSource(musicItem, Quality);
+        mediaPlatform = Object.assign(mediaPlatform, _getPlatform(musicItem.platform));
     } catch (e) {}
-    if (!mediaItem) {
+    try {
+        if (musicItem.type == 9) {
+            mediaItem = mediaPlatform.getVideo(musicItem, Quality);
+        } else if (musicItem.type == 8) {
+            mediaItem = mediaPlatform.getRadio(musicItem, Quality);
+        } else {
+            mediaItem = mediaPlatform.getMediaSource(musicItem, Quality);
+        }
+    } catch (e) {}
+    if (!mediaItem && isMedia && mediaType != "0" && (mediaItem.vid || mediaItem.rid)) { // 获取视频链接
+        try {
+            if (musicItem.vid) {
+                mediaItem = mediaPlatform.getVideo(musicItem, Quality);
+            } else {
+                mediaItem = mediaPlatform.getRadio(musicItem, Quality);
+            }
+        } catch (e) {}
+    }
+    if (!mediaItem && isMedia) { // 调用解析执行
         try {
             let proxyPaths = _getPath(_getPath(["proxy", musicItem.platform, Quality + ".json"], "_cache", 1)) || [];
             for (let proxyPath of proxyPaths) {
@@ -1125,15 +1154,18 @@ function getMedia(musicItem, quality, mediaType) {
         }, mediaItem);
         if (!mediaItem.urls.length && mediaItem.url) {
             mediaItem.urls.push(mediaItem.url);
-            delete mediaItem.url;
+            // delete mediaItem.url;
         }
         if (!mediaItem.lyric) {
-            mediaItem.lyric = _getPlatform(musicItem.platform).getLyric(musicItem);
+            try {
+                mediaItem.lyric = mediaPlatform.getLyric(musicItem);
+            } catch (e) {}
         }
         return JSON.stringify(mediaItem);
     } else {
         switch (mediaType) {
-            case "0":
+            case "0": // 精准下载
+            case "3": // 没有音质
                 return "toast://解析失败";
                 break;
             case "1":
@@ -1292,6 +1324,7 @@ function setCollectionData(musicItem, run) {
         iconList,
         title: "请选择资源位置",
         extraMenu: new hikerPop.IconExtraMenu(() => {
+            pop.dismiss();
             hikerPop.inputTwoRow({
                 titleHint: "新组名称",
                 titleDefault: "",

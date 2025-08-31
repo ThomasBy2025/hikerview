@@ -1,6 +1,8 @@
 if (platforms.length === 0) {
     if (page == 1) {
-        getTopImage();
+        getTopImage({
+            url: "hiker://empty"
+        });
         d.push({
             title: Rich(Color("没有插件数据").bold().big()),
             desc: Rich("去导入".small()),
@@ -13,7 +15,14 @@ if (platforms.length === 0) {
     }
 } else {
     if (page == 1) {
-        getTopImage();
+        getTopImage({
+            url: buildUrl("hiker://page/home", {
+                p: "nopage",
+                t: "collection",
+                s: "#immersiveTheme##noHistory##noRecordHistory#",
+                rule: MY_RULE.title
+            }),
+        });
         getColType({
             type: '#切换接口_独立#'
         });

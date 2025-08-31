@@ -1,97 +1,97 @@
 ({
     "ClassTab.js": {
-        "version": 20250901,
+        "version": 20250902,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "global.js": {
-        "version": 20250901,
+        "version": 20250902,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "initialization.js": {
-        "version": 20250901,
+        "version": 20250902,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "preRule.js": {
-        "version": 20250901,
+        "version": 20250902,
         "records": [
             "““更新””: 云端链接",
-            "‘‘修复’’: 。。。"
+            "‘‘优化’’: getMedia"
         ]
     },
     "pluginList.js": {
-        "version": 20250901,
+        "version": 20250902,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "proxyList.js": {
-        "version": 20250901,
+        "version": 20250902,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "themeList.js": {
-        "version": 20250901,
+        "version": 20250902,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "themeEdit.js": {
-        "version": 20250901,
+        "version": 20250902,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "collectionList.js": {
-        "version": 20250901,
+        "version": 20250902,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "collection.js": {
-        "version": 20250901,
+        "version": 20250902,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "search.js": {
-        "version": 20250901,
+        "version": 20250902,
         "records": [
             "““更新””: 云端链接",
-            "‘‘修复’’: 。。。"
+            "‘‘修复’’: s_types跟随插件获取"
         ]
     },
     "image.js": {
-        "version": 20250901,
+        "version": 20250902,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "putImportCode.js": {
-        "version": 20250901,
+        "version": 20250902,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "update.json": {
-        "version": 20250901,
+        "version": 20250902,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"

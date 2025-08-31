@@ -3,7 +3,12 @@ getTopImage({
 });
 d.push({
     title: "新增插件",
-    url: "toast://完善中" || "editFile://" + "hiker://files/rules/Thomas/gcsp1999/example.js",
+    url: $("#noLoading#").lazyRule((url1, url2) => {
+        if (!fileExist(url1)) {
+            saveFile(url1, fetch(url2));
+        }
+        return "editFile://" + url1;
+    }, _getPath(["pluginExample.js"], "_cache", 1), getGitHub(["pluginExample.js"])),
     col_type: 'text_2',
     extra: {
         pageTitle: "新插件"
@@ -12,7 +17,17 @@ d.push({
 d.push({
     title: '分享选中',
     col_type: 'text_2',
-    url: "toast://完善中"
+    url: $("#noLoading#").lazyRule(() => {
+        require(config.preRule);
+        // 准备分享的插件
+        let selectp = _getPath(["plugin", "selects.json"], "_cache", 1);
+        let selects = JSON.parse(readFile(selectp) || "[]") || [];
+        if (selects.length === 0) return "toast://没有选中的插件";
+        selects = selects.map(platform => {
+            return _getPath(["plugin", "plugins", platform + ".js"], 0, 1);
+        });
+        return getShareText(selects, "plugin");
+    }),
 });
 d.push({
     col_type: 'line'
@@ -271,10 +286,7 @@ else details.map((_, i) => {
                     }
                 });
                 return "hiker://empty";
-            },
-            _,
-            i,
-            isH ? {
+            }, _, i, isH ? {
                 title: "取消劫持",
                 icon: getImageUrl("unhijack.svg")
             } : {
