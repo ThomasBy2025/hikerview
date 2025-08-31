@@ -1,5 +1,5 @@
-// 自带变量 mediaPlatform
-// 可以调用隶属插件的函数
+// 可以通过 _getPlatform(musicItem.platform)
+// 调用隶属插件的函数
 
 let proxyObj = {
     "platform": "debug", // 隶属插件标识
