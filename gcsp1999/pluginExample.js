@@ -169,13 +169,13 @@ function formatComment(_) {
 
 // 返回对象，不支持的功能把函数删掉就行。
 let platformObj = {
-    platform: "插件标识", // 一般是英文简写，例: tx, wy, kg, kw, mg
-    title: "插件名称", // ☆
-    type: "插件分类", // ☆ 随便写：视频 / 音频 / 其他
-    author: "插件作者",
+    platform: "debug", // 插件标识，一般是英文简写，例: tx, wy, kg, kw, mg
+    title: "插件示例", // 插件名称☆
+    type: "示例", // 插件分类☆ 随便写：视频 / 音频 / 其他
+    author: "Thomas喲", // 插件作者
     version: "2025.09.01", // 插件版本
-    icon: "插件封面", //☆
-    srcUrl: "插件在线链接",
+    icon: "", //插件封面☆
+    srcUrl: "", // 在线链接
     description: [{ // 更新内容/简介☆
         "title": "2025.09.01",
         "records": [
@@ -202,6 +202,7 @@ let platformObj = {
         name: "标题2",
         hint: "注释2"
     }],
+    debug_musicItem: {},// 测试登录/解析时需要调用
 
 
 
@@ -323,10 +324,8 @@ let platformObj = {
         // quality = "low" || "standard" || "high" || "super" #需要获取的音质
         // header = 会员cookie(前提插件有实现登录函数)
         // mediaType = "play" || "down" || "debug"
-        if (mediaType == "debug") { // 解析测试
-            musicItem = {
-                id: "会员歌曲id"
-            };
+        if (mediaType == "debug") { // 登录测试
+            musicItem = platformObj.debug_musicItem;
             quality = "low";
             mediaType = "down";
         }
