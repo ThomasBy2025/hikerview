@@ -872,7 +872,7 @@ const Extra = (_, _extra, run) => {
 
 
     let json = Object.assign({
-        title: _.title + (_.artist ? " - " + _.artist : ""),
+        title: _.title + (isMedia && _.artist ? " - " + _.artist : ""),
         desc: (_.album + _.duration) || _.description,
         content: _type,
         col_type,
