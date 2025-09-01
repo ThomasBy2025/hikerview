@@ -244,7 +244,7 @@
 
     // 通过依赖检测规则是否更新
     // 只在首页检测，子页面MY_RULE的version是0
-    if (themeType == "home" && MY_RULE.version < 20250901) {
+    if (themeType == "home" && MY_RULE.version < 20250902) {
         confirm({
             title: '更新提示',
             content: '检测到你的规则版本小于服务器版本，是否立即更新？',
