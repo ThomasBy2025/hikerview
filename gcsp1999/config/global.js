@@ -1,6 +1,7 @@
 addListener('onClose', $.toString(() => {
     clearMyVar('isEnd_page');
     clearMyVar('music_down');
+    clearMyVar('platform');
 }));
 try {
     page = MY_PAGE;

@@ -82,7 +82,8 @@ d.push({
                     for (let i in json.paths) {
                         saveFile(json.paths[i], json.codes[i]);
                         if (isPlugin) {
-                            enableds[json.paths[i]] = true;
+                            let _platform = json.paths[i].replace(/^.+\/plugins\/|\.js$/g, "");
+                            enableds[_platform] = true;
                         }
                         len++;
                     }
@@ -90,7 +91,8 @@ d.push({
                     for (let i of arr2) {
                         saveFile(json.paths[i], json.codes[i]);
                         if (isPlugin) {
-                            enableds[json.paths[i]] = true;
+                            let _platform = json.paths[i].replace(/^.+\/plugins\/|\.js$/g, "");
+                            enableds[_platform] = true;
                         }
                         len++;
                     }
