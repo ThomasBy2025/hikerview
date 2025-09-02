@@ -99,7 +99,9 @@ ClassTab.prototype = {
 }
 
 
+
 // 生成头部分类
+url = String(url || "");
 let fyAll = url.includes('fyAll'),
     tabHeader = []
 if (class_name) tabHeader.push({

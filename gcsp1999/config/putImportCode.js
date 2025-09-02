@@ -71,19 +71,32 @@ d.push({
         title: _[0],
         pic_url: _[1],
         col_type: "icon_small_3",
-        url: $("#noLoading#").lazyRule((type, json, arr2) => {
+        url: $("#noLoading#").lazyRule((type, json, arr2, isPlugin) => {
             if (json.paths) {
-                let len = 0
+                let len = 0;
+                let enableds = {};
+                if (isPlugin) {
+                    enableds = JSON.parse(readFile(isPlugin) || '{}');
+                }
                 if (type == "导入全部") {
                     for (let i in json.paths) {
                         saveFile(json.paths[i], json.codes[i]);
+                        if (isPlugin) {
+                            enableds[json.paths[i]] = true;
+                        }
                         len++;
                     }
                 } else {
                     for (let i of arr2) {
                         saveFile(json.paths[i], json.codes[i]);
+                        if (isPlugin) {
+                            enableds[json.paths[i]] = true;
+                        }
                         len++;
                     }
+                }
+                if (isPlugin) {
+                    saveFile(isPlugin, JSON.stringify(enableds));
                 }
                 clearMyVar(json.type + 'Initialization');
                 return back(true), "toast://导入成功, 数量: " + len;
@@ -97,7 +110,7 @@ d.push({
                     return setCollectionData(json.code, true);
                 }
             }
-        }, _[0], json, arr2)
+        }, _[0], json, arr2, json.type == "plugin" && _getPath(["plugin", "enableds.json"], 0, 1))
     });
 });
 d.push({

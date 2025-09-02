@@ -1,97 +1,122 @@
 ({
     "ClassTab.js": {
-        "version": 20250902,
+        "version": 20250903,
         "records": [
             "““更新””: 云端链接",
-            "‘‘修复’’: 。。。"
+            "‘‘修复’’: 插件没写函数导致报错"
         ]
     },
     "global.js": {
-        "version": 20250902,
+        "version": 20250903,
         "records": [
             "““更新””: 云端链接",
-            "‘‘修复’’: 。。。"
+            "‘‘修复’’: js优化"
         ]
     },
     "initialization.js": {
-        "version": 20250902,
+        "version": 20250903,
         "records": [
             "““更新””: 云端链接",
-            "‘‘修复’’: 。。。"
+            "‘‘注意’’: 小程序本体有更新",
+            "‘‘修复’’: 没打开过小程序无法导入资源"
         ]
     },
     "preRule.js": {
         "version": 20250903,
         "records": [
             "““更新””: 云端链接",
-            "‘‘优化’’: 临时修改程序设置接口为下载图标"
+            "‘‘优化’’: 不是音频数据的列表不显示作者"
         ]
     },
     "pluginList.js": {
-        "version": 20250902,
+        "version": 20250903,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "proxyList.js": {
-        "version": 20250902,
+        "version": 20250903,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "themeList.js": {
-        "version": 20250902,
+        "version": 20250903,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "themeEdit.js": {
-        "version": 20250902,
+        "version": 20250903,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "collectionList.js": {
-        "version": 20250902,
+        "version": 20250903,
         "records": [
             "““更新””: 云端链接",
-            "‘‘修复’’: 。。。"
+            "‘‘修复’’: 在线收藏 or 浏览记录 不继承页面标题"
         ]
     },
     "collection.js": {
-        "version": 20250902,
+        "version": 20250903,
         "records": [
             "““更新””: 云端链接",
-            "‘‘修复’’: 。。。"
+            "‘‘修复’’: 不能删除元素"
         ]
     },
     "search.js": {
-        "version": 20250902,
+        "version": 20250903,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: s_types跟随插件获取"
         ]
     },
     "image.js": {
-        "version": 20250902,
+        "version": 20250901,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"
         ]
     },
     "putImportCode.js": {
-        "version": 20250902,
+        "version": 20250903,
         "records": [
             "““更新””: 云端链接",
-            "‘‘修复’’: 。。。"
+            "‘‘支持’’: 导入的插件默认启用"
+        ]
+    },
+    "KuwoDES.js": {
+        "version": 20250903,
+        "records": [
+            "““更新””: 云端链接",
+            "‘‘实现’’: des加密 or 解密",
+            "‘‘示例’’: let cipher = $.require(getGitHub([\"config\", \"KuwoDES.js\"]));",
+            "‘‘加密’’: cipher.encrypt(str, 1); 第二个参数: 是否包含中文",
+            "‘‘解密’’: cipher.decrypt(str, 1); 第二个参数: 是否包含中文"
+        ]
+    },
+    "JavaGzip.js": {
+        "version": 20250903,
+        "records": [
+            "““更新””: 云端链接",
+            "‘‘支持’’: 压缩/解压 字符串",
+            "‘‘支持’’: 异或 字符串",
+            "‘‘示例’’: let javaGzip = $.require(getGitHub([\"config\", \"JavaGzip.js\"]));",
+            "‘‘异或’’: javaGzip.xor(str, keyStr);",
+            "‘‘mode = \"Base64\" || \"Hex\" || \"\"’’: 返回的文本格式",
+            "hexStr = fetch(path, {toHex:true})",
+            "‘‘压缩’’: javaGzip.zip(str, isGzip, mode);",
+            "‘‘解压’’: javaGzip.unzip(hexStr, isGzip, mode);"
         ]
     },
     "update.json": {
-        "version": 20250902,
+        "version": 20250903,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 。。。"

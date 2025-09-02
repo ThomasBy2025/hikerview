@@ -202,7 +202,7 @@ if (themeType_TwoSwitch) switch (themeType) {
             ArtistObj = _getPlatform(platform).getExploreArtistList();
             storage0.putMyVar(platform + "_iArt", ArtistObj);
         }
-        ArtistObj = $.require(getGitHub(["config", "ClassTab.js"]), ArtistObj);
+        ArtistObj = $.require(getGitHub(["config", "ClassTab.js"]), ArtistObj || {});
         var ArtistUrl = ArtistObj.getBaseUrl();
 
         function getArtistListDetails() {
@@ -213,7 +213,7 @@ if (themeType_TwoSwitch) switch (themeType) {
         if (!platforms.length) break;
         let TopLists = storage0.getMyVar(platform + "_iTop");
         if (platform && TopLists == "") {
-            TopLists = _getPlatform(platform).getTopLists();
+            TopLists = _getPlatform(platform).getTopLists() || [];
             storage0.putMyVar(platform + "_iTop", TopLists);
         }
         let TopIndex = Number(getMyVar('TopIndex', '0'));
@@ -280,21 +280,24 @@ if (themeType_TwoSwitch) switch (themeType) {
         if (!platforms.length) break;
         let SheetTags = storage0.getMyVar(platform + "_iTag");
         if (SheetTags == "") {
-            SheetTags = _getPlatform(platform).getRecommendSheetTags();
+            SheetTags = _getPlatform(platform).getRecommendSheetTags() || [];
             storage0.putMyVar(platform + "_iTag", SheetTags);
         }
         let SheetGroups = SheetTags.map(_ => _.title);
         let GroupIndex = Number(getMyVar('GroupIndex', '0'));
         let GroupTitle = SheetGroups[GroupIndex];
-        let SheetSorts = SheetTags[GroupIndex].data.map(_ => _.title);
+        var SheetTag = (SheetTags[GroupIndex] || {}).data || []
+        let SheetSorts = SheetTag.map(_ => _.title);
         let SortIndex = Number(getMyVar('SortIndex', '0'));
         let SortTitle = SheetSorts[SortIndex];
-        var SheetTag = SheetTags[GroupIndex].data[SortIndex].id;
+        SheetTag = (SheetTag[SortIndex] || {}).id || "";
+
+        let SheetZero = (SheetTags[0] || {}).data || [];
 
         function getRecommendSheetsByTag() {
             d.push({
                 title: Rich((
-                    GroupIndex == 0 ? Color(SheetTags[0].data[0].title, SortIndex != 0 && "Gray") : Color(SortTitle)
+                    GroupIndex == 0 ? Color((SheetZero[0] || {}).title || "无法获取", SortIndex != 0 && "Gray") : Color(SortTitle)
                 ).bold()),
                 url: $("#noLoading#").lazyRule((platform, isOne) => {
                     if (isOne) {
@@ -331,10 +334,10 @@ if (themeType_TwoSwitch) switch (themeType) {
                         }
                     });
                     return "hiker://empty";
-                }, platform, SheetTags.length === 1),
+                }, platform, SheetTags.length < 2),
                 col_type: "scroll_button"
             });
-            SheetTags[0].data.slice(1).map((_, ii) => {
+            SheetZero.slice(1).map((_, ii) => {
                 ii = ii + 1;
                 d.push({
                     title: Rich((Color(_.title, GroupIndex == 0 ? (SortIndex != ii && "Gray") : "Gray")).bold()),
@@ -558,10 +561,13 @@ function getThemeData(themeType) {
                 }
                 Loading();
             }
-            let platform_id = getParam('id');
+            let platform_id = decodeURIComponent(getParam('id'));
             try {
                 platform_id = eval(platform_id);
             } catch (e) {}
+            if (typeof platform_id === 'number') {
+                platform_id = String(platform_id);
+            }
             getDataExtra(getParam('platform') || platform, platform_id);
             break;
 
@@ -918,7 +924,7 @@ const Extra = (_, _extra, run) => {
         s: isMedia ? "#noHistory##noRecordHistory#" : "#immersiveTheme#",
         rule: MY_RULE.title,
         platform: _.platform,
-        id: String(_.mid || _.id),
+        id: encodeURIComponent(String(_.mid || _.id)),
     });
     if (isMedia) {
         let _url3 = (is_down) => $(_url2).lazyRule((musicItem, is_down) => {
@@ -959,10 +965,10 @@ function getDataExtra(platform, tag, type) {
                 isEnd,
                 item,
                 data
-            }) = _getPlatform(platform)[themeType](tag, page, type);
+            }) = _getPlatform(platform)[themeType](tag, page, type) || {};
         }
-        data.map(Extra);
-        if (isEnd) {
+        (data || []).map(Extra);
+        if (isEnd || !data || data.length === 0) {
             putMyVar('isEnd_page', '1');
             if (themeType == "search" && Array.isArray(tag) && tag.length == 0) {
                 d.push({

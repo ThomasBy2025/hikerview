@@ -58,7 +58,10 @@ switch (c_type) {
                         title,
                         desc,
                         pic_url,
-                        col_type
+                        col_type,
+                        extra: {
+                            inheritTitle: false,
+                        }
                     });
                     collectioni++;
                 }
@@ -88,7 +91,10 @@ switch (c_type) {
                         title,
                         desc,
                         pic_url,
-                        col_type
+                        col_type,
+                        extra: {
+                            inheritTitle: false
+                        }
                     });
                     historyi++;
                 }
