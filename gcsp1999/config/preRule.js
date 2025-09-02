@@ -52,6 +52,11 @@ switch (themeType) {
     case "getTopLists":
     case "getRecommendSheetsByTag":
     case "getArtistListDetails":
+        addListener('onClose', $.toString(() => {
+            clearMyVar('platform');
+            clearMyVar('GroupIndex');
+            clearMyVar('SortIndex');
+        }));
         themeType_TwoSwitch = true;
 
         let platformPath1 = _getPath(["plugin", themeType + ".json"], "_cache", 1);
@@ -879,7 +884,7 @@ const Extra = (_, _extra, run) => {
 
     let json = Object.assign({
         title: _.title + (isMedia && _.artist ? " - " + _.artist : ""),
-        desc: (_.album + _.duration) || _.description,
+        desc: ((_.album || "") + " " + (_.duration || "")) || (_.description || ""),
         content: _type,
         col_type,
         pic_url,
@@ -1136,15 +1141,7 @@ function getMedia(musicItem, quality, mediaType) {
             mediaItem = mediaPlatform.getMediaSource(musicItem, Quality);
         }
     } catch (e) {}
-    if (!mediaItem && isMedia && mediaType != "0" && (musicItem.vid || musicItem.rid)) { // 获取视频链接
-        try {
-            if (musicItem.vid) {
-                mediaItem = mediaPlatform.getVideo(musicItem, Quality);
-            } else {
-                mediaItem = mediaPlatform.getRadio(musicItem, Quality);
-            }
-        } catch (e) {}
-    }
+
     if (!mediaItem && isMedia) { // 调用解析执行
         try {
             let proxyPaths = _getPath(_getPath(["proxy", musicItem.platform, Quality + ".json"], "_cache", 1)) || [];
@@ -1159,6 +1156,17 @@ function getMedia(musicItem, quality, mediaType) {
             }
         } catch (e) {}
     }
+
+    if (!mediaItem && isMedia && mediaType != "0" && (musicItem.vid || musicItem.rid)) { // 获取视频链接
+        try {
+            if (musicItem.vid) {
+                mediaItem = mediaPlatform.getVideo(musicItem, Quality);
+            } else {
+                mediaItem = mediaPlatform.getRadio(musicItem, Quality);
+            }
+        } catch (e) {}
+    }
+
     if (mediaItem) {
         mediaItem = Object.assign({
             urls: [],
