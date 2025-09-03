@@ -203,7 +203,7 @@ else details.map((_, i) => {
                                         hintMap[__.key] = __.hint;
                                         let tit = __.name + "\r\n" + __.key;
                                         let val = getItem(_.platform + "@userVariables@" + __.key, "") || __.hint;
-                                        options.push(SettingItem(tit, val));
+                                        options.push(SettingItem(tit, val.slice(0, 16)));
                                     });
                                     hikerPop.selectBottomSettingMenu({
                                         options,

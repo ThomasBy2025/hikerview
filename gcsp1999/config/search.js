@@ -134,7 +134,7 @@ if (platforms.length === 0) {
                 title: key,
                 url: $("#noLoading#").lazyRule((s_type, key) => {
                     if (true) {
-                        if (s_type == '热搜') putMyVar('s_type', getItem('s_type', 'wy'));
+                        if (s_type == '热搜') clearMyVar('s_type');
                         clearMyVar('isEnd_page');
                         putMyVar('s_query', key);
                         // clearMyVar('s_t3');

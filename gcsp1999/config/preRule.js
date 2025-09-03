@@ -268,14 +268,14 @@ if (themeType_TwoSwitch) switch (themeType) {
                     data
                 }) => {
                     d.push({
-                        title: Rich(title.fontcolor('#555555').bold().big()),
+                        title: Rich((title || "无法获取").fontcolor('#555555').bold().big()),
                         col_type: "text_1",
                         url: "hiker://empty",
                         extra: {
                             lineVisible: false
                         }
                     });
-                    data.map(Extra);
+                    (data || []).map(Extra);
                 });
                 TopList = [];
             }
@@ -1093,7 +1093,7 @@ function getQuality(musicItem, down) {
                 return "toast://解析失败";
             }
         }, musicItem, arr1);
-    } else {
+    } else if (qualities) {
         let typeCache = {}
         let i = 0
         if (typeCache.QualityType) { // 向上取
@@ -1111,9 +1111,9 @@ function getQuality(musicItem, down) {
                 i--;
             } while (0 < i && i < 4);
         }
-        // 异常
-        return getMedia(musicItem, 0, "3");
     }
+    // 异常
+    return getMedia(musicItem, 0, "3");
 }
 
 function getMedia(musicItem, quality, mediaType) {
