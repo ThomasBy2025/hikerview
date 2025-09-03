@@ -457,7 +457,12 @@ function getThemeType(themeType) {
     let theme_Item = [];
     try {
         theme_Index = theme_Data.indexOf(theme_Info);
-        theme_Item = ((_getPath(["theme", themeType2, "themes", theme_Id]) || {}).data || []).filter(_ => _.open && (!_.page || page == 1));
+        theme_Item = (_getPath(["theme", themeType2, "themes", theme_Id]) || {}).data || [];
+        if (theme_Data.length === 0 && theme_Item.length) {
+            log("主题初始化异常，重新获取");
+            clearMyVar("themeInitialization");
+        }
+        theme_Item = theme_Item.filter(_ => _.open && (!_.page || page == 1));
     } catch (e) {}
 
 
