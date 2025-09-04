@@ -266,12 +266,13 @@ if (themeType_TwoSwitch) switch (themeType) {
             } else {
                 TopLists.map(({
                     title,
+                    url,
                     data
                 }) => {
-                    d.push({
+                    if (title !== "") d.push({
                         title: Rich((title || "无法获取").fontcolor('#555555').bold().big()),
                         col_type: "text_1",
-                        url: "hiker://empty",
+                        url: url || "hiker://empty",
                         extra: {
                             lineVisible: false
                         }
@@ -574,7 +575,7 @@ function getThemeData(themeType) {
             }
             let platform_id = decodeURIComponent(getParam('id'));
             try {
-                platform_id = eval(platform_id);
+                if (/\D/.test(platform_id)) platform_id = eval(platform_id);
             } catch (e) {}
             if (typeof platform_id === 'number') {
                 platform_id = String(platform_id);
