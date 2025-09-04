@@ -47,7 +47,7 @@ d.push({
         let selects = JSON.parse(readFile(selectp) || "[]") || [];
         selects = selects.filter(p => fileExist(p));
         if (selects.length === 0) return "toast://没有选中的解析";
-        return getShareText(selects, "proxy");
+        return getShareText(selects, "proxy", 0, selectp);
     }),
 });
 d.push({

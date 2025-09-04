@@ -56,6 +56,7 @@ switch (themeType) {
             clearMyVar('platform');
             clearMyVar('GroupIndex');
             clearMyVar('SortIndex');
+            clearMyVar("s_type");
         }));
         themeType_TwoSwitch = true;
 
@@ -1210,13 +1211,13 @@ function getMedia(musicItem, quality, mediaType) {
 
 
 
-function getShareText(input, type, len) {
+function getShareText(input, type, len, path) {
     let arr = getPastes();
     if (type == "plugin" || type == "collection") {
         arr.push("复制链接");
     }
     arr.push("明文口令");
-    return $(arr, 2, '选择分享格式').select((code, type, len) => {
+    return $(arr, 2, '选择分享格式').select((code, type, len, path) => {
         try {
             let isObj = typeof code === 'object' && !Array.isArray(code);
             if (isObj) return "toast://元素分享完善中";
@@ -1269,11 +1270,15 @@ function getShareText(input, type, len) {
                 }
                 desc = type3 + type2 + "「" + isObj.title + "」";
             }
+            if (path) {
+                deleteFile(path);
+                refreshPage();
+            }
             return "copy://歌词适配" + type2 + "口令，打开海阔即可导入\n" + desc + "￥" + group + "￥" + text + '@import=js:$.require("import?rule=歌词适配")(input.split("￥"));';
         } catch (err) {
             return "toast://分享失败";
         }
-    }, input, type, len || 1);
+    }, input, type, len || 1, path || "");
 }
 
 

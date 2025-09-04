@@ -131,7 +131,7 @@ d.push({
 d.push({
     col_type: "line"
 });
-let importPath = _getPath(["import", "_code.js"], "_cache", 1);
+let importPath = _getPath(["import", "codes", ""], "_cache", 1);
 if (json.paths) {
     for (let i in json.paths) {
         let _code = json.codes[i];
@@ -157,8 +157,9 @@ if (json.paths) {
                 col_type: 'line'
             });
         } else if (type == "插件数据" || type == "解析代理") {
-            saveFile(importPath, _code);
-            _code = $.require(importPath);
+            let _importPath = importPath + md5(_code) + '.js';
+            saveFile(_importPath, _code);
+            _code = $.require(_importPath);
             d.push({
                 title: _code.title,
                 desc: "作者: " + _code.author,
@@ -182,6 +183,7 @@ if (json.paths) {
             d.push({
                 col_type: 'line'
             });
+            deleteFile(_importPath);
         }
     }
     // clearMyVar(json.type + 'Initialization');

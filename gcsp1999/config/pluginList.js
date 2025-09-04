@@ -42,7 +42,7 @@ d.push({
         });
         selects = selects.filter(p => fileExist(p));
         if (selects.length === 0) return "toast://没有选中的插件";
-        return getShareText(selects, "plugin");
+        return getShareText(selects, "plugin", 0, selectp);
     }),
 });
 d.push({
