@@ -133,6 +133,7 @@ if (themeType_TwoSwitch) switch (themeType) {
     case "search":
         s_types = platformItem.supportedSearchType || s_types;
         s_types.unshift("热搜");
+        if (s_types.indexOf(s_type) == -1) s_type = s_types[0];
         var s_query = function(s_t2) {
             try {
                 if (/https?\:\/\//.test(s_t2)) {
@@ -1053,10 +1054,12 @@ function getCollectionItems(c_json, isPop) {
 }
 
 
-function executeThemeIndex(t_type, t_id, t_index) {
-    let t_data = _getPath(["theme", t_type, "themes", t_id.replace(".json", "") + ".json"]) || {};
-    t_data = (t_data.data || [])[t_index] || {};
-    eval(String(t_data.data || "").replace(/\$length/g, t_data.length || "1").replace(/\$name/g, t_data.name || "").replace(/\$type/g, t_data.type || ""));
+function executeThemeIndex(t_type, t_id, t_index, run) {
+    let t_item = _getPath(["theme", t_type, "themes", t_id.replace(".json", "") + ".json"]) || {};
+    let t_data = (t_item.data || [])[t_index] || {};
+    t_data = String(t_data.data || "").replace(/\$length/g, t_data.length || "1").replace(/\$name/g, t_data.name || "").replace(/\$type/g, t_data.type || "");
+    if (run) return t_data;
+    eval(t_data);
 }
 
 
