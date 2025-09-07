@@ -47,7 +47,7 @@ switch (themeType) {
             "单曲", "歌单", "专辑", "歌手",
             "视频", "歌词", "电台", "播客",
         ];
-        let s_type = getMyVar('s_type', '单曲');
+        let s_type = getMyVar('s_type', getItem('s_type', '单曲'));
         if (themeType == "searchFind") break;
     case "getTopLists":
     case "getRecommendSheetsByTag":
@@ -783,17 +783,10 @@ function getColType(_json) {
                 _json2 = {
                     title: "‘‘’’设置".bold(),
                     pic_url: "hiker://images/rule_type_tool",
-                    url: $("#noLoading#").lazyRule((url1, len1) => {
-                        if (len1 != 23) {
-                            require(config.preRule);
-                            require(url1);
-                        }
-                        return "toast://图标已下载~";
-                    }, getGitHub(["config", "image.js"]), readDir(_getPath(["image"], 0, 1)).length) || buildUrl("hiker://page/home", {
-                        p: "nopage",
-                        t: "ruleInstall",
-                        s: "#immersiveTheme##noHistory##noRecordHistory#",
-                        rule: MY_RULE.title
+                    url: $("#noLoading#").lazyRule(() => {
+                        require(config.preRule);
+                        getGitHub(["config", "ruleInstallPop.js"], true);
+                        return "hiker://empty";
                     }),
                     col_type: "icon_5"
                 }
@@ -892,7 +885,7 @@ const Extra = (_, _extra, run) => {
 
     let json = Object.assign({
         title: _.title + (isMedia && _.artist ? " - " + _.artist : ""),
-        desc: ((_.album || "") + " " + (_.duration || "")) || (_.description || ""),
+        desc: isMedia ? ((_.album || "") + " " + (_.duration || "")) : (_.description || ""),
         content: _type,
         col_type,
         pic_url,
@@ -934,7 +927,7 @@ const Extra = (_, _extra, run) => {
     let _url2 = buildUrl(isMedia ? "hiker://empty" : "hiker://page/home", {
         p: isMedia ? "nopage" : "fypage",
         t: ["getMediaSource", "getMediaSource", "getMusicSheetInfo", "getTopListDetail", "getAlbumInfo", "getArtistWorks", "getUserInfo", "getProgramInfo", "getRadio", "getVideo", "getLyric", "getMusicComments"][_.type] || _.type || "",
-        s: isMedia ? "#noHistory##noRecordHistory#" : "#immersiveTheme#",
+        s: isMedia ? "#noHistory##noRecordHistory#" : getItem('pageHomeType', '#immersiveTheme#'),
         rule: MY_RULE.title,
         platform: _.platform,
         id: encodeURIComponent(String(_.mid || _.id)),
@@ -1069,7 +1062,7 @@ function executeThemeIndex(t_type, t_id, t_index, run) {
 function getQuality(musicItem, down) {
     let ns = ["【标准音质】", "【高品音质】", "【无损音质】", "【高品无损】"];
     let qs = ["low", "standard", "high", "super"];
-    let qualities = musicItem.qualities;
+    let qualities = musicItem.qualities || {};
     if (down) {
         let SizetoStr = size => {
             if (!size) return '无法计算';
@@ -1105,8 +1098,8 @@ function getQuality(musicItem, down) {
         }, musicItem, arr1);
     } else if (qualities) {
         let typeCache = {}
-        let i = 0
-        if (typeCache.QualityType) { // 向上取
+        let i = Number(getItem('QualityIndex', '0'))
+        if (getItem('QualityFailure', "向下兼容") != "向下兼容") { // 向上取
             do {
                 if (qualities[qs[i]]) {
                     return getMedia(musicItem, i, "1");
@@ -1139,61 +1132,170 @@ function getMedia(musicItem, quality, mediaType) {
         getRadio: () => false,
     };
     let isMedia = musicItem.type != 8 && musicItem.type != 9;
-    try {
-        mediaPlatform = Object.assign(mediaPlatform, _getPlatform(musicItem.platform));
-    } catch (e) {}
-    try {
-        if (musicItem.type == 9) {
-            mediaItem = mediaPlatform.getVideo(musicItem, Quality);
-        } else if (musicItem.type == 8) {
-            mediaItem = mediaPlatform.getRadio(musicItem, Quality);
-        } else {
-            mediaItem = mediaPlatform.getMediaSource(musicItem, Quality);
+    let _cachePath = _getPath([Quality, musicItem.platform, musicItem.mid || musicItem.id || musicItem.vid || musicItem.rid, ".json"], "_cache", 1);
+    let timeout = new Date().getTime();
+    let isCache = getItem('MediaCache', '1') == "1";
+    if (isCache) { // 读取缓存
+        try {
+            mediaItem = _getPath(_cachePath);
+            if (mediaItem.timeout < timeout) {
+                mediaItem = false;
+            }
+        } catch (e) {
+            mediaItem = false;
         }
-    } catch (e) {}
-
-    if (!mediaItem && isMedia) { // 调用解析执行
-        try {
-            let proxyPaths = _getPath(_getPath(["proxy", musicItem.platform, Quality + ".json"], "_cache", 1)) || [];
-            let enableds = _getPath(["proxy", musicItem.platform, "open.json"]) || {};
-            for (let proxyPath of proxyPaths) {
-                if (enableds[proxyPath]) {
-                    try {
-                        mediaItem = $.require(proxyPath).getMediaSource(musicItem, Quality);
-                    } catch (e) {}
-                    if (mediaItem) break;
-                }
-            }
-        } catch (e) {}
     }
+    if (!mediaItem) {
+        try { // 获取插件函数
+            mediaPlatform = Object.assign(mediaPlatform, _getPlatform(musicItem.platform));
+        } catch (e) {}
 
-    if (!mediaItem && isMedia && mediaType != "0" && (musicItem.vid || musicItem.rid)) { // 获取视频链接
-        try {
-            if (musicItem.vid) {
+        try { // 通过插件获取链接
+            if (musicItem.type == 9) {
                 mediaItem = mediaPlatform.getVideo(musicItem, Quality);
-            } else {
+            } else if (musicItem.type == 8) {
                 mediaItem = mediaPlatform.getRadio(musicItem, Quality);
+            } else {
+                mediaItem = mediaPlatform.getMediaSource(musicItem, Quality);
             }
         } catch (e) {}
-    }
 
-    if (mediaItem) {
+        if (!mediaItem && isMedia) { // 通过解析获取链接
+            try {
+                let proxyPaths = _getPath(_getPath(["proxy", musicItem.platform, Quality + ".json"], "_cache", 1)) || [];
+                let enableds = _getPath(["proxy", musicItem.platform, "open.json"]) || {};
+                for (let proxyPath of proxyPaths) {
+                    if (enableds[proxyPath]) {
+                        try {
+                            mediaItem = $.require(proxyPath).getMediaSource(musicItem, Quality);
+                        } catch (e) {}
+                        if (mediaItem) break;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        if (!mediaItem && isMedia && mediaType != "0" && (musicItem.vid || musicItem.rid)) { // 获取视频链接代替
+            try {
+                if (musicItem.vid) {
+                    mediaItem = mediaPlatform.getVideo(musicItem, Quality);
+                } else {
+                    mediaItem = mediaPlatform.getRadio(musicItem, Quality);
+                }
+            } catch (e) {}
+        }
+    }
+    if (mediaItem) { // 返回的字符串链接改成json
+        if (typeof mediaItem === 'string') {
+            if (mediaItem.includes("hiker://") || mediaItem.includes("toast://")) {
+                return mediaItem;
+            }
+            mediaItem = {
+                url: mediaItem
+            }
+        }
         mediaItem = Object.assign({
             urls: [],
             names: [],
             headers: [],
             // audioUrls: [],
             lyric: "",
-            danmu: ""
-        }, mediaItem);
+            danmu: "",
+            timeout: mediaPlatform.playurl_timeout || 60 * 60
+        }, mediaItem || {});
         if (!mediaItem.urls.length && mediaItem.url) {
             mediaItem.urls.push(mediaItem.url);
             // delete mediaItem.url;
         }
+        // 获取LRC歌词
         if (!mediaItem.lyric) {
             try {
                 mediaItem.lyric = mediaPlatform.getLyric(musicItem);
             } catch (e) {}
+        }
+        // 缓存直链数据
+        if (isCache) {
+            mediaItem.timeout += timeout;
+            saveFile(_cachePath, JSON.stringify(mediaItem));
+        }
+
+        // 获取链接设置
+        if (mediaType != "down") {
+            // 是否读取链接信息 #checkMetadata=true#
+            let _url = getItem('checkMetadata', '');
+            // 强制识别音频 #isMusic=true#
+            _url += getItem('mediaIsMusic', '');
+            // 链接预加载 #pre# #noPre#
+            _url += getItem('MediaPre', '');
+            for (let i in mediaItem.urls) {
+                let u = String(mediaItem.urls[i]);
+                // 是否记忆播放进度 &memoryPosition=null
+                u = u.replace(/$/, (u.includes("?") ? "&" : "?") + getItem('memoryPosition', '')) + _url;
+                mediaItem.urls[i] = u;
+            }
+        }
+
+        // 格式化歌词
+        mediaItem.lyric = String(mediaItem.lyric).replace(/\<\/?(br|p)\/?\>/gi, "\n")
+            .replace(/^data\:text\/plain\,\s*|\<\s*\-?\d+\s*\,\s*\-?\d+\s*\>/gi, "") // 目前不支持逐字歌词
+            .replace(/(\[\d+\:\d+)\:(\d+\])/gi, "$1.$2");
+        if (!mediaItem.lyric.match(/^\s*https?\:\/\/|\d+\:\d+/i)) { // 不是 标准lrc / lrcurl
+            mediaItem.lyric = function(lrc, time) {
+                let time = String(time || 200);
+                if (time.match(/\d+\:\d+/)) {
+                    time = function(time) {
+                        let sp = time.split(":");
+                        let l3 = sp.length == 3;
+                        let h = l3 ? sp[0] : sp[3] || 0;
+                        let m = l3 ? sp[1] : sp[0] || 0;
+                        let s = l3 ? sp[2] : sp[1] || 0;
+                        return (h * 60 * 60) + (m * 60) + s;
+                    }(time.replace(/^\s*0+\:/gi, ""));
+                } else if (time.match(/\D/)) {
+                    time = 200;
+                }
+                time = Number(time) || 200;
+                let n = String(lrc).replace(/\s*((\n|(\u003c|<)\/?(br|p)\/?(\u003e|>))\s*)+\s*/gi, '\n').trim().split(/\n/);
+                return n.map((lineLyric, i) => {
+                    let itime = i / n.length * time;
+                    let s = ((itime - 0) % 60).toFixed(3).padStart(6, '0');
+                    let m = ((itime - s) / 60).toFixed(0).padStart(2, '0');
+                    return `[${m}:${s}]` + lineLyric;
+                }).join('\n');
+            }(mediaItem.lyric, musicItem.duration || 200);
+        }
+        // 显示弹幕歌词
+        if (getItem('danmuLrc', '0') == "1") {
+            mediaItem.danmu = function(lrcText) {
+                try {
+                    if (!lrcText.match(/\d+\:\d+/) && lrcText.match(/^\s*https?\:\/\//)) { // 可能是lrc链接
+                        lrcText = fetch(lrcText);
+                        mediaItem.lyric = lrcText;
+                    }
+
+                    let result = [];
+                    String(lrcText).split(/\n/).map(t => {
+                        let mat = String(t).trim().split(/\]\s*/);
+                        let txt = String(mat.slice(1).join(']'));
+                        let tme = mat[0].slice(1).split(':');
+                        if (txt.length) {
+                            try {
+                                let minutes = parseInt(tme[0], 10) * 60;
+                                let seconds = tme.slice(1).join(".");
+                                minutes += parseFloat(seconds);
+                                result.push({
+                                    text: txt,
+                                    time: minutes.toFixed(3)
+                                });
+                            } catch (nolrc) {}
+                        }
+                    });
+                    let danmuLRC = _getPath(["danmuLRC.json"], "_cache", 1);
+                    saveFile(danmuLRC, JSON.stringify(result));
+                    return danmuLRC;
+                } catch (e) {}
+                return "";
+            }(mediaItem.lyric);
         }
         return JSON.stringify(mediaItem);
     } else {

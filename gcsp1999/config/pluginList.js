@@ -220,6 +220,7 @@ else details.map((_, i) => {
                                                 confirm(text) {
                                                     setItem(_key2, text);
                                                     officeItem.setDesc(text || hintMap[_key]);
+                                                    change();
                                                     return "toast://保存了\n" + text;
                                                 },
                                                 cancel() {
