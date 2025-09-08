@@ -116,20 +116,21 @@ hikerPop.selectBottomSettingMenu({
 
             case "图标下载状态":
                 if (officeItem.getDesc() == "文件不全") {
-                    let imageNames = ["open.svg", "icon.png", "down.png", "shut.svg", "Loading.gif", "2.png", "1.png", "3.png", "topImg.png", "play.png", "jump.png", "update.svg", "edit.svg", "share.svg", "proxy.svg", "uninstall.svg", "account.svg", "import.svg", "hijack.svg", "unhijack.svg", "selected.svg", "unselected.svg", "sorted.svg"];
-                    let imagePath2 = _getPath(["image", ""], 0, 1);
-                    let imagePath1 = getGitHub(["image", ""]);
-                    for (let imageName of imageNames) {
-                        // saveImage('http://x.com/1.png||http://x.com/2.png', 'hiker://files/1.png')
-                        showLoading('加载图标: ' + imageName)
-                        // downloadFile(imagePath1 + imageName, imagePath2 + imageName);
-                        saveImage(imagePath2 + imageName, imagePath1 + imageName);
-                    }
-                    hideLoading();
                     officeItem.setSelected(1);
                     officeItem.setDesc("");
                     change();
-                    return "toast://图标初始化成功";
+                    hikerPop.runOnNewThread(() => {
+                        let imageNames = ["open.svg", "icon.png", "down.png", "shut.svg", "Loading.gif", "2.png", "1.png", "3.png", "topImg.png", "play.png", "jump.png", "update.svg", "edit.svg", "share.svg", "proxy.svg", "uninstall.svg", "account.svg", "import.svg", "hijack.svg", "unhijack.svg", "selected.svg", "unselected.svg", "sorted.svg"];
+                        let imagePath2 = _getPath(["image", ""], 0, 1);
+                        let imagePath1 = getGitHub(["image", ""]);
+                        for (let imageName of imageNames) {
+                            // saveImage('http://x.com/1.png||http://x.com/2.png', 'hiker://files/1.png')
+                            showLoading('加载图标: ' + imageName)
+                            downloadFile(imagePath1 + imageName, imagePath2 + imageName);
+                        }
+                        hideLoading();
+                        return "toast://图标初始化成功";
+                    });
                 } else {
                     return "toast://图标已下载~";
                 }
