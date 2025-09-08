@@ -122,7 +122,8 @@ hikerPop.selectBottomSettingMenu({
                     for (let imageName of imageNames) {
                         // saveImage('http://x.com/1.png||http://x.com/2.png', 'hiker://files/1.png')
                         showLoading('加载图标: ' + imageName)
-                        downloadFile(imagePath1 + imageName, imagePath2 + imageName);
+                        // downloadFile(imagePath1 + imageName, imagePath2 + imageName);
+                        saveImage(imagePath2 + imageName, imagePath1 + imageName);
                     }
                     hideLoading();
                     officeItem.setSelected(1);
