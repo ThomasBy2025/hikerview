@@ -116,7 +116,7 @@ hikerPop.selectBottomSettingMenu({
 
             case "图标下载状态":
                 if (officeItem.getDesc() == "文件不全") {
-                    getGitHub(["config", "image.js"], true);
+                    eval(fetch(getGitHub(["config", "image.js"])));
                     officeItem.setSelected(1);
                     officeItem.setDesc("");
                     change();
