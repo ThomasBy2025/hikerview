@@ -127,6 +127,63 @@ if (jx_list.length == 0) {
                             case '编辑解析':
                                 return "editFile://" + _.path;
                                 break;
+                            case '测试解析':
+                                let _Jiexi = $.require(_.path);
+                                let QualityNames = _Jiexi.supportedQualityType.map(quality => {
+                                    let name = {
+                                        low: "标准音质",
+                                        standard: "高品音质",
+                                        high: "无损音质",
+                                        super: "高品无损"
+                                    } [quality];
+                                    return name + " > " + quality;
+                                });
+                                hikerPop.selectCenterIcon({
+                                    iconList: QualityNames.map(title => ({
+                                        icon: "hiker://images/rule_type_audio",
+                                        title: title
+                                    })),
+                                    title: "选择测试音质",
+                                    columns: 1,
+                                    click(a, i) {
+                                        let quality = a.split(" > ")[1];
+                                        try {
+                                            let _Platform = _getPlatform(_.platform);
+                                            let musicItem = _Platform.debug_musicItem;
+                                            if (musicItem) {
+                                                if (musicItem.qualities && musicItem.qualities[quality]) {
+                                                    hikerPop.runOnNewThread(() => {
+                                                        let _Jiexi_url = _Jiexi.getMediaSource(musicItem, quality);
+                                                        hikerPop.confirm({
+                                                            content: JSON.stringify(_Jiexi_url).replace(/^"|"$/, ""),
+                                                            title: "获取成功",
+                                                            okTitle: "播放看看",
+                                                            cancelTitle: "我知道了",
+                                                            hideCancel: false, //隐藏取消按钮
+                                                            confirm() {
+                                                                if (_Jiexi_url.url && !(Array.isArray(_Jiexi_url.urls) && _Jiexi_url.urls.length)) {
+                                                                    _Jiexi_url.urls = [_Jiexi_url.url];
+                                                                }
+                                                                return JSON.stringify(_Jiexi_url).replace(/^"|"$/, "");
+                                                            },
+                                                            cancel() {
+                                                                return "hiker://empty";
+                                                            }
+                                                        });
+                                                    });
+                                                } else {
+                                                    return "toast://插件的debug_musicItem.qualities不存在" + quality + "参数";
+                                                }
+                                            } else {
+                                                return "toast://插件的debug_musicItem参数不存在";
+                                            }
+                                        } catch (e) {
+                                            log(e)
+                                            return "toast://未知异常";
+                                        }
+                                    }
+                                });
+                                break;
                             case '分享解析':
                                 return getShareText([_.path], "proxy");
                                 break;
@@ -173,7 +230,7 @@ if (jx_list.length == 0) {
                                     data.splice(i1, 1);
                                     data.splice(i2, 0, i3);
                                     saveFile(set, JSON.stringify(data, 0, 1));
-                                    let data2 = data.map(_ => base64Encode(_.url) + ".js");
+                                    let data2 = data.map(_ => md5(_.srcUrl) + ".js");
                                     saveFile(set2, JSON.stringify(data2));
                                     refreshPage();
                                     return "toast://更改成功";
