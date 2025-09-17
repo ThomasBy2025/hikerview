@@ -75,11 +75,11 @@ switch (themeType) {
                     desc: platformItem.type + " &nbsp;",
                     url: $(platforms.map((_, ii) => {
                         return {
-                            title: _.title + "\r\n" + _.platform,
+                            title: _.title + "\r\n\n\n" + _.platform,
                             icon: _.icon
                         }
                     }), 2, '选择接口平台', platformAll.indexOf(platformItem)).select(() => {
-                        let platform = input.split("\r\n")[1];
+                        let platform = input.split("\r\n\n\n")[1];
                         putMyVar('platform', platform);
                         clearMyVar('isEnd_page');
                         clearMyVar('GroupIndex');
@@ -235,9 +235,9 @@ if (themeType_TwoSwitch) switch (themeType) {
                     url: $(TopTitles.map((title, ii) => {
                         if (TopIndex == ii)
                             title = Rich(Color(title).bold());
-                        return title + "\r\n" + ii;
+                        return title + "\r\n\n\n" + ii;
                     }), 2, '榜单分类选择').select(() => {
-                        let index = input.split("\r\n")[1];
+                        let index = input.split("\r\n\n\n")[1];
                         putMyVar('TopIndex', index);
                         clearMyVar('isEnd_page');
                         refreshPage();
@@ -371,9 +371,9 @@ if (themeType_TwoSwitch) switch (themeType) {
                     url: $(SheetGroups.map((title, ii) => {
                         if (GroupIndex == ii)
                             title = Rich(Color(title).bold());
-                        return title + "\r\n" + ii;
+                        return title + "\r\n\n\n" + ii;
                     }), 2, '主要分类选择').select(() => {
-                        let index = input.split("\r\n")[1];
+                        let index = input.split("\r\n\n\n")[1];
                         putMyVar('GroupIndex', index);
                         clearMyVar('isEnd_page');
                         clearMyVar('SortIndex');
@@ -410,9 +410,9 @@ if (themeType_TwoSwitch) switch (themeType) {
                     url: $(SheetSorts.map((title, ii) => {
                         if (SortIndex == ii)
                             title = Rich(Color(title).bold());
-                        return title + "\r\n" + ii;
+                        return title + "\r\n\n\n" + ii;
                     }), 2, '次要分类选择').select(() => {
-                        let index = input.split("\r\n")[1];
+                        let index = input.split("\r\n\n\n")[1];
                         putMyVar('SortIndex', index);
                         clearMyVar('isEnd_page');
                         refreshPage();
@@ -447,7 +447,7 @@ if (themeType_TwoSwitch) switch (themeType) {
 
 
 
-function getThemeType(themeType) {
+function getThemeType(themeType, run) {
     let themeType2 = MY_PARAMS.t_type || getParam('t_type', '') || {
         home: "home",
         // getMusicSheetInfo: "page"
@@ -461,14 +461,8 @@ function getThemeType(themeType) {
     try {
         theme_Index = theme_Data.indexOf(theme_Info);
         theme_Item = (_getPath(["theme", themeType2, "themes", theme_Id]) || {}).data || [];
-        if (theme_Data.length === 0 && theme_Item.length) {
-            log("主题初始化异常，重新获取");
-            clearMyVar("themeInitialization");
-        }
         theme_Item = theme_Item.filter(_ => _.open && (!_.page || page == 1));
     } catch (e) {}
-
-
 
     if (theme_Info.plugins && theme_Info.plugins.length) { // 待完善
         log("主题有插件依赖: " + JSON.stringify(theme_Info.plugins));
@@ -536,8 +530,12 @@ function getThemeData(themeType) {
                     });
                     if (platforms.length === 0) d.push({
                         title: Rich(Color("没有插件数据").bold().big()),
-                        desc: Rich("去导入".small()),
-                        url: 'hiker://empty',
+                        desc: Rich("点我刷新".small()),
+                        url: $("#noLoading#").lazyRule(() => {
+                            clearMyVar('pluginInitialization');
+                            refreshPage(false);
+                            return 'hiker://empty';
+                        }),
                         col_type: 'text_center_1',
                         extra: {
                             lineVisible: false
@@ -615,14 +613,18 @@ function getThemeData(themeType) {
         case "home":
             if (theme_Data.length === 0) d.push({
                 title: Rich(Color("没有主题数据").bold().big()),
-                desc: Rich("去导入".small()),
-                url: 'hiker://empty',
+                desc: Rich("点我刷新".small()),
+                url: $("#noLoading#").lazyRule(() => {
+                    clearMyVar('themeInitialization');
+                    refreshPage(false);
+                    return 'hiker://empty';
+                }),
                 col_type: 'text_center_1',
                 extra: {
                     lineVisible: false
                 }
             });
-            theme_Item.map(_ => {
+            else theme_Item.map(_ => {
                 eval(String(_.data || "").replace(/\$name/g, _.name || "").replace(/\$type/g, _.type || "").replace(/\$length/g, _.length || "1"));
             });
             break;
@@ -948,6 +950,7 @@ const Extra = (_, _extra, run) => {
     } else {
         json.url = _url || _url2;
     }
+    json.title = json.title.replace("　-　", "&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;");
     if (run == true) return json;
     d.push(json);
     return true;
@@ -955,7 +958,6 @@ const Extra = (_, _extra, run) => {
     _.title = Rich(_.title || _.name + ((_.singer && ' - ' + _.singer) || ""))
         .replace(/^‘‘’’|\s*\-?\s*$/gi, "")
         .replace("　-　".small().small().sub(), "")
-        .replace("　-　", "&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;");
 }
 
 function getDataExtra(platform, tag, type) {
@@ -1008,7 +1010,11 @@ function getCollectionItems(c_json, isPop) {
     if (collectionItems.length == 0 && !isPop && c_json != undefined) {
         d.push({
             title: "没有本地收藏",
-            url: "hiker://empty",
+            url: $("#noLoading#").lazyRule(() => {
+                clearMyVar('collectionInitialization');
+                refreshPage(false);
+                return 'hiker://empty';
+            }),
             col_type: "text_center_1"
         });
     }
@@ -1040,7 +1046,7 @@ function getCollectionItems(c_json, isPop) {
         _json.desc = String(_json.desc || ("‘‘类别’’: " + it.type + "　　" + "““数量””: " + (it.worksNum || "未知")).small())
             .replace(/\$length|\$worksNum/gi, it.worksNum || "未知").replace(/\$type/gi, it.type);
         return isPop ? {
-            title: it.title + "\r\n" + it.path,
+            title: it.title + "\r\n\n\n" + it.path,
             icon: it.icon
         } : (c_json != undefined ? d.push(_json) : it);
     });
@@ -1132,9 +1138,10 @@ function getMedia(musicItem, quality, mediaType) {
         getRadio: () => false,
     };
     let isMedia = musicItem.type != 8 && musicItem.type != 9;
-    let _cachePath = _getPath([Quality, musicItem.platform, musicItem.mid || musicItem.id || musicItem.vid || musicItem.rid, ".json"], "_cache", 1);
+    let _cachePath = _getPath(["mediaCache", musicItem.platform, musicItem.mid || musicItem.id || musicItem.vid || musicItem.rid, Quality + ".json"], "_cache", 1);
     let timeout = new Date().getTime();
     let isCache = getItem('MediaCache', '1') == "1";
+
     if (isCache) { // 读取缓存
         try {
             mediaItem = _getPath(_cachePath);
@@ -1201,12 +1208,13 @@ function getMedia(musicItem, quality, mediaType) {
             // audioUrls: [],
             lyric: "",
             danmu: "",
-            timeout: mediaPlatform.playurl_timeout || 60 * 60
+            timeout: (mediaPlatform.playurl_timeout || 60 * 10) * 1000
         }, mediaItem || {});
         if (!mediaItem.urls.length && mediaItem.url) {
             mediaItem.urls.push(mediaItem.url);
             // delete mediaItem.url;
         }
+        if (!mediaItem.urls.length) return "toast://无法解析";
         // 获取LRC歌词
         if (!mediaItem.lyric) {
             try {
@@ -1265,7 +1273,7 @@ function getMedia(musicItem, quality, mediaType) {
             }(mediaItem.lyric, musicItem.duration || 200);
         }
         // 显示弹幕歌词
-        if (getItem('danmuLrc', '0') == "1") {
+        if (getItem('danmuLrc', '0') == "1" && !mediaItem.danmu) {
             mediaItem.danmu = function(lrcText) {
                 try {
                     if (!lrcText.match(/\d+\:\d+/) && lrcText.match(/^\s*https?\:\/\//)) { // 可能是lrc链接
@@ -1342,7 +1350,34 @@ function getShareText(input, type, len, path) {
                 len = code.length;
             }
             // isObj = {};
-            let text = base64Encode(JSON.stringify(json));
+            let text = JSON.stringify(json);
+            switch (getItem('shareTextEncodeType', 'base64Encode')) {
+                case 'base64Encode':
+                    text = base64Encode(text);
+                    break;
+                case 'aesEncode':
+                    text = aesDecode('hk6666666109', text);
+                    break;
+                case 'rc4Encode':
+                    text = rc4.encode(text, 'hk6666666109', 'UTF-8');
+                    break;
+                case 'KuwoDES':
+                    text = $.require(getGitHub(["config", "KuwoDES.js"])).encrypt(text, 1);
+                    break;
+                case 'gzipToHex':
+                    text = $.require(getGitHub(["config", "JavaGzip.js"])).zip(text, 1, "Hex");
+                    break;
+                case 'rsaEncrypt':
+                    text = rsaEncrypt(text, "MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBALOqp7bihtGYTLNjPeZXV21ICT7vCg39BE2GXhpENnctWghrnwQ96bNu5DISt26NYdhCPHaxO8PaunWFsWh9G9cCAwEAAQ==");
+                    break;
+            }
+
+
+
+
+
+
+
 
             let group = "getCode";
             if (input == "复制链接") {
@@ -1388,14 +1423,49 @@ function getShareText(input, type, len, path) {
 }
 
 
-function setCollectionGroup(input, path, title) {
+function setCollectionGroup(input, path, title, i) {
     switch (input) {
         case '更新资源':
             return "toast://完善中";
             break;
         case '合并分组':
-            break;
         case '更改排序':
+            let detailp = _getPath(["collection", "details.json"], "_cache", 1);
+            let details = JSON.parse(readFile(detailp) || "[]") || [];
+            details.splice(i, 1);
+            details = details.map((_, i) => {
+                _.title += "\r\n\n\n" + i;
+                return _;
+            });
+            return $(input == "合并分组" ? details : details.concat({
+                title: '最后面'
+            }), 2, input + '到').select((isH, set, len, i1, set2) => {
+                let i2
+                if (input == '最后面') {
+                    i2 = len;
+                } else {
+                    i2 = input.split("\r\n\n\n")[1];
+                }
+                let data = JSON.parse(readFile(set) || "[]") || [];
+                let data2, i3 = data[i1];
+                data.splice(i1, 1);
+                if (!isH) data.splice(i2, 0, i3);
+                saveFile(set, JSON.stringify(data, 0, 1));
+                if (isH) {
+                    set2 = i3.path;
+                    i3 = JSON.parse(readFile(set2) || "{}") || {};
+                    data2 = JSON.parse(readFile(data[i2].path) || "{}") || {};
+                    data2.musicList = data2.musicList.concat(i3.musicList);
+                    saveFile(data[i2].path, JSON.stringify(data2));
+                    deleteFile(set2);
+                    clearMyVar('collectionInitialization');
+                } else {
+                    data2 = data.map(_ => _.path.split("/collections/")[1]);
+                    saveFile(set2, JSON.stringify(data2));
+                }
+                refreshPage();
+                return "toast://更改成功";
+            }, input == "合并分组", detailp, details.length, i, _getPath(["collection", "sorted.json"], 0, 1));
             break;
         case '分享分组':
             return getShareText([path], "collection");
@@ -1453,7 +1523,7 @@ function setCollectionData(musicItem, run) {
     let isMedia = ["0", "1", "8", "9", "10"].indexOf(musicItem.type) != -1;
     let detailp = _getPath(["collection", "details.json"], "_cache", 1);
     let iconList = (_getPath(detailp) || []).map(_ => ({
-        title: _.title + '\r\n' + _.path,
+        title: _.title + '\r\n\n\n' + _.path,
         icon: _.icon
     }));
     let isBack = run === true;
@@ -1500,9 +1570,9 @@ function setCollectionData(musicItem, run) {
         columns: 2,
         // position: 0,
         click(input) {
-            let [title, path] = input.split("\r\n");
+            let [title, path] = input.split("\r\n\n\n");
             let zy = JSON.parse(readFile(path) || "{}") || {};
-            let zu = (zy.musicList || []).map((_, i) => _.title + '\r\n' + i);
+            let zu = (zy.musicList || []).map((_, i) => _.title + '\r\n\n\n' + i);
             return $(zu.concat("最后面"), 2, '请选择资源位置').select((zy, zu, path, musicItem, isBack) => {
                 let i;
                 if ("最后面" == input) {

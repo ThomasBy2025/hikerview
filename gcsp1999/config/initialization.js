@@ -49,40 +49,44 @@
 
         // 保存插件信息
         for (let platform of filedirs) {
-            let plugin = _getPlatform(platform);
-            let detail = {
-                platform: plugin.platform,
-                title: plugin.title,
-                type: plugin.type || "未知",
-                author: plugin.author || "佚名",
-                version: plugin.version || "0",
-                icon: plugin.icon,
-                srcUrl: plugin.srcUrl,
-                description: plugin.description || "",
-                platformProxy: plugin.platformProxy,
-                userVariables: plugin.userVariables,
-                supportedSearchType: Array.isArray(plugin.supportedSearchType) ? plugin.supportedSearchType : ["单曲", "歌单", "专辑", "歌手", "视频", "歌词", "电台", "播客"],
-                import_url: plugin.import_url && true
-                // 登录相关还没写 - 完善中
-            };
-            if (plugin.search) {
-                search1.push(detail);
-            }
-            if (plugin.getRecommendSheetTags) {
-                sheets.push(detail);
-            }
-            if (plugin.getTopLists) {
-                topLists.push(detail);
-            }
-            if (plugin.getExploreArtistList) {
-                artists.push(detail);
-            }
-            if (plugin.musicfree && plugin.musicfree.regNames) {
-                for (let regName of plugin.musicfree.regNames) {
-                    musicfree[regName] = plugin.platform;
+            try {
+                let plugin = _getPlatform(platform);
+                let detail = {
+                    platform: plugin.platform,
+                    title: plugin.title,
+                    type: plugin.type || "未知",
+                    author: plugin.author || "佚名",
+                    version: plugin.version || "0",
+                    icon: plugin.icon,
+                    srcUrl: plugin.srcUrl,
+                    description: plugin.description || "",
+                    platformProxy: plugin.platformProxy,
+                    userVariables: plugin.userVariables,
+                    supportedSearchType: Array.isArray(plugin.supportedSearchType) ? plugin.supportedSearchType : ["单曲", "歌单", "专辑", "歌手", "视频", "歌词", "电台", "播客"],
+                    import_url: plugin.import_url && true
+                    // 登录相关还没写 - 完善中
+                };
+                if (plugin.search) {
+                    search1.push(detail);
                 }
+                if (plugin.getRecommendSheetTags) {
+                    sheets.push(detail);
+                }
+                if (plugin.getTopLists) {
+                    topLists.push(detail);
+                }
+                if (plugin.getExploreArtistList) {
+                    artists.push(detail);
+                }
+                if (plugin.musicfree && plugin.musicfree.regNames) {
+                    for (let regName of plugin.musicfree.regNames) {
+                        musicfree[regName] = plugin.platform;
+                    }
+                }
+                details.push(detail);
+            } catch (e) {
+                log("标识: " + platform + " 的插件异常，无法获取");
             }
-            details.push(detail);
         }
         saveFile(path1, JSON.stringify(details));
         saveFile(path2, JSON.stringify(search1));
@@ -109,26 +113,30 @@
             };
             for (let proxy of proxys) {
                 let proxyPath = _getPath(["proxy", plugin, "proxys", proxy], 0, 1);
-                let proxyObj = $.require(proxyPath);
-                let proxyQs = proxyObj.supportedQualityType || ["low"];
-                for (proxyQa of proxyQs) {
-                    if (!proxyQ[proxyQa]) {
-                        proxyQ[proxyQa] = [];
+                try {
+                    let proxyObj = $.require(proxyPath);
+                    let proxyQs = proxyObj.supportedQualityType || ["low"];
+                    for (proxyQa of proxyQs) {
+                        if (!proxyQ[proxyQa]) {
+                            proxyQ[proxyQa] = [];
+                        }
+                        proxyQ[proxyQa]["push"](proxyPath);
                     }
-                    proxyQ[proxyQa]["push"](proxyPath);
+                    proxyQ.details.push({
+                        "platform": proxyObj.platform, // 隶属插件标识
+                        "srcUrl": proxyObj.srcUrl, // 解析标识
+                        "title": proxyObj.title, // 解析名称
+                        "author": proxyObj.author || "佚名", // 解析作者
+                        "icon": proxyObj.icon || "", // 解析封面
+                        "type": proxyObj.type || "未知", // 解析分组
+                        "desc": proxyObj.desc || [], // 解析简介
+                        "version": proxyObj.version || "0", // 解析版本
+                        "supportedQualityType": proxyQs, // 支持的音质
+                        "path": proxyPath // 解析地址
+                    });
+                } catch (e) {
+                    log("地址: " + proxyPath + " 的解析异常，无法获取");
                 }
-                proxyQ.details.push({
-                    "platform": proxyObj.platform, // 隶属插件标识
-                    "srcUrl": proxyObj.srcUrl, // 解析标识
-                    "title": proxyObj.title, // 解析名称
-                    "author": proxyObj.author || "佚名", // 解析作者
-                    "icon": proxyObj.icon || "", // 解析封面
-                    "type": proxyObj.type || "未知", // 解析分组
-                    "desc": proxyObj.desc || [], // 解析简介
-                    "version": proxyObj.version || "0", // 解析版本
-                    "supportedQualityType": proxyQs, // 支持的音质
-                    "path": proxyPath // 解析地址
-                });
             }
             Object.keys(proxyQ).map(Quality => {
                 let qualityPath = _getPath(["proxy", plugin, Quality + ".json"], "_cache", 1);
@@ -153,15 +161,19 @@
         // 保存收藏信息
         for (let c_path of filedirs) {
             let cPath = _getPath(["collection", "collections", c_path], 0, 1);
-            let cObj = $.require(cPath);
-            details.push({
-                path: cPath,
-                title: cObj.title,
-                author: cObj.author,
-                icon: cObj.icon,
-                type: cObj.type || "2",
-                worksNum: cObj.musicList.length
-            });
+            try {
+                let cObj = $.require(cPath);
+                details.push({
+                    path: cPath,
+                    title: cObj.title,
+                    author: cObj.author,
+                    icon: cObj.icon,
+                    type: cObj.type || "2",
+                    worksNum: cObj.musicList.length
+                });
+            } catch (e) {
+                log("地址: " + cPath + " 的收藏异常，无法获取");
+            }
         }
         saveFile(path1, JSON.stringify(details));
         putMyVar("collectionInitialization", "1");

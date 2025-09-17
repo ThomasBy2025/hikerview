@@ -11,11 +11,17 @@ for (let enType of enTypes) {
         case 'aesDecode':
             text = aesDecode('hk6666666109', text);
             break;
+        case 'rc4Decode':
+            text = rc4.decode(text, 'hk6666666109', 'UTF-8');
+            break;
         case 'KuwoDES':
-
+            text = $.require(getGitHub(["config", "KuwoDES.js"])).decrypt(text, 1);
+            break;
+        case 'unGzipHex':
+            text = $.require(getGitHub(["config", "JavaGzip.js"])).unzip(text, 1);
             break;
         case 'rsaDecrypt':
-
+            text = rsaDecrypt(text, "MIIBVQIBADANBgkqhkiG9w0BAQEFAASCAT8wggE7AgEAAkEAs6qntuKG0ZhMs2M95ldXbUgJPu8KDf0ETYZeGkQ2dy1aCGufBD3ps27kMhK3bo1h2EI8drE7w9q6dYWxaH0b1wIDAQABAkEAq7o1HhA9Dr8EqP31n2HiVbjh5X5zXNV3NGZ3MaH7cUKSeb2AG+9XdkRiiAbu5Y2qa7rbPU56YfRZr6dUt48UuQIhAO8+9XCtoefS+29vQEQqVlK7NBWogGBoiYy3Qb0ufA+DAiEAwD+ZKhpGQLd5NgsqE0IBg580sbK1Wf7/cc3wLGqKHh0CIQCQmhII/7k7AAdeq/RA/wHb0TBC4uxs2OJCPcUrDfyH9wIgBeMstpxdYGf9/0iyPiq8TyKWA4cchKgJfJu46jNNDYUCIAOaGz6DZLIl43E9ONaldVvWiQN05vQqHheYZik/J0z5");
             break;
     }
 }

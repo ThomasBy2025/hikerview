@@ -139,7 +139,7 @@ let c_url = $("#noLoading#").lazyRule((options, c_path, c_title, i) => {
         toPosition: 20,
         position: i,
         click(a) {
-            let path = a.title.split("\r\n")[1];
+            let path = a.title.split("\r\n\n\n")[1];
             setPageParams({
                 path
             });
@@ -163,7 +163,7 @@ let c_url = $("#noLoading#").lazyRule((options, c_path, c_title, i) => {
                         return "hiker://empty";
                     } else {
                         pop.dismiss();
-                        return setCollectionGroup(input, c_path, c_title);
+                        return setCollectionGroup(input, c_path, c_title, i);
                     }
                 },
             });
@@ -193,10 +193,10 @@ if (c_info === undefined) {
         extra: {
             longClick: options.map(title => ({
                 title,
-                js: $.toString((input, c_path, c_title) => {
+                js: $.toString((input, c_path, c_title, c_index) => {
                     require(config.preRule);
-                    return setCollectionGroup(input, c_path, c_title);
-                }, title, c_path, c_info.title)
+                    return setCollectionGroup(input, c_path, c_title, c_index);
+                }, title, c_path, c_info.title, c_index)
             }))
         }
     });
@@ -243,6 +243,29 @@ if (c_info === undefined) {
                             return 'toast://参数异常，不是标准的json';
                         }
                     }, path1, json, i);
+                }, c_path, i)
+            }, {
+                title: "排序",
+                js: $.toString((path, i) => {
+                    let json = JSON.parse(readFile(path));
+                    let zy = json.musicList
+                    let zu = json.musicList.map((_, i) => _.title + '\r\n\n\n' + i);
+                    let _ = json.musicList[i];
+                    zy.splice(i, 1);
+                    zu.splice(i, 1);
+                    return $(zu.concat("最后面"), 2, '请选择资源位置').select((path, json, zy, zu, data) => {
+                        let i;
+                        if ("最后面" == input) {
+                            i = zu.length;
+                        } else {
+                            i = zu.indexOf(input);
+                        }
+                        zy.splice(i, 0, data);
+                        json.musicList = zy;
+                        saveFile(path, JSON.stringify(json));
+                        refreshPage(false);
+                        return "toast://更改排序成功";
+                    }, path, json, zy, zu, _);
                 }, c_path, i)
             }, {
                 title: "删除",

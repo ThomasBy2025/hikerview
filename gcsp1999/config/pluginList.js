@@ -1,3 +1,6 @@
+let detailp = _getPath(["plugin", "details.json"], "_cache", 1);
+let selectp = _getPath(["plugin", "selects.json"], "_cache", 1);
+
 getTopImage({
     url: "hiker://empty",
 });
@@ -44,6 +47,25 @@ d.push({
         if (selects.length === 0) return "toast://没有选中的插件";
         return getShareText(selects, "plugin", 0, selectp);
     }),
+    extra: {
+        longClick: [{
+            title: '选中全部',
+            js: $.toString((p1, p2) => {
+                let arr = JSON.parse(readFile(p2) || "[]") || [];
+                arr = arr.map(_ => _.platform);
+                saveFile(p1, JSON.stringify(arr));
+                refreshPage();
+                return "hiker://empty";
+            }, selectp, detailp)
+        }, {
+            title: '取消选中',
+            js: $.toString((url) => {
+                deleteFile(url);
+                refreshPage();
+                return "hiker://empty";
+            }, selectp)
+        }]
+    }
 });
 d.push({
     col_type: 'line'
@@ -58,20 +80,22 @@ let enableds = _getPath(["plugin", "enableds.json"]) || {};
 let hijacking = _getPath(["plugin", "hijacking.json"]) || {};
 
 // 精简的插件信息
-let detailp = _getPath(["plugin", "details.json"], "_cache", 1);
 let details = JSON.parse(readFile(detailp) || "[]") || [];
 
 
 // 准备分享的插件
-let selectp = _getPath(["plugin", "selects.json"], "_cache", 1);
 let selects = JSON.parse(readFile(selectp) || "[]") || [];
 
 
 
 if (details.length == 0) d.push({
     title: Rich(Color("没有插件数据").bold().big()),
-    desc: Rich("去导入".small()),
-    url: 'hiker://empty',
+    desc: Rich("点我刷新".small()),
+    url: $("#noLoading#").lazyRule(() => {
+        clearMyVar('pluginInitialization');
+        refreshPage(false);
+        return 'hiker://empty';
+    }),
     col_type: 'text_center_1',
     extra: {
         lineVisible: false
@@ -201,7 +225,7 @@ else details.map((_, i) => {
                                     let hintMap = {};
                                     _.userVariables.map(__ => {
                                         hintMap[__.key] = __.hint;
-                                        let tit = __.name + "\r\n" + __.key;
+                                        let tit = __.name + "\r\n\n\n" + __.key;
                                         let val = getItem(_.platform + "@userVariables@" + __.key, "") || __.hint;
                                         options.push(SettingItem(tit, val.slice(0, 16)));
                                     });
@@ -209,7 +233,7 @@ else details.map((_, i) => {
                                         options,
                                         click(s, officeItem, change) {
                                             if ("登录" == s) return "toast://完善中";
-                                            let [_title, _key] = s.split("\r\n");
+                                            let [_title, _key] = s.split("\r\n\n\n");
                                             let _key2 = _.platform + "@userVariables@" + _key;
                                             hikerPop.inputAutoRow({
                                                 hint: hintMap[_key],

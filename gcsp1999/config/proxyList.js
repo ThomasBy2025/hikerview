@@ -1,3 +1,10 @@
+// 对应的解析列表
+let jx_platform = getParam("platform", "");
+let jx_list = _getPath(["proxy", jx_platform, "details.json"], "_cache", 1);
+let selectp = _getPath(["proxy", "selects.json"], "_cache", 1);
+
+
+
 getTopImage({
     url: "hiker://empty"
 });
@@ -49,34 +56,52 @@ d.push({
         if (selects.length === 0) return "toast://没有选中的解析";
         return getShareText(selects, "proxy", 0, selectp);
     }),
+    extra: {
+        longClick: [{
+            title: '选中全部',
+            js: $.toString((p1, p2) => {
+                let arr = JSON.parse(readFile(p2) || "[]") || [];
+                arr = arr.map(_ => _.path);
+                saveFile(p1, JSON.stringify(arr));
+                refreshPage();
+                return "hiker://empty";
+            }, selectp, jx_list)
+        }, {
+            title: '取消选中',
+            js: $.toString((url) => {
+                deleteFile(url);
+                refreshPage();
+                return "hiker://empty";
+            }, selectp)
+        }]
+    }
 });
 d.push({
     col_type: 'line'
 });
 
 
+
 // 对应的解析列表
-let jx_platform = getParam("platform", "");
-let jx_list = _getPath(_getPath(["proxy", jx_platform, "details.json"], "_cache", 1)) || [];
-
-
+jx_list = _getPath(jx_list) || [];
 
 // 确定使用的解析
 let enableds = _getPath(["proxy", jx_platform, "open.json"]) || {};
 
-
-
 // 准备分享的解析
-let selectp = _getPath(["proxy", "selects.json"], "_cache", 1);
-let selects = JSON.parse(readFile(selectp) || "[]") || [];
+let selects = _getPath(selectp) || [];
 
 
 
 if (jx_list.length == 0) {
     d.push({
         title: Rich(Color("没有解析数据").bold().big()),
-        desc: Rich("去导入".small()),
-        url: 'hiker://empty',
+        desc: Rich("点我刷新".small()),
+        url: $("#noLoading#").lazyRule(() => {
+            clearMyVar('proxyInitialization');
+            refreshPage(false);
+            return 'hiker://empty';
+        }),
         col_type: 'text_center_1',
         extra: {
             lineVisible: false
