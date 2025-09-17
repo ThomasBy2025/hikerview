@@ -2,68 +2,11 @@ getTopImage({
     url: "hiker://empty"
 });
 d.push(getDownData());
-d.push({
+getColType({
+    type: '#资源导入#',
     title: "导入歌单".bold(),
     col_type: "icon_small_3",
-    img: "http://123.56.105.145/tubiao/unframed/459.png",
-    url: "fileSelect://" + $.toString(() => {
-        if (!input) return "toast://没有地址";
-        path = "hiker://files/rules/Thomas/gcsp1999/collection/";
-        _ = $.require("GZIP").unzip("file://" + input),
-            _ = JSON.parse(_.replace(/("source"\:")tx"/gi, '$1qq"'));
-        if (_.type == "playListPart_v2")
-            _.data = [_.data];
-        let l1 = JSON.parse(readFile(path + "details.json"));
-        let l2 = l1.map(_ => _.source + _.sourceListId);
-        let l3 = _.data.map(_ => {
-            let __ = {
-                name: _.name,
-                source: _.source || _.id.split("_")[0],
-                sourceListId: _.sourceListId || _.id.split("_")[1],
-                locationUpdateTime: _.locationUpdateTime || new Date().getTime(),
-                picUrl: _.picUrl || "https://docs.lxmusic.top/logo.svg",
-                content: "2",
-                // author: _.author || "佚名",
-                // desc: _.desc || "值得分享的歌曲",
-                // tags: _.tags || "好听"
-            };
-            if (__.source == "kg" || __.source == "kw") {
-                let sourceListId = __.sourceListId.replace(/^(id|digest\-8_)_(\d+)$/i, "$2");
-                if (__.source == "kg" && sourceListId.match(/https?\:\/\//i)) {
-                    let ListIdmatch = sourceListId.match(/(\/special\/single\/|share_type=special&id=|global_specialid=|\/songlist\/|global_collection_id=)([^\.\&\/\?]+)/i);
-                    sourceListId = ListIdmatch && ListIdmatch[2] || sourceListId;
-                }
-                __.sourceListId = sourceListId;
-            };
-            let i1 = l2.indexOf(__.source + __.sourceListId);
-            if (i1 != -1) {
-                l1.splice(i1, 1);
-                l2.splice(i1, 1);
-            }
-            let list = _.list.map(_ => {
-                let meta = _.meta;
-                delete _.id;
-                delete _.meta;
-                delete meta._qualitys;
-                meta.qualitys = meta.qualitys.filter(_ => /^(128k|320k|flac|flac24bit)$/i.test(_.type));
-                if (_.interval.length == 5) {
-                    _.interval = "00:" + _.interval;
-                }
-                return Object.assign(_, meta);
-            });
-            saveFile(
-                path + __.source + '_' + __.sourceListId + ".json",
-                JSON.stringify(list, 0, 1)
-            );
-            return __;
-        });
-        saveFile(
-            path + "details.json",
-            JSON.stringify(l1.concat(l3), 0, 1)
-        );
-        refreshPage();
-        return "toast://导入成功";
-    })
+    img: "http://123.56.105.145/tubiao/unframed/459.png"
 });
 d.push({
     title: "样式切换".bold(),
