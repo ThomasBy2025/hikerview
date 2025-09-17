@@ -6,7 +6,10 @@ getColType({
     type: '#资源导入#',
     title: "导入歌单".bold(),
     col_type: "icon_small_3",
-    img: "http://123.56.105.145/tubiao/unframed/459.png"
+    img: "http://123.56.105.145/tubiao/unframed/459.png",
+    extra: {
+        pageTitle: "资源导入"
+    }
 });
 d.push({
     title: "样式切换".bold(),
