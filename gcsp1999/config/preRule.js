@@ -796,10 +796,201 @@ function getColType(_json) {
             case '#资源导入#':
                 _json2 = {
                     title: Rich(Color("资源导入").bold()).small(),
-                    url: "toast://完善中~" || buildUrl("hiker://empty", {
-                        p: "nopage",
-                        t: "fileSelect",
-                        s: "#immersiveTheme##noHistory##noRecordHistory#"
+                    url: "fileSelect://" + $.toString(() => {
+                        if (!input) return "toast://没有地址";
+                        input = ("file://" + input);
+                        require(config.preRule);
+                        let cPath = _getPath(["collection", "collections"], 0, 1);
+                        try {
+                            // 解压本地文件 #gzip
+                            let input2 = $.require(getGitHub(["config", "JavaGzip.js"])).unzip(fetch(input, {
+                                toHex: true
+                            }), true);
+
+                            // 获取分组数据 #json
+                            let data = JSON.parse(input2);
+                            if (data.type == "playListPart_v2") { // 单个分组，转成列表
+                                data.data = [data.data];
+                            }
+                            data = data.data;
+
+                            // 分组基础数据 #info
+                            for (let _ of data) {
+                                let __ = {
+                                    platform: _.source || _.id.split("_")[0],
+                                    id: _.sourceListId || _.id.split("_")[1],
+                                    icon: _.picUrl || "http://p.qlogo.cn/gh/365976134/365976134_3/0",
+                                    title: _.name,
+                                    type: "2",
+                                    // locationUpdateTime: _.locationUpdateTime || new Date().getTime()
+                                };
+                                if (__.platform == "kg" || __.platform == "kw") {
+                                    let sourceListId = __.id.replace(/^(id|digest\-8_)_(\d+)$/i, "$2");
+                                    if (__.platform == "kg" && sourceListId.match(/https?\:\/\//i)) {
+                                        let ListIdmatch = sourceListId.match(/(\/special\/single\/|share_type=special&id=|global_specialid=|\/songlist\/|global_collection_id=)([^\.\&\/\?]+)/i);
+                                        sourceListId = ListIdmatch && ListIdmatch[2] || sourceListId;
+                                    }
+                                    __.id = sourceListId;
+                                };
+                                // 分组歌曲数据 #list
+                                __.musicList = _.list.map(_ => {
+                                    let meta = _.meta;
+                                    delete _.id;
+                                    delete _.meta;
+                                    delete meta._qualitys;
+                                    meta.qualitys = meta.qualitys.filter(_ => /^(128k|320k|flac|flac24bit)$/i.test(_.type));
+                                    if (_.interval.length == 5) {
+                                        _.interval = "00:" + _.interval;
+                                    }
+                                    _ = Object.assign(_, meta);
+
+                                    // 转化成musicfree格式
+                                    _.platform = _.source;
+                                    delete _.source;
+                                    _.id = _.songId;
+                                    delete _.songId;
+                                    _.title = _.name;
+                                    delete _.name;
+                                    _.artist = _.singer;
+                                    delete _.singer;
+                                    _.duration = _.interval;
+                                    delete _.interval;
+                                    _.album = _.albumName;
+                                    delete _.albumName;
+                                    _.artwork = _.picUrl;
+                                    delete _.picUrl;
+                                    _.qualities = {};
+                                    for (let obj of _.qualitys) {
+                                        let quality = {
+                                            '128k': 'low',
+                                            '320k': 'standard',
+                                            'flac': 'high',
+                                            'flac24bit': 'super'
+                                        } [obj.type];
+                                        delete obj.type;
+                                        _.qualities[quality] = obj;
+                                    }
+                                    delete _.qualitys;
+                                    _.type = "1"; // 默认算会员歌曲
+                                    return _;
+                                });
+                                // 保存分组数据
+                                saveFile(
+                                    cPath + "/" + __.platform + '_' + __.id + ".json",
+                                    JSON.stringify(__)
+                                );
+                            }
+                            // 初始化收藏
+                            clearMyVar('collectionInitialization');
+                            refreshPage();
+                            return "toast://收藏导入成功";
+                        } catch (noLx) { // 不是落雪歌单
+                            try {
+                                let input3 = JSON.parse(fetch(input));
+                                if (input3.musicSheets != undefined) {
+                                    let path6 = _getPath(["plugin", "musicfree.json"], "_cache", 1);
+                                    let nameMap = JSON.parse(fetch(path6));
+                                    let nameArray = [];
+                                    input3.musicSheets.map(_ => {
+                                        let __ = {
+                                            platform: "userlist",
+                                            id: _.id,
+                                            icon: _.coverImg || "http://p.qlogo.cn/gh/365976134/365976134_3/0",
+                                            title: _.title,
+                                            type: "2",
+                                            // worksNum: _.worksNum || _.musicList.length
+                                        };
+                                        let musicList = [];
+                                        _.musicList.map(_ => {
+                                            let source = nameMap[_.platform];
+                                            if (source != undefined) {
+                                                _.platform = source;
+                                                _.type = (source == "yinyuetai" ? "9" : _.type) || (_.content === undefined ? "1" : _.content);
+                                                _.id = _.id && _.id + "";
+                                                if (!_.qualities && _.qualitys) {
+                                                    _.qualities = {};
+                                                    for (let obj of _.qualitys) {
+                                                        let quality = {
+                                                            '128k': 'low',
+                                                            '320k': 'standard',
+                                                            'flac': 'high',
+                                                            'flac24bit': 'super'
+                                                        } [obj.type];
+                                                        delete obj.type;
+                                                        _.qualities[quality] = obj;
+                                                    }
+                                                }
+                                                if (!isNaN(Number(_.duration))) {
+                                                    _.duration = Number(_.duration);
+                                                    if (_.duration < 999) {
+                                                        _.duration *= 1000;
+                                                    }
+                                                    let t_Arr = $.dateFormat(_.duration, 'hh:mm:ss').split(':');
+                                                    if ((t_Arr[0] -= 8) < 10) t_Arr[0] = '0' + t_Arr[0];
+                                                    _.duration = t_Arr.join(":");
+                                                }
+                                                delete _.$timestamp;
+                                                delete _.$sortIndex;
+                                                delete _.qualitys;
+                                                delete _.content;
+                                                musicList.push(_);
+                                                return true;
+                                            } else {
+                                                if (!nameArray.includes(_.platform)) {
+                                                    nameArray.push(_.platform);
+                                                }
+                                            }
+                                            return false;
+                                        });
+                                        __.musicList = musicList;
+                                        // 保存分组数据
+                                        saveFile(
+                                            cPath + "/" + __.platform + '_' + __.id + ".json",
+                                            JSON.stringify(__)
+                                        );
+                                    });
+                                    if (nameArray.length) {
+                                        log("musicfree插件未收录，已过滤以下插件：\n" + nameArray.join(", "));
+                                    }
+                                    // 初始化收藏
+                                    clearMyVar('collectionInitialization');
+                                    refreshPage();
+                                    return "toast://收藏导入成功";
+                                } else {
+                                    throw new Error('no musicSheets');
+                                }
+                            } catch (noMf) { // 不是musicfree歌单
+                                try {
+                                    let xRes = $.require(input);
+                                    if (xRes.platform && xRes.srcUrl && xRes.supportedQualityType) {
+                                        saveFile(
+                                            _getPath(["proxy", xRes.platform, "proxys", md5(xRes.srcUrl) + ".js"], 0, 1),
+                                            readFile(input)
+                                        );
+                                        clearMyVar('proxyInitialization');
+                                        refreshPage();
+                                        return 'toast://解析导入成功';
+                                    } else if (xRes.platform) {
+                                        saveFile(
+                                            _getPath(["plugin", "plugins", xRes.platform + ".js"], 0, 1),
+                                            readFile(input)
+                                        );
+                                        clearMyVar('pluginInitialization');
+                                        refreshPage();
+                                        return 'toast://插件导入成功';
+                                    } else {
+                                        throw new Error('no platform');
+                                    }
+                                } catch (noJs) { // 不是插件/解析
+                                    try {
+                                        let input4 = readFile(input).match(/(.+)@import=/)[1];
+                                        return $.require("import?rule=" + MY_RULE.title)(input4.split("￥"));
+                                    } catch (noHk) { // 不是导入口令
+                                        return "toast://文件格式未收录";
+                                    }
+                                }
+                            }
+                        }
                     }),
                     pic_url: 'hiker://images/icon_bookmark_add',
                     col_type: 'text_4'
@@ -1499,7 +1690,7 @@ function setCollectionGroup(input, path, title, i) {
                         "id": t + "",
                         "type": "2",
                         "title": input,
-                        "icon": icon || "hiker://images/icon1",
+                        "icon": icon || "http://p.qlogo.cn/gh/365976134/365976134_3/0",
                         "musicList": []
                     }
                     let path = "hiker://files/rules/Thomas/gcsp1999/collection/collections/userlist_" + t + ".json";
@@ -1551,7 +1742,7 @@ function setCollectionData(musicItem, run) {
                         "id": t + "",
                         "type": "2",
                         "title": input,
-                        "icon": icon || "hiker://images/icon1",
+                        "icon": icon || "http://p.qlogo.cn/gh/365976134/365976134_3/0",
                         "musicList": [musicItem]
                     }
                     let path = "hiker://files/rules/Thomas/gcsp1999/collection/collections/userlist_" + t + ".json";
