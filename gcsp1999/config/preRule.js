@@ -206,8 +206,13 @@ if (themeType_TwoSwitch) switch (themeType) {
         if (!platforms.length) break;
         let ArtistObj = storage0.getMyVar(platform + "_iArt");
         if (ArtistObj == "") {
-            ArtistObj = _getPlatform(platform).getExploreArtistList();
-            storage0.putMyVar(platform + "_iArt", ArtistObj);
+            try {
+                ArtistObj = _getPlatform(platform).getExploreArtistList();
+                storage0.putMyVar(platform + "_iArt", ArtistObj);
+            } catch (e) {
+                log("标识为：" + platform + " 的插件异常，无法获取歌手列表");
+                ArtistObj = {};
+            }
         }
         ArtistObj = $.require(getGitHub(["config", "ClassTab.js"]), ArtistObj || {});
         var ArtistUrl = ArtistObj.getBaseUrl();
@@ -220,8 +225,13 @@ if (themeType_TwoSwitch) switch (themeType) {
         if (!platforms.length) break;
         let TopLists = storage0.getMyVar(platform + "_iTop");
         if (platform && TopLists == "") {
-            TopLists = _getPlatform(platform).getTopLists() || [];
-            storage0.putMyVar(platform + "_iTop", TopLists);
+            try {
+                TopLists = _getPlatform(platform).getTopLists() || [];
+                storage0.putMyVar(platform + "_iTop", TopLists);
+            } catch (e) {
+                log("标识为：" + platform + " 的插件异常，无法获取榜单列表");
+                TopLists = [];
+            }
         }
         let TopIndex = Number(getMyVar('TopIndex', '0'));
         let TopTitles = TopLists.map(_ => _.title);
@@ -288,8 +298,13 @@ if (themeType_TwoSwitch) switch (themeType) {
         if (!platforms.length) break;
         let SheetTags = storage0.getMyVar(platform + "_iTag");
         if (SheetTags == "") {
-            SheetTags = _getPlatform(platform).getRecommendSheetTags() || [];
-            storage0.putMyVar(platform + "_iTag", SheetTags);
+            try {
+                SheetTags = _getPlatform(platform).getRecommendSheetTags() || [];
+                storage0.putMyVar(platform + "_iTag", SheetTags);
+            } catch (e) {
+                log("标识为：" + platform + " 的插件异常，无法获取歌单标签");
+                SheetTags = [];
+            }
         }
         let SheetGroups = SheetTags.map(_ => _.title);
         let GroupIndex = Number(getMyVar('GroupIndex', '0'));
@@ -579,7 +594,11 @@ function getThemeData(themeType) {
             if (typeof platform_id === 'number') {
                 platform_id = String(platform_id);
             }
-            getDataExtra(getParam('platform') || platform, platform_id);
+            try {
+                getDataExtra(getParam('platform') || platform, platform_id);
+            } catch (e) {
+                log("标识为：" + (getParam('platform') || platform) + " 的插件异常，" + themeType + "(\"" + platform_id + "\", " + page + ") 获取失败")
+            }
             break;
 
 
@@ -816,69 +835,81 @@ function getColType(_json) {
 
                             // 分组基础数据 #info
                             for (let _ of data) {
-                                let __ = {
-                                    platform: _.source || _.id.split("_")[0],
-                                    id: _.sourceListId || _.id.split("_")[1],
-                                    icon: _.picUrl || "http://p.qlogo.cn/gh/365976134/365976134_3/0",
-                                    title: _.name,
-                                    type: "2",
-                                    // locationUpdateTime: _.locationUpdateTime || new Date().getTime()
-                                };
-                                if (__.platform == "kg" || __.platform == "kw") {
-                                    let sourceListId = __.id.replace(/^(id|digest\-8_)_(\d+)$/i, "$2");
-                                    if (__.platform == "kg" && sourceListId.match(/https?\:\/\//i)) {
-                                        let ListIdmatch = sourceListId.match(/(\/special\/single\/|share_type=special&id=|global_specialid=|\/songlist\/|global_collection_id=)([^\.\&\/\?]+)/i);
-                                        sourceListId = ListIdmatch && ListIdmatch[2] || sourceListId;
+                                if (_.list && _.list.length) {
+                                    let __ = {
+                                        platform: _.source || _.id.split("_")[0].replace("default", "userlist"),
+                                        id: _.sourceListId || _.id.split("_")[1] || _.id.split("_")[0],
+                                        icon: _.picUrl || "http://p.qlogo.cn/gh/365976134/365976134_3/0",
+                                        title: _.name,
+                                        type: "2",
+                                        // locationUpdateTime: _.locationUpdateTime || new Date().getTime()
+                                    };
+
+                                    let sourceListId = String(__.id).replace(/^(id|digest\-8_)_(\d+)$/i, "$2");
+                                    if (/https?\:\/\//i.test(sourceListId)) {
+                                        let ListIdmatch;
+                                        if (__.platform == "kg") {
+                                            ListIdmatch = sourceListId.match(/(\/special\/single\/|share_type=special&id=|global_specialid=|\/songlist\/|global_collection_id=)([^\.\&\/\?]+)/i);
+                                            sourceListId = ListIdmatch && ListIdmatch[2] || sourceListId;
+                                        } else if (__.platform == "tx") {
+                                            ListIdmatch = sourceListId.match(/.*(\/details\/.*id=|\/playlist\/|playlist_v2.*?[\?&]id=)(\d+)/i);
+                                            sourceListId = ListIdmatch && ListIdmatch[2] || sourceListId;
+                                        }
+
+                                        if (/https?\:\/\//i.test(sourceListId)) {
+                                            sourceListId = base64Encode(sourceListId);
+                                        }
                                     }
                                     __.id = sourceListId;
-                                };
-                                // 分组歌曲数据 #list
-                                __.musicList = _.list.map(_ => {
-                                    let meta = _.meta;
-                                    delete _.id;
-                                    delete _.meta;
-                                    delete meta._qualitys;
-                                    meta.qualitys = meta.qualitys.filter(_ => /^(128k|320k|flac|flac24bit)$/i.test(_.type));
-                                    if (_.interval.length == 5) {
-                                        _.interval = "00:" + _.interval;
-                                    }
-                                    _ = Object.assign(_, meta);
 
-                                    // 转化成musicfree格式
-                                    _.platform = _.source;
-                                    delete _.source;
-                                    _.id = _.songId;
-                                    delete _.songId;
-                                    _.title = _.name;
-                                    delete _.name;
-                                    _.artist = _.singer;
-                                    delete _.singer;
-                                    _.duration = _.interval;
-                                    delete _.interval;
-                                    _.album = _.albumName;
-                                    delete _.albumName;
-                                    _.artwork = _.picUrl;
-                                    delete _.picUrl;
-                                    _.qualities = {};
-                                    for (let obj of _.qualitys) {
-                                        let quality = {
-                                            '128k': 'low',
-                                            '320k': 'standard',
-                                            'flac': 'high',
-                                            'flac24bit': 'super'
-                                        } [obj.type];
-                                        delete obj.type;
-                                        _.qualities[quality] = obj;
-                                    }
-                                    delete _.qualitys;
-                                    _.type = "1"; // 默认算会员歌曲
-                                    return _;
-                                });
-                                // 保存分组数据
-                                saveFile(
-                                    cPath + "/" + __.platform + '_' + __.id + ".json",
-                                    JSON.stringify(__)
-                                );
+                                    // 分组歌曲数据 #list
+                                    __.musicList = _.list.map(_ => {
+                                        let meta = _.meta;
+                                        delete _.id;
+                                        delete _.meta;
+                                        delete meta._qualitys;
+                                        meta.qualitys = meta.qualitys.filter(_ => /^(128k|320k|flac|flac24bit)$/i.test(_.type));
+                                        if (_.interval.length == 5) {
+                                            _.interval = "00:" + _.interval;
+                                        }
+                                        _ = Object.assign(_, meta);
+
+                                        // 转化成musicfree格式
+                                        _.platform = _.source;
+                                        delete _.source;
+                                        _.id = _.songId;
+                                        delete _.songId;
+                                        _.title = _.name;
+                                        delete _.name;
+                                        _.artist = _.singer;
+                                        delete _.singer;
+                                        _.duration = _.interval;
+                                        delete _.interval;
+                                        _.album = _.albumName;
+                                        delete _.albumName;
+                                        _.artwork = _.picUrl;
+                                        delete _.picUrl;
+                                        _.qualities = {};
+                                        for (let obj of _.qualitys) {
+                                            let quality = {
+                                                '128k': 'low',
+                                                '320k': 'standard',
+                                                'flac': 'high',
+                                                'flac24bit': 'super'
+                                            } [obj.type];
+                                            delete obj.type;
+                                            _.qualities[quality] = obj;
+                                        }
+                                        delete _.qualitys;
+                                        _.type = "1"; // 默认算会员歌曲
+                                        return _;
+                                    });
+                                    // 保存分组数据
+                                    saveFile(
+                                        cPath + "/" + __.platform + '_' + __.id + ".json",
+                                        JSON.stringify(__)
+                                    );
+                                }
                             }
                             // 初始化收藏
                             clearMyVar('collectionInitialization');
@@ -1209,7 +1240,7 @@ function getCollectionItems(c_json, isPop) {
             col_type: "text_center_1"
         });
     }
-    return collectionItems.map(it => {
+    return collectionItems.map((it, c_index) => {
         it.type = ["免费", "会员", "歌单", "榜单", "专辑", "歌手", "用户", "电台", "播客", "视频", "歌词", "评论"][it.type] || "未知";
         it.path = encodeURIComponent(it.path);
         let _json = Object.assign({
@@ -1228,7 +1259,14 @@ function getCollectionItems(c_json, isPop) {
             }, it.path),
             col_type: "icon_1_left_pic",
             extra: {
-                inheritTitle: false
+                inheritTitle: false,
+                longClick: ["更新资源", "分享分组", "编辑分组", "删除分组", "合并分组", "新增分组", "更改排序"].map(title => ({
+                    title,
+                    js: $.toString((input, c_path) => {
+                        require(config.preRule);
+                        return setCollectionGroup(input, c_path);
+                    }, title, it.path)
+                }))
             }
         }, c_json || {});
         _json.title = String(_json.title || it.title || "").replace(/\$title|\$name/gi, it.title || "");
@@ -1565,11 +1603,6 @@ function getShareText(input, type, len, path) {
 
 
 
-
-
-
-
-
             let group = "getCode";
             if (input == "复制链接") {
                 if (isObj) {
@@ -1614,7 +1647,13 @@ function getShareText(input, type, len, path) {
 }
 
 
-function setCollectionGroup(input, path, title, i) {
+function setCollectionGroup(input, path) {
+    let c_Items = getCollectionItems();
+    let c_info = c_Items.find(_ => _.path == path);
+    let title = c_info.title;
+    let i = c_Items.indexOf(c_info);
+
+    path = decodeURIComponent(path);
     switch (input) {
         case '更新资源':
             return "toast://完善中";
@@ -1622,7 +1661,7 @@ function setCollectionGroup(input, path, title, i) {
         case '合并分组':
         case '更改排序':
             let detailp = _getPath(["collection", "details.json"], "_cache", 1);
-            let details = JSON.parse(readFile(detailp) || "[]") || [];
+            let details = c_Items;
             details.splice(i, 1);
             details = details.map((_, i) => {
                 _.title += "\r\n\n\n" + i;

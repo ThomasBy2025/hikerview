@@ -61,11 +61,6 @@ let c_path = (MY_PARAMS && MY_PARAMS.path) || getParam("path", c_Items[0] && c_I
 let c_info = c_Items.find(_ => _.path == c_path);
 let c_index = c_Items.indexOf(c_info);
 
-c_path = decodeURIComponent(c_path);
-let c_data = _getPath(c_path) || {};
-c_data = c_data.musicList || [];
-
-
 
 // "修改封面", "修改名称", "二级页面"
 let options = ["更新资源", "分享分组", "编辑分组", "删除分组", "合并分组", "新增分组", "更改排序"];
@@ -109,7 +104,7 @@ let c_url = $("#noLoading#").lazyRule((options, c_path, c_title, i) => {
                         return "hiker://empty";
                     } else {
                         pop.dismiss();
-                        return setCollectionGroup(input, c_path, c_title, i);
+                        return setCollectionGroup(input, c_path);
                     }
                 },
             });
@@ -130,6 +125,8 @@ if (c_info === undefined) {
         }
     });
 } else {
+    let c_data = _getPath(decodeURIComponent(c_path)) || {};
+    c_data = c_data.musicList || [];
     d.push({
         title: c_info.title.bold(),
         desc: "共" + c_data.length + "首音乐",
@@ -142,7 +139,7 @@ if (c_info === undefined) {
                 js: $.toString((input, c_path, c_title, c_index) => {
                     require(config.preRule);
                     return setCollectionGroup(input, c_path, c_title, c_index);
-                }, title, c_path, c_info.title, c_index)
+                }, title, c_path)
             }))
         }
     });
@@ -150,7 +147,7 @@ if (c_info === undefined) {
         url: "hiker://empty",
         col_type: "line",
     });
-
+    c_path = decodeURIComponent(c_path);
 
 
     // 分组数据
