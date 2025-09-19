@@ -645,8 +645,12 @@ function getThemeData(themeType) {
                     lineVisible: false
                 }
             });
-            else theme_Item.map(_ => {
-                eval(String(_.data || "").replace(/\$name/g, _.name || "").replace(/\$type/g, _.type || "").replace(/\$length/g, _.length || "1"));
+            else theme_Item.map((_, t_index) => {
+                try {
+                    eval(String(_.data || "").replace(/\$name/g, _.name || "").replace(/\$type/g, _.type || "").replace(/\$length/g, _.length || "1"));
+                } catch (e) {
+                    log("主题索引异常：" + theme_Info.title + "=>" + t_index);
+                }
             });
             break;
         case "themeList":
@@ -1721,7 +1725,17 @@ function setCollectionGroup(input, path) {
             return getShareText([path], "collection");
             break;
         case '编辑分组':
-            return "editFile://" + path;
+            return "editFile://" + path + "@js=" + $.toString((path, code) => {
+                input = "file://" + input;
+                try {
+                    let _ = JSON.parse(readFile(input));
+                    clearMyVar('collectionInitialization');
+                    refreshPage(false);
+                    return "hiker://empty";
+                } catch (e) {}
+                saveFile(path, code);
+                return 'toast://json异常，无法保存';
+            }, path, readFile(path));
             break;
         case '删除分组':
             return $("确定删除分组 " + title + " 吗？\n此操作不可逆，谨慎选择。").confirm((path) => {
