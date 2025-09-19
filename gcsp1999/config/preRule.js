@@ -134,34 +134,36 @@ if (themeType_TwoSwitch) switch (themeType) {
         s_types = platformItem.supportedSearchType || s_types;
         s_types.unshift("热搜");
         if (s_types.indexOf(s_type) == -1) s_type = s_types[0];
-        var s_query = function(s_t2) {
-            try {
-                if (/https?\:\/\//.test(s_t2)) {
+        var s_query = String(getMyVar('s_query', '')).replace(/^[\s\S]*?(https?\:\/\/[^\n\r]+)[\s\S]*/i, '$1').split(/\s+\@QQ音乐/i)[0];
+
+        // 搜索内容有链接时调用
+        if (/https?\:\/\//.test(s_query)) {
+            s_query = function(s_t2) {
+                try { // 获取重定向链接
                     let s_t2_1 = !/antiserver.kuwo.cn/i.test(s_t2) && JSON.parse(fetch(s_t2, {
                         redirect: false,
                         onlyHeaders: true,
                         timeout: 5000
                     })).headers.location || "";
-                    return s_t2_1[0].split("/").length > 4 ? s_t2_1[0] : s_t2;
+                    s_t2 = s_t2_1[0].split("/").length > 4 ? s_t2_1[0] : s_t2;
+                } catch (noFetch) {};
+                for (let s_platform of platforms) {
+                    try {
+                        if (s_platform.import_url) {
+                            let search_item = _getPlatform(s_platform.platform).import_url(s_t2);
+                            if (search_item) {
+                                platform = search_item.platform;
+                                s_type = ["单曲", "单曲", "歌单", "排行", "专辑", "歌手"][search_item.type];
+                                putMyVar("platform", platform);
+                                putMyVar("s_type", s_type);
+                                return [search_item];
+                                break;
+                            }
+                        }
+                    } catch (e) {}
                 }
-            } catch (noFetch) {};
-            return s_t2;
-        }(String(getMyVar('s_query', '')).replace(/^[\s\S]*?(https?\:\/\/[^\n\r]+)[\s\S]*/i, '$1').split(/\s+\@QQ音乐/i)[0]);
-
-        // 搜索内容是 链接 / 数字(酷狗码) 时调用
-        if (/https?\:\/\//.test(s_query) || Number(s_query)) {
-            for (let s_platform of ["wy"]) {
-                s_platform = _getPlatform(s_platform).import_url(s_query);
-                if (s_platform) {
-                    platform = s_platform.platform;
-                    s_query = [s_platform];
-                    s_type = ["单曲", "单曲", "歌单", "排行", "专辑", "歌手"][s_platform.type];
-                    putMyVar("platform", platform);
-                    putMyVar("s_type", s_type);
-                    break;
-                }
-            }
-            if (!Array.isArray(s_query) && !Number(s_query)) s_query = [];
+                return []; // 无法获取
+            }(s_query);
         }
 
         function getSearchTypes(_json) {
@@ -906,7 +908,7 @@ function getColType(_json) {
                                     });
                                     // 保存分组数据
                                     saveFile(
-                                        cPath + "/" + __.platform + '_' + __.id + ".json",
+                                        cPath + "/" + __.platform + '_2_' + __.id + ".json",
                                         JSON.stringify(__)
                                     );
                                 }
@@ -976,7 +978,7 @@ function getColType(_json) {
                                         __.musicList = musicList;
                                         // 保存分组数据
                                         saveFile(
-                                            cPath + "/" + __.platform + '_' + __.id + ".json",
+                                            cPath + "/" + __.platform + '_2_' + __.id + ".json",
                                             JSON.stringify(__)
                                         );
                                     });
@@ -1106,7 +1108,8 @@ const Extra = (_, _extra, run) => {
     let _type = ["单曲", "单曲", "歌单", "榜单", "专辑", "歌手", "用户", "电台", "播客", "视频", "歌词", "评论"][_.type] || "未知";
 
 
-
+    // let _wid = "$" + rule_id + "$" + Math.random();
+    let _mid = [_.platform, _.type, _.mid || _.id].join("$");
     let json = Object.assign({
         title: _.title + (isMedia && _.artist ? " - " + _.artist : ""),
         desc: isMedia ? ((_.album || "") + " " + (_.duration || "")) : (_.description || ""),
@@ -1116,22 +1119,23 @@ const Extra = (_, _extra, run) => {
         extra: {
             inheritTitle: false, // 不继承页面标题
             lineVisible: false, // 隐藏底部分界线
-            cls: rule_id + ':addlist',
-            id: [_.platform, _.type, _.id].join("$"),
-            pic_url,
+            cls: [rule_id + ':itemlist', /*_mid + _wid*/ ].join(" "),
+            id: _mid,
+            // windowId: _wid,
             longClick: [{
                 title: "★ 收藏" + _type + " ★",
-                js: $.toString((_) => {
+                js: $.toString((_id) => {
                     require(config.preRule);
-                    return setCollectionData(_);
-                }, _)
+                    return setCollectionData(findItem(_id).extra.item);
+                }, _mid)
             }, {
                 title: "✩ 分享" + _type + " ✩",
-                js: $.toString((_) => {
+                js: $.toString((_id) => {
                     require(config.preRule);
-                    return getShareText(_, "collection");
-                }, _)
+                    return getShareText(findItem(_id).extra.item, "collection");
+                }, _mid)
             }],
+            item: _
         }
     }, isExtra ? _extra : {});
 
@@ -1157,18 +1161,17 @@ const Extra = (_, _extra, run) => {
         id: encodeURIComponent(String(_.mid || _.id)),
     });
     if (isMedia) {
-        let _url3 = (is_down) => $(_url2).lazyRule((musicItem, is_down) => {
-            require(config.preRule);
-            return getQuality(musicItem, is_down);
-        }, _, is_down);
         json.extra.longClick.unshift({
             title: "★ 下载资源 ★",
-            js: $.toString((url) => {
-                return url;
-            }, _url || _url3(true))
+            js: $.toString((_id) => {
+                require(config.preRule);
+                return getQuality(findItem(_id).extra.item, true);
+            }, _mid)
         });
-        json.extra.url = _url || _url3(!is_down);
-        json.url = _url || _url3(is_down);
+        json.url = _url || $(_url2).lazyRule((musicItem) => {
+            require(config.preRule);
+            return getQuality(musicItem, false);
+        }, _);
     } else {
         json.url = _url || _url2;
     }
@@ -1443,6 +1446,7 @@ function getMedia(musicItem, quality, mediaType) {
             mediaItem.urls.push(mediaItem.url);
             // delete mediaItem.url;
         }
+        mediaItem.urls = mediaItem.urls.filter(Boolean); // 去除假链接
         if (!mediaItem.urls.length) return "toast://无法解析";
         // 获取LRC歌词
         if (!mediaItem.lyric) {
@@ -1467,7 +1471,7 @@ function getMedia(musicItem, quality, mediaType) {
             for (let i in mediaItem.urls) {
                 let u = String(mediaItem.urls[i]);
                 // 是否记忆播放进度 &memoryPosition=null
-                u = u.replace(/$/, (u.includes("?") ? "&" : "?") + getItem('memoryPosition', '')) + _url;
+                if (u) u = u.replace(/$/, (u.includes("?") ? "&" : "?") + getItem('memoryPosition', '')) + _url;
                 mediaItem.urls[i] = u;
             }
         }
@@ -1601,8 +1605,6 @@ function getShareText(input, type, len, path) {
                     break;
             }
 
-
-
             let group = "getCode";
             if (input == "复制链接") {
                 if (isObj) {
@@ -1648,6 +1650,7 @@ function getShareText(input, type, len, path) {
 
 
 function setCollectionGroup(input, path) {
+    let hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
     let c_Items = getCollectionItems();
     let c_info = c_Items.find(_ => _.path == path);
     let title = c_info.title;
@@ -1656,7 +1659,24 @@ function setCollectionGroup(input, path) {
     path = decodeURIComponent(path);
     switch (input) {
         case '更新资源':
-            return "toast://完善中";
+            if (c_info.platform == "userlist") {
+                return "toast://自建分组无法更新";
+            } else {
+                hikerPop.confirm({
+                    title: "注意",
+                    content: "这将会把 " + title + " 内的歌曲替换成在线列表的歌曲，你确定要更新吗？",
+                    okTitle: "确定更新",
+                    cancelTitle: "算了算了",
+                    hideCancel: false, //隐藏取消按钮
+                    confirm() {
+                        return setCollectionData(c_info);
+                    },
+                    cancel() {
+                        return "hiker://empty";
+                    }
+                });
+                return "hiker://empty";
+            }
             break;
         case '合并分组':
         case '更改排序':
@@ -1712,7 +1732,6 @@ function setCollectionGroup(input, path) {
             }, path);
             break;
         case '新增分组':
-            let hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
             hikerPop.inputTwoRow({
                 titleHint: "新组名称",
                 titleDefault: "",
@@ -1732,7 +1751,7 @@ function setCollectionGroup(input, path) {
                         "icon": icon || "http://p.qlogo.cn/gh/365976134/365976134_3/0",
                         "musicList": []
                     }
-                    let path = "hiker://files/rules/Thomas/gcsp1999/collection/collections/userlist_" + t + ".json";
+                    let path = "hiker://files/rules/Thomas/gcsp1999/collection/collections/userlist_2_" + t + ".json";
                     saveFile(path, JSON.stringify(_));
                     clearMyVar('collectionInitialization');
                     refreshPage();
@@ -1752,13 +1771,102 @@ function setCollectionData(musicItem, run) {
     let hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
     let isMedia = ["0", "1", "8", "9", "10"].indexOf(musicItem.type) != -1;
     let detailp = _getPath(["collection", "details.json"], "_cache", 1);
-    let iconList = (_getPath(detailp) || []).map(_ => ({
-        title: _.title + '\r\n\n\n' + _.path,
+    let iconList = (_getPath(detailp) || []).map((_, i) => ({
+        title: _.title + '\r\n\n\n' + _.path + '\r\n\n\n' + i,
         icon: _.icon
     }));
     let isBack = run === true;
     if (!isMedia) {
-        return "toast://分组收藏完善中，可以先在线收藏";
+        try {
+            let tag = musicItem.mid || musicItem.id;
+            let fun = _getPlatform(musicItem.platform)[["getMediaSource", "getMediaSource", "getMusicSheetInfo", "getTopListDetail", "getAlbumInfo", "getArtistWorks", "getUserInfo", "getProgramInfo", "getRadio", "getVideo", "getLyric", "getMusicComments"][musicItem.type] || musicItem.type];
+
+            // 手动遍历歌单数据
+            let e = 0;
+            page = 1;
+            d = [];
+            do {
+                try {
+                    showLoading('获取页面数据_' + page + "_" + (e + 1));
+                    let {
+                        isEnd,
+                        data
+                    } = fun(tag, page) || {};
+                    (data || []).map(Extra);
+                    if (isEnd) {
+                        break;
+                    }
+                } catch (err) {
+                    log(err)
+                    if (e > 3) {
+                        break;
+                    } else {
+                        page--;
+                        e++;
+                    }
+                }
+            } while (page++);
+            musicItem.musicList = d.map(_ => _.extra.item);
+            hideLoading();
+
+            // 格式化
+            if (musicItem.musicList.length) {
+                musicItem.icon = musicItem.icon || musicItem.artwork || musicItem.avatar;
+                delete musicItem.artwork;
+                delete musicItem.avatar;
+                let cPath = _getPath(["collection", "collections", musicItem.platform + "_" + musicItem.type + "_" + (musicItem.mid || musicItem.id) + ".json"], 0, 1);
+                let cObj = {
+                    path: cPath,
+                    title: musicItem.title,
+                    author: musicItem.author,
+                    icon: musicItem.icon,
+                    type: musicItem.type || "2",
+                    worksNum: musicItem.musicList.length
+                }
+
+                // 选择位置
+                hikerPop.selectCenterIcon({
+                    iconList: iconList.concat([{
+                        title: "最后面"
+                    }]),
+                    title: "请选择分组位置",
+                    columns: 2,
+                    // position: 0,
+                    click(input) {
+                        // 保存详情
+                        let data = _getPath(detailp) || [];
+                        let i2 = data.findIndex(_ => _.path == cPath);
+                        if (i2 != -1) {
+                            data.splice(i2, 1, cObj);
+                        } else {
+                            if (input == '最后面') {
+                                i2 = iconList.length;
+                            } else {
+                                i2 = input.split("\r\n\n\n")[2];
+                            }
+                            data.splice(i2, 0, cObj);
+                        }
+                        saveFile(detailp, JSON.stringify(data, 0, 1));
+
+                        // 保存排序
+                        let data2 = data.map(_ => _.path.split("/collections/")[1]);
+                        saveFile(_getPath(["collection", "sorted.json"], 0, 1), JSON.stringify(data2));
+
+                        // 保存数据
+                        saveFile(cPath, JSON.stringify(musicItem));
+                        refreshPage(false);
+                        return "toast://更改成功";
+                    }
+                });
+                return "hiker://empty";
+            } else {
+                return "toast://歌曲数据为空";
+            }
+        } catch (e) {
+            log(e)
+            hideLoading();
+            return "toast://未知异常，无法收藏";
+        }
     }
     let pop = hikerPop.selectCenterIcon({
         iconList,
@@ -1784,7 +1892,7 @@ function setCollectionData(musicItem, run) {
                         "icon": icon || "http://p.qlogo.cn/gh/365976134/365976134_3/0",
                         "musicList": [musicItem]
                     }
-                    let path = "hiker://files/rules/Thomas/gcsp1999/collection/collections/userlist_" + t + ".json";
+                    let path = "hiker://files/rules/Thomas/gcsp1999/collection/collections/userlist_2_" + t + ".json";
                     saveFile(path, JSON.stringify(_));
                     clearMyVar('collectionInitialization');
                     isBack && back(true);

@@ -7,6 +7,7 @@
         let filepath = _getPath(fileArr2, 0, 1);
         let filedir1 = readDir(_getPath(fileArr1, 0, 1));
         let filedir2 = _getPath(filepath) || [];
+        // filedir2 = filedir2.filter((item, index) => filedir2.indexOf(item) === index);
         let filteredFiledir2 = filedir2.filter(item => filedir1.includes(item));
         let presentInBoth = filteredFiledir2.filter(item => filedir1.includes(item));
         let uniqueToFiledir1 = filedir1.filter(item => !filteredFiledir2.includes(item));
@@ -63,7 +64,7 @@
                     platformProxy: plugin.platformProxy,
                     userVariables: plugin.userVariables,
                     supportedSearchType: Array.isArray(plugin.supportedSearchType) ? plugin.supportedSearchType : ["单曲", "歌单", "专辑", "歌手", "视频", "歌词", "电台", "播客"],
-                    import_url: plugin.import_url && true
+                    import_url: plugin.import_url && true,
                     // 登录相关还没写 - 完善中
                 };
                 if (plugin.search) {

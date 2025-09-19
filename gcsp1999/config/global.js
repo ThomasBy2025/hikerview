@@ -242,14 +242,17 @@ function getDownData(_json) {
                 title: _json.title,
                 pic_url: _json.pic_url
             });
-            let list = findItemsByCls(rule_id + ':addlist') || [];
+
+            let list = findItemsByCls(rule_id + ':itemlist') || [];
             for (let it of list) {
-                let extra_url = it.url;
-                let url = it.extra.url;
-                it.extra.url = extra_url;
                 updateItem(it.extra.id, {
-                    extra: it.extra,
-                    url
+                    url: it.url.replace(/, (false|true)\);/i, function($0, $1) {
+                        if ($1 == "false") {
+                            return ", true);";
+                        } else {
+                            return ", false);";
+                        }
+                    })
                 });
             }
             return "hiker://empty";

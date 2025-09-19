@@ -29,6 +29,13 @@ d.push({
                 deleteFile(url);
                 return 'toast://删除成功';
             }, _getPath(["pluginExample.js"], "_cache", 1))
+        }, {
+            title: '插件初始化',
+            js: $.toString(() => {
+                clearMyVar("pluginInitialization");
+                refreshPage();
+                return "hiker://empty";
+            })
         }]
     }
 });
@@ -152,24 +159,120 @@ else details.map((_, i) => {
                         switch (a) {
                             case '资源导入':
                                 if (_.import_url) {
-                                    return $("", "填写正确的资源链接").input((_platform) => {
-                                        MY_URL = "";
-                                        require(config.preRule);
-                                        let mediaItem = false;
-                                        try {
-                                            mediaItem = _getPlatform(_platform).import_url(input);
-                                        } catch (e) {}
-                                        return mediaItem ? setCollectionData(mediaItem) : "toast://导入失败";
-                                    }, _.platform);
+                                    hikerPop.inputAutoRow({
+                                        hint: "填写正确的资源链接",
+                                        title: "导入资源",
+                                        defaultValue: "",
+                                        //hideCancel: true,
+                                        noAutoSoft: true, //不自动打开输入法
+                                        confirm(urlLike) {
+                                            hikerPop.runOnNewThread(() => {
+                                                showLoading('获取资源详情');
+                                                urlLike = function(s_t2) {
+                                                    try { // 获取重定向链接
+                                                        let s_t2_1 = !/antiserver.kuwo.cn/i.test(s_t2) && JSON.parse(fetch(s_t2, {
+                                                            redirect: false,
+                                                            onlyHeaders: true,
+                                                            timeout: 3000
+                                                        })).headers.location || "";
+                                                        return (s_t2_1[0].split("/").length > 4 ? s_t2_1[0] : s_t2) || s_t2;
+                                                    } catch (noFetch) {};
+                                                    return s_t2;
+                                                }(urlLike);
+                                                let mediaItem = false;
+                                                try {
+                                                    mediaItem = $.require(pluginPath).import_url(urlLike);
+                                                } catch (e) {}
+                                                hideLoading();
+                                                if (mediaItem) {
+                                                    hikerPop.confirm({
+                                                        content: mediaItem.title + "\n" + (mediaItem.artist || ""),
+                                                        title: "获取「" + ["歌曲", "歌曲", "歌单", "榜单", "专辑", "歌手", "用户", "电台", "播客", "视频", "歌词", "评论"][mediaItem.type] + "」成功",
+                                                        okTitle: "确定导入",
+                                                        cancelTitle: "算了算了",
+                                                        hideCancel: false, //隐藏取消按钮
+                                                        confirm() {
+                                                            hikerPop.runOnNewThread(() => {
+                                                                return setCollectionData(mediaItem);
+                                                            });
+                                                        },
+                                                        cancel() {
+                                                            return "hiker://empty";
+                                                        }
+                                                    });
+                                                    return "hiker://empty";
+                                                }
+                                                if (mediaItem === undefined) {
+                                                    return "toast://链接格式未收录";
+                                                }
+                                                return "toast://资源获取失败";
+                                            });
+                                        },
+                                        cancel() {
+                                            return "hiker://empty";
+                                        }
+                                    });
+                                    return "hiker://empty";
                                 } else {
                                     return "toast://该插件没有写资源导入函数";
                                 }
                                 break;
                             case '更新插件':
-                                return _.srcUrl ? "toast://完善中" : "toast://该插件不支持在线更新";
+                                if (_.srcUrl) {
+                                    let newPath = _getPath(["plugin", "newPlatform.js"], "_cache", 1);
+                                    try {
+                                        let newPlatform = fetch(_.srcUrl);
+                                        if (newPlatform && newPlatform != "") {
+                                            saveFile(newPath, newPlatform);
+                                            newPath = $.require(newPath);
+                                            if (newPath.platform == _.platform) {
+                                                let v1 = String(_.version || "0");
+                                                let v2 = String(newPath.version || "0");
+                                                let v3 = v1 != v2; // 版本是否一致
+                                                if (v3) {
+                                                    v1 = v1.split(".");
+                                                    v2 = v2.split(".");
+                                                    v3 = false;
+                                                    for (let v4 in v1) {
+                                                        if (v1[v4] < v2[v4]) {
+                                                            v3 = true;
+                                                            break;
+                                                        }
+                                                    }
+                                                    if (v3) {
+                                                        saveFile(pluginPath, newPlatform);
+                                                        clearMyVar('pluginInitialization');
+                                                        refreshPage(false);
+                                                        return 'toast://插件更新成功\n' + v1.join(".") + " => " + v2.join(".");
+                                                    }
+                                                }
+                                                return 'toast://插件没有更新';
+                                            } else {
+                                                return 'toast://插件标识不一致';
+                                            }
+                                        } else {
+                                            return 'toast://无法获取插件数据';
+                                        }
+                                    } catch (e) {
+                                        return "toast://无法更新";
+                                    }
+                                } else {
+                                    return "toast://该插件不支持在线更新";
+                                }
                                 break;
                             case '编辑插件':
-                                return "editFile://" + pluginPath;
+                                return "editFile://" + pluginPath + "@js=" + $.toString((platform, platformPath, platformCode) => {
+                                    input = "file://" + input;
+                                    clearMyVar('pluginInitialization');
+                                    refreshPage(false);
+                                    try {
+                                        if ($.require(input).platform == platform) {
+                                            return 'hiker://empty';
+                                        }
+                                    } catch (e) {}
+                                    saveFile(platformPath, platformCode);
+                                    return 'toast://参数异常，无法保存';
+                                }, _.platform, pluginPath, readFile(pluginPath));
                                 break;
                             case '分享插件':
                                 return getShareText([pluginPath], "plugin");
@@ -243,7 +346,7 @@ else details.map((_, i) => {
                                                 noAutoSoft: true, //不自动打开输入法
                                                 confirm(text) {
                                                     setItem(_key2, text);
-                                                    officeItem.setDesc(text || hintMap[_key]);
+                                                    officeItem.setDesc((text && text.slice(0, 16)) || hintMap[_key]);
                                                     change();
                                                     return "toast://保存了\n" + text;
                                                 },
@@ -258,7 +361,7 @@ else details.map((_, i) => {
                                         }
                                     });
                                 } else {
-                                    return "toast://该插件没有写用户变量";
+                                    return "toast://该插件不支持用户变量";
                                 }
                                 break;
 

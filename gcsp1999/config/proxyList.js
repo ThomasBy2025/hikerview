@@ -41,6 +41,13 @@ d.push({
                 deleteFile(url);
                 return 'toast://删除成功'
             }, _getPath(["proxyExample.js"], "_cache", 1))
+        }, {
+            title: '解析初始化',
+            js: $.toString(() => {
+                clearMyVar("proxyInitialization");
+                refreshPage();
+                return "hiker://empty";
+            })
         }]
     }
 });
@@ -150,7 +157,18 @@ if (jx_list.length == 0) {
                     click(a) {
                         switch (a) {
                             case '编辑解析':
-                                return "editFile://" + _.path;
+                                return "editFile://" + _.path + "@js=" + $.toString((platform, platformPath, platformCode) => {
+                                    input = "file://" + input;
+                                    clearMyVar('proxyInitialization');
+                                    refreshPage(false);
+                                    try {
+                                        if ($.require(input).platform == platform) {
+                                            return 'hiker://empty';
+                                        }
+                                    } catch (e) {}
+                                    saveFile(platformPath, platformCode);
+                                    return 'toast://参数异常，无法保存';
+                                }, _.platform, _.path, readFile(_.path));
                                 break;
                             case '测试解析':
                                 let _Jiexi = $.require(_.path);
@@ -180,8 +198,8 @@ if (jx_list.length == 0) {
                                                     hikerPop.runOnNewThread(() => {
                                                         let _Jiexi_url = _Jiexi.getMediaSource(musicItem, quality);
                                                         hikerPop.confirm({
-                                                            content: JSON.stringify(_Jiexi_url).replace(/^"|"$/, ""),
-                                                            title: "获取成功",
+                                                            content: JSON.stringify(_Jiexi_url).replace(/^"|"$/g, "") || "没有链接",
+                                                            title: "解析成功",
                                                             okTitle: "播放看看",
                                                             cancelTitle: "我知道了",
                                                             hideCancel: false, //隐藏取消按钮
@@ -189,7 +207,7 @@ if (jx_list.length == 0) {
                                                                 if (_Jiexi_url.url && !(Array.isArray(_Jiexi_url.urls) && _Jiexi_url.urls.length)) {
                                                                     _Jiexi_url.urls = [_Jiexi_url.url];
                                                                 }
-                                                                return JSON.stringify(_Jiexi_url).replace(/^"|"$/, "");
+                                                                return JSON.stringify(_Jiexi_url).replace(/^"|"$/g, "") || "toast://解析失败，没有链接";
                                                             },
                                                             cancel() {
                                                                 return "hiker://empty";
@@ -203,7 +221,6 @@ if (jx_list.length == 0) {
                                                 return "toast://插件的debug_musicItem参数不存在";
                                             }
                                         } catch (e) {
-                                            log(e)
                                             return "toast://未知异常";
                                         }
                                     }
@@ -219,9 +236,6 @@ if (jx_list.length == 0) {
                                     refreshPage();
                                     return "hiker://empty";
                                 }, _.path);
-                                break;
-                            case '测试解析':
-                                return "toast://完善中";
                                 break;
                             case '选中解析':
                             case '取消选中':
