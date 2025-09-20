@@ -219,43 +219,47 @@ else details.map((_, i) => {
                                 break;
                             case '更新插件':
                                 if (_.srcUrl) {
-                                    let newPath = _getPath(["plugin", "newPlatform.js"], "_cache", 1);
-                                    try {
-                                        let newPlatform = fetch(_.srcUrl);
-                                        if (newPlatform && newPlatform != "") {
-                                            saveFile(newPath, newPlatform);
-                                            newPath = $.require(newPath);
-                                            if (newPath.platform == _.platform) {
-                                                let v1 = String(_.version || "0");
-                                                let v2 = String(newPath.version || "0");
-                                                let v3 = v1 != v2; // 版本是否一致
-                                                if (v3) {
-                                                    v1 = v1.split(".");
-                                                    v2 = v2.split(".");
-                                                    v3 = false;
-                                                    for (let v4 in v1) {
-                                                        if (v1[v4] < v2[v4]) {
-                                                            v3 = true;
-                                                            break;
+                                    hikerPop.runOnNewThread(() => {
+                                        let newPath = _getPath(["plugin", "newPlatform.js"], "_cache", 1);
+                                        try {
+                                            let newPlatform = fetch(_.srcUrl);
+                                            log(_.srcUrl);
+                                            log(newPlatform);
+                                            if (newPlatform && newPlatform != "") {
+                                                saveFile(newPath, newPlatform);
+                                                newPath = $.require(newPath);
+                                                if (newPath.platform == _.platform) {
+                                                    let v1 = String(_.version || "0");
+                                                    let v2 = String(newPath.version || "0");
+                                                    let v3 = v1 != v2; // 版本是否一致
+                                                    if (v3) {
+                                                        v1 = v1.split(".");
+                                                        v2 = v2.split(".");
+                                                        v3 = false;
+                                                        for (let v4 in v1) {
+                                                            if (v1[v4] < v2[v4]) {
+                                                                v3 = true;
+                                                                break;
+                                                            }
+                                                        }
+                                                        if (v3) {
+                                                            saveFile(pluginPath, newPlatform);
+                                                            clearMyVar('pluginInitialization');
+                                                            refreshPage(false);
+                                                            return 'toast://插件更新成功\n' + v1.join(".") + "=>" + v2.join(".");
                                                         }
                                                     }
-                                                    if (v3) {
-                                                        saveFile(pluginPath, newPlatform);
-                                                        clearMyVar('pluginInitialization');
-                                                        refreshPage(false);
-                                                        return 'toast://插件更新成功\n' + v1.join(".") + " => " + v2.join(".");
-                                                    }
+                                                    return 'toast://插件没有更新';
+                                                } else {
+                                                    return 'toast://插件标识不一致';
                                                 }
-                                                return 'toast://插件没有更新';
                                             } else {
-                                                return 'toast://插件标识不一致';
+                                                return 'toast://无法获取插件数据';
                                             }
-                                        } else {
-                                            return 'toast://无法获取插件数据';
+                                        } catch (e) {
+                                            return "toast://无法更新";
                                         }
-                                    } catch (e) {
-                                        return "toast://无法更新";
-                                    }
+                                    });
                                 } else {
                                     return "toast://该插件不支持在线更新";
                                 }
