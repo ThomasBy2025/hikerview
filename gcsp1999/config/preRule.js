@@ -145,7 +145,7 @@ if (themeType_TwoSwitch) switch (themeType) {
                         onlyHeaders: true,
                         timeout: 5000
                     })).headers.location || "";
-                    s_t2 = s_t2_1[0].split("/").length > 4 ? s_t2_1[0] : s_t2;
+                    s_t2 = s_t2_1[0].split("/").length > 5 ? s_t2_1[0] : s_t2;
                 } catch (noFetch) {};
                 for (let s_platform of platforms) {
                     try {
@@ -1522,6 +1522,7 @@ function getMedia(musicItem, quality, mediaType) {
                         lrcText = fetch(lrcText);
                         mediaItem.lyric = lrcText;
                     }
+                    // return _getPath(["danmuLRC.xml"], "_cache", 1);
 
                     let result = [];
                     String(lrcText).split(/\n/).map(t => {
@@ -1533,15 +1534,45 @@ function getMedia(musicItem, quality, mediaType) {
                                 let minutes = parseInt(tme[0], 10) * 60;
                                 let seconds = tme.slice(1).join(".");
                                 minutes += parseFloat(seconds);
-                                result.push({
-                                    text: txt,
-                                    time: minutes.toFixed(3)
-                                });
+
+
+
+
+
+                                // 1 普通滚动  4 底部固定   5顶部固定
+                                // 6 逆向滚动   7 高级弹幕
+                                let mode = 1;
+                                let size = 20;
+                                let color = function() {
+                                    let h = Math.floor(Math.random() * 360), // 色相（0-359）
+                                        s = Math.floor(Math.random() * 50 + 50) / 100, // 饱和度（50%-100%）
+                                        l = Math.floor(Math.random() * 50 + 50) / 100, // 亮度（50%-100%，避免过暗）
+                                        c = (1 - Math.abs(2 * l - 1)) * s,
+                                        x = c * (1 - Math.abs((h / 60) % 2 - 1)),
+                                        m = l - c / 2,
+                                        // 根据色相计算 RGB 分量（0-1 范围）
+                                        [r1, g1, b1] = h < 60 ? [c, x, 0] :
+                                        h < 120 ? [x, c, 0] :
+                                        h < 180 ? [0, c, x] :
+                                        h < 240 ? [0, x, c] :
+                                        h < 300 ? [x, 0, c] : [c, 0, x],
+                                        // 转换为 0-255 整数
+                                        r = Math.floor((r1 + m) * 255),
+                                        g = Math.floor((g1 + m) * 255),
+                                        b = Math.floor((b1 + m) * 255);
+
+                                    // 计算十进制 RGB 值：R*65536 + G*256 + B
+                                    return r * 65536 + g * 256 + b;
+                                }();
+
+                                // 时间(s)，模式，字号，颜色
+                                result.push(`<d p="${minutes.toFixed(5)},${mode},${size},${color}">${txt}</d>`);
                             } catch (nolrc) {}
                         }
                     });
-                    let danmuLRC = _getPath(["danmuLRC.json"], "_cache", 1);
-                    saveFile(danmuLRC, JSON.stringify(result));
+
+                    let danmuLRC = _getPath(["danmuLRC.xml"], "_cache", 1);
+                    saveFile(danmuLRC, `<?xml version="1.0" encoding="UTF-8"?>\n<i>\n${result.join("\n")}\n</i>`);
                     return danmuLRC;
                 } catch (e) {}
                 return "";

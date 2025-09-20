@@ -218,6 +218,45 @@
 
 
 
+    if (getMyVar("ghproxy_url_update", "0") == "0") {
+        log("github代理保活");
+        if (getItem("ghproxy", "") != "") {
+            try {
+                let ghproxys = JSON.parse(fetch("https://www.github-mirrors.zone.id/api/urls")).data.map(url => {
+                    url = url.trim();
+                    if (!url.endsWith("/")) {
+                        url = url + "/";
+                    }
+                    return url;
+                });
+                ghproxys.unshift(getItem("ghproxy"));
+                showLoading('更新依赖代理...');
+                let new_ghproxy;
+                let verify_url = 'https://raw.githubusercontent.com/src48597962/hk/master/verify';
+                for (let ghproxy of ghproxys) {
+                    try {
+                        let content = fetch(ghproxy + verify_url, {
+                            timeout: 3000
+                        });
+                        if (content == 'ok') {
+                            new_ghproxy = ghproxy;
+                            break;
+                        }
+                    } catch (e) {}
+                }
+                if (new_ghproxy && new_ghproxy != "") { // 更新成功
+                    setItem("ghproxy", new_ghproxy);
+                }
+                hideLoading();
+            } catch (err) {}
+        } else {
+            // log("未设置github代理");
+        }
+        putMyVar("ghproxy_url_update", "1");
+    }
+
+
+
     if (getMyVar("require_url_update", "0") == "0") {
         log("检测并更新依赖");
         try {
@@ -247,7 +286,7 @@
                 hikerPop.updateRecordsBottom(records);
             }
         } catch (e) {
-            log("失败: " + e)
+            log("失败: ")
         }
         hideLoading();
         putMyVar("require_url_update", "1");
