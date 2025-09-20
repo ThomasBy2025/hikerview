@@ -295,7 +295,7 @@ let platformObj = {
     author: "Thomas喲", // 插件作者
     version: "2025.09.20", // 插件版本
     icon: "https://android-artworks.25pp.com/fs08/2025/08/19/6/110_7a4a098a92bb3f1b506acfda21a038e4_con_130x130.png", //插件封面☆
-    srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/wy.js", // 在线链接
+    srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/kw.js", // 在线链接
     description: [{ // 更新内容/简介☆
         "title": "2025.09.20",
         "records": [
