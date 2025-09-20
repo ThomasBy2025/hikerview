@@ -1388,6 +1388,8 @@ function getMedia(musicItem, quality, mediaType) {
             mediaItem = _getPath(_cachePath);
             if (mediaItem.timeout < timeout) {
                 mediaItem = false;
+            } else {
+                mediaItem.timeout -= timeout;
             }
         } catch (e) {
             mediaItem = false;
