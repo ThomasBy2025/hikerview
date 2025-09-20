@@ -1317,16 +1317,21 @@ function getQuality(musicItem, down) {
             size = i ? size.toFixed(2) : size;
             return `${size} ${units[i]}`;
         }
-        qs = Object.keys(qualities);
+
         let arr1 = [];
-        for (let i in qs) {
-            let size = qualities[qs[i]].size;
-            if (Number(size)) {
-                size = SizetoStr(size);
+        if (Object.keys(qualities).length === 0) {
+            arr1 = [musicItem.title + ' - ' + musicItem.artist];
+        } else {
+            for (let i in qs) {
+                if (qualities[qs[i]]) {
+                    let size = qualities[qs[i]].size;
+                    if (Number(size)) {
+                        size = SizetoStr(size);
+                    }
+                    arr1.push(ns[i] + size);
+                }
             }
-            arr1.push(ns[i] + size);
         }
-        if (qs.length === 0) arr1 = [musicItem.title + ' - ' + musicItem.artist];
         return $(arr1, 1, '选择下载音质').select((musicItem, arr1) => {
             let quality = arr1.indexOf(input);
             MY_URL = "";
