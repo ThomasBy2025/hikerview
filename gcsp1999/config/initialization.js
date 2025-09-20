@@ -218,37 +218,46 @@
 
 
 
+
     if (getMyVar("ghproxy_url_update", "0") == "0") {
         log("github代理保活");
         if (getItem("ghproxy", "") != "") {
+            showLoading('更新依赖代理...');
             try {
-                let ghproxys = JSON.parse(fetch("https://www.github-mirrors.zone.id/api/urls")).data.map(url => {
-                    url = url.trim();
-                    if (!url.endsWith("/")) {
-                        url = url + "/";
-                    }
-                    return url;
-                });
-                ghproxys.unshift(getItem("ghproxy"));
-                showLoading('更新依赖代理...');
-                let new_ghproxy;
-                let verify_url = 'https://raw.githubusercontent.com/src48597962/hk/master/verify';
-                for (let ghproxy of ghproxys) {
-                    try {
-                        let content = fetch(ghproxy + verify_url, {
-                            timeout: 3000
-                        });
-                        if (content == 'ok') {
-                            new_ghproxy = ghproxy;
-                            break;
+                let ghproxys = [];
+                try {
+                    ghproxys = JSON.parse(fetch("https://www.github-mirrors.zone.id/api/urls")).data.map(url => {
+                        url = url.trim();
+                        if (!url.endsWith("/")) {
+                            url = url + "/";
                         }
-                    } catch (e) {}
+                        return url;
+                    });
+                } catch (no_zone) {
+                    ghproxys = JSON.parse(fetch(getGitHub(["config", "ghproxys.json"])));
                 }
+                ghproxys.unshift(getItem("ghproxy"));
+                let verify_url = 'https://raw.githubusercontent.com/src48597962/hk/master/verify';
+                let new_ghproxy = function() {
+                    for (let ghproxy of ghproxys) {
+                        try {
+                            let verify_txt = String(fetch(ghproxy + verify_url, {
+                                timeout: 3000
+                            })).trim();
+                            if (verify_txt.match(/^\s*ok\s*$/i)) {
+                                return ghproxy;
+                                break;
+                            }
+                            // log("err: " + ghproxy + " => " + verify_txt);
+                        } catch (e) {}
+                    }
+                    return false;
+                }();
                 if (new_ghproxy && new_ghproxy != "") { // 更新成功
                     setItem("ghproxy", new_ghproxy);
                 }
-                hideLoading();
             } catch (err) {}
+            hideLoading();
         } else {
             // log("未设置github代理");
         }

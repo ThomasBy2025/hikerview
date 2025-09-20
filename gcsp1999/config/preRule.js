@@ -1465,7 +1465,7 @@ function getMedia(musicItem, quality, mediaType) {
         }
         // 缓存直链数据
         if (isCache) {
-            mediaItem.timeout += timeout;
+            mediaItem.timeout = Number(mediaItem.timeout) + Number(timeout);
             saveFile(_cachePath, JSON.stringify(mediaItem));
         }
 
@@ -1525,9 +1525,10 @@ function getMedia(musicItem, quality, mediaType) {
                     // return _getPath(["danmuLRC.xml"], "_cache", 1);
 
                     let result = [];
-                    String(lrcText).split(/\n/).map(t => {
+                    let lrcTime = [];
+                    String(lrcText).split(/\n/).map((t, i) => {
                         let mat = String(t).trim().split(/\]\s*/);
-                        let txt = String(mat.slice(1).join(']'));
+                        let txt = String(mat.slice(1).join(']')).replace(/\&/gi, "＆").replace(/"/gi, "\\\"").trim();
                         let tme = mat[0].slice(1).split(':');
                         if (txt.length) {
                             try {
@@ -1535,19 +1536,12 @@ function getMedia(musicItem, quality, mediaType) {
                                 let seconds = tme.slice(1).join(".");
                                 minutes += parseFloat(seconds);
 
-
-
-
-
-                                // 1 普通滚动  4 底部固定   5顶部固定
-                                // 6 逆向滚动   7 高级弹幕
-                                let mode = 1;
                                 let size = 20;
-                                let color = function() {
-                                    let h = Math.floor(Math.random() * 360), // 色相（0-359）
-                                        s = Math.floor(Math.random() * 50 + 50) / 100, // 饱和度（50%-100%）
-                                        l = Math.floor(Math.random() * 50 + 50) / 100, // 亮度（50%-100%，避免过暗）
-                                        c = (1 - Math.abs(2 * l - 1)) * s,
+                                let ran_color = function(isTop) { // 随机颜色
+                                    let h = Math.floor(Math.random() * 360); // 色相（0-359）
+                                    let s = Math.floor(Math.random() * 50 + 50) / 100; // 饱和度（50%-100%）
+                                    let l = Math.floor(Math.random() * 50 + 50) / 100; // 亮度（50%-100%，避免过暗）
+                                    let c = (1 - Math.abs(2 * l - 1)) * s,
                                         x = c * (1 - Math.abs((h / 60) % 2 - 1)),
                                         m = l - c / 2,
                                         // 根据色相计算 RGB 分量（0-1 范围）
@@ -1563,16 +1557,32 @@ function getMedia(musicItem, quality, mediaType) {
 
                                     // 计算十进制 RGB 值：R*65536 + G*256 + B
                                     return r * 65536 + g * 256 + b;
-                                }();
+                                }
 
                                 // 时间(s)，模式，字号，颜色
-                                result.push(`<d p="${minutes.toFixed(5)},${mode},${size},${color}">${txt}</d>`);
+                                let s = minutes.toFixed(5);
+                                lrcTime[i] = s;
+                                // 4 - 置底居中
+                                // result.push(`<d p="${s},4,${size},${ran_color()}">\t${txt}\t</d>`);
+                                // 6 - 逆向滚动
+                                // result.push(`<d p="${s},6,${size},${ran_color()}">${txt}\r</d>`);
+                                // 5 - 置顶居中
+                                // result.push(`<d p="${s},5,${size},${ran_color(true)}">${txt}</d>`);
+                                // 7 - 高级弹幕
+                                if ((lrcTime[i - 1] || !i || s) != s) { // 重叠的歌词不获取
+                                    result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r",0,0,0,0.2,4800,0,1,"SimHei",1]</d>`);
+                                    result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"1-${i}",5,"${txt}\r\r\r",0,0,0.15,0.35,4800,0,1,"SimHei",1]</d>`);
+                                    result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r\r\r",0,0,0.3,0.5,4800,0,1,"SimHei",1]</d>`);
+                                    result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r\r\r\r",0,0,0.45,0.65,4800,0,1,"SimHei",1]</d>`);
+                                }
+                                // 1 - 顺序滚动
+                                result.push(`<d p="${s},1,${size},${ran_color()}">\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t${txt}</d>`);
                             } catch (nolrc) {}
                         }
                     });
 
                     let danmuLRC = _getPath(["danmuLRC.xml"], "_cache", 1);
-                    saveFile(danmuLRC, `<?xml version="1.0" encoding="UTF-8"?>\n<i>\n${result.join("\n")}\n</i>`);
+                    saveFile(danmuLRC, `<xml version="1.0" encoding="UTF-8">\n<i>\n${result.join("\n")}\n</i>`);
                     return danmuLRC;
                 } catch (e) {}
                 return "";
