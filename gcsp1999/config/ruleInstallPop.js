@@ -19,7 +19,7 @@ let s_types = [
     "视频", "歌词", "电台", "播客",
 ];
 let s_type = getItem('s_type', '单曲');
-hikerPop.selectBottomSettingMenu({
+let pop = hikerPop.selectBottomSettingMenu({
     options: [
         SettingItem("默认播放音质", QualityNames[getItem('QualityIndex', '0')]),
         SettingItem("音质获取失败", getItem('QualityFailure', "向下兼容")),
@@ -33,13 +33,78 @@ hikerPop.selectBottomSettingMenu({
         SettingItem(),
 
         SettingItem("图标下载状态", readDir(_getPath(["image"], 0, 1)).length == 23 ? true : "文件不全"),
-        SettingItem("依赖代理接口", getItem("ghproxy", "") || "hiker://empty"),
+        SettingItem("依赖代理接口", getItem("ghproxy", "").slice(0, 16) || "hiker://empty"),
+        SettingItem("清除依赖缓存", "更新依赖"),
+        SettingItem("查看温馨提示", "编辑修改"),
         SettingItem("页面标识设置", pageHomeTypes[pageHomeIndex]),
         SettingItem("默认搜索类型", "搜索" + s_type),
     ],
     click(s, officeItem, change) {
         let isTrue;
         switch (s) {
+            case '查看温馨提示':
+                hikerPop.selectCenterIcon({
+                    iconList: Array.from({
+                        length: 24
+                    }, (t, i) => ({
+                        title: getHourHint(i, true),
+                        icon: getLenSvg(i)
+                    })),
+                    title: "温馨提示",
+                    extraMenu: new hikerPop.IconExtraMenu(() => {
+                        hikerPop.infoBottom({
+                            content: "介绍",
+                            options: [
+                                "通过 getHourHint(num) 获取返回文本",
+                                "num取值：0-23，其他值返回num本身",
+                                "如果返回的文本以js:开头，会执行eval",
+                                "",
+                                "示例：js:fetch(\"https://v1.hitokoto.cn/?encode=text\")"
+                            ],
+                            click(text) {}
+                        });
+                    }),
+                    columns: 1,
+                    // position: 0,
+                    click(a, i) {
+                        hikerPop.inputAutoRow({
+                            hint: "文本以js:开头会执行eval",
+                            title: "修改: " + i,
+                            defaultValue: getHourHint(i, true),
+                            //hideCancel: true,
+                            noAutoSoft: true, //不自动打开输入法
+                            confirm(text) {
+                                setItem("HourHint_" + i, text.trim());
+                                return "toast://设置成功\n" + text;
+                            },
+                            cancel() {
+                                return "hiker://empty";
+                            }
+                        });
+                    }
+                });
+                break;
+            case '清除依赖缓存':
+                hikerPop.confirm({
+                    content: "清除后需要能打开github的网络，进行初始化",
+                    title: "确定清除依赖缓存吗？",
+                    okTitle: "确定清除",
+                    cancelTitle: "算了算了",
+                    hideCancel: false, //隐藏取消按钮
+                    confirm() {
+                        let _json2 = JSON.parse(fetch(getGitHub(["config", "update.json"])).replace(/^\(|\)$/g, ""));
+                        for (let _key in _json2) {
+                            log("清除依赖：" + _key);
+                            deleteCache(getGitHub(["config", _key]));
+                        }
+                        pop.dismiss();
+                        return "hiker://清除成功";
+                    },
+                    cancel() {
+                        return "hiker://empty";
+                    }
+                });
+                break;
             case '默认播放音质':
                 hikerPop.selectCenterIcon({
                     iconList: QualityNames.map(title => ({

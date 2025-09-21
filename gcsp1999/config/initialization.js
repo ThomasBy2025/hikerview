@@ -218,8 +218,8 @@
 
 
 
-
-    if (getMyVar("ghproxy_url_update", "0") == "0") {
+    let new_time = Number($.dateFormat(new Date().getTime(), 'yyyyMMdd'));
+    if (Number(getItem("ghproxy_url_update", "20250921")) < new_time) {
         log("github代理保活");
         if (getItem("ghproxy", "") != "") {
             showLoading('更新依赖代理...');
@@ -261,12 +261,12 @@
         } else {
             // log("未设置github代理");
         }
-        putMyVar("ghproxy_url_update", "1");
+        setItem("ghproxy_url_update", new_time + "");
     }
 
 
 
-    if (getMyVar("require_url_update", "0") == "0") {
+    if (Number(getItem("require_url_update", "20250921")) < new_time) {
         log("检测并更新依赖");
         try {
             let update_url = getGitHub(["config", "update.json"]);
@@ -298,7 +298,7 @@
             log("失败: ")
         }
         hideLoading();
-        putMyVar("require_url_update", "1");
+        setItem("require_url_update", new_time + "");
     }
 
 

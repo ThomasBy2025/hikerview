@@ -79,8 +79,8 @@ function readDir(path) {
 
 
 // 返回温馨提示
-function getHourHint(hour) {
-    return getItem('HourHint_' + hour, function() {
+function getHourHint(hour, noEval) {
+    return String(getItem('HourHint_' + hour, "").trim() || function() {
         switch (String(hour)) {
             case '5':
                 return "晨雾编织着朦胧的前奏，请踩着露珠的韵脚走进今日"
@@ -132,7 +132,13 @@ function getHourHint(hour) {
                 return hour;
                 break;
         }
-    }());
+    }()).trim().replace(/^js:([\s\S]+)/i, function($0, $1) {
+        try {
+            return noEval ? $1 : eval($1);
+        } catch (e) {
+            return "js异常";
+        }
+    })
 }
 
 
@@ -147,6 +153,18 @@ function getImageUrl(_type) {
         _type = 'hiker://images/' + _type
     }
     return _type;
+}
+
+
+// 获取数字图标
+function getLenSvg(len) {
+    let Svg = `
+  <svg width="1000" height="800" xmlns="http://www.w3.org/2000/svg">
+    <rect x="25" y="25" width="950" height="750" rx="250" ry="250" fill="#5BA946" stroke="#5BA946" stroke-width="25"/>
+    <text x="510" y="600" font-family="Arial, sans-serif" text-anchor="middle" dominant-baseline="middle" font-size="600" fill="#ffffff" stroke="#ffffff" stroke-width="30">${len}</text>
+</svg>
+`;
+    return "data:image/svg+xml;base64," + base64Encode(Svg);
 }
 
 
