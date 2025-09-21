@@ -1538,7 +1538,8 @@ function getMedia(musicItem, quality, mediaType) {
                                 let seconds = tme.slice(1).join(".");
                                 minutes += parseFloat(seconds);
 
-                                let size = 20;
+                                let size = getItem("danmuSize", "10");
+                                let mode = [5, 1, 6, 7, 4][getItem('danmuMode', '1')];
                                 let ran_color = function(isTop) { // 随机颜色
                                     let h = Math.floor(Math.random() * 360); // 色相（0-359）
                                     let s = Math.floor(Math.random() * 50 + 50) / 100; // 饱和度（50%-100%）
@@ -1564,21 +1565,28 @@ function getMedia(musicItem, quality, mediaType) {
                                 // 时间(s)，模式，字号，颜色
                                 let s = minutes.toFixed(5);
                                 lrcTime[i] = s;
-                                // 4 - 置底居中
-                                // result.push(`<d p="${s},4,${size},${ran_color()}">\t${txt}\t</d>`);
-                                // 6 - 逆向滚动
-                                // result.push(`<d p="${s},6,${size},${ran_color()}">${txt}\r</d>`);
-                                // 5 - 置顶居中
-                                // result.push(`<d p="${s},5,${size},${ran_color(true)}">${txt}</d>`);
-                                // 7 - 高级弹幕
-                                if ((lrcTime[i - 1] || !i || s) != s) { // 重叠的歌词不获取
-                                    result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r",0,0,0,0.2,4800,0,1,"SimHei",1]</d>`);
-                                    result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"1-${i}",5,"${txt}\r\r\r",0,0,0.15,0.35,4800,0,1,"SimHei",1]</d>`);
-                                    result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r\r\r",0,0,0.3,0.5,4800,0,1,"SimHei",1]</d>`);
-                                    result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r\r\r\r",0,0,0.45,0.65,4800,0,1,"SimHei",1]</d>`);
+                                switch (String(mode)) {
+                                    case "4": // 4 - 置底居中
+                                        result.push(`<d p="${s},4,${size},${ran_color()}">\t${txt}\t</d>`);
+                                        break;
+                                    case "6": // 6 - 逆向滚动
+                                        result.push(`<d p="${s},6,${size},${ran_color()}">${txt}\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t</d>`);
+                                        break;
+                                    case "5": // 5 - 置顶居中
+                                        result.push(`<d p="${s},5,${size},${ran_color(true)}">${txt}</d>`);
+                                        break;
+                                    case "7": // 7 - 高级弹幕
+                                        if ((lrcTime[i - 1] || !i || s) != s) { // 重叠的歌词不获取
+                                            result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r",0,0,0,0.2,4800,0,1,"SimHei",1]</d>`);
+                                            result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"1-${i}",5,"${txt}\r\r\r",0,0,0.15,0.35,4800,0,1,"SimHei",1]</d>`);
+                                            result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r\r\r",0,0,0.3,0.5,4800,0,1,"SimHei",1]</d>`);
+                                            result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r\r\r\r",0,0,0.45,0.65,4800,0,1,"SimHei",1]</d>`);
+                                        }
+                                    default:
+                                    case "1": // 1 - 顺序滚动
+                                        result.push(`<d p="${s},1,${size},${ran_color()}">\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t${txt}</d>`);
+                                        break;
                                 }
-                                // 1 - 顺序滚动
-                                result.push(`<d p="${s},1,${size},${ran_color()}">\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t${txt}</d>`);
                             } catch (nolrc) {}
                         }
                     });

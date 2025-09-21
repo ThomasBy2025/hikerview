@@ -108,12 +108,66 @@ hikerPop.selectBottomSettingMenu({
                 change();
                 break;
             case "显示弹幕歌词":
-                isTrue = officeItem.getSelected() === 1;
-                setItem('danmuLrc', isTrue ? "0" : "1");
-                officeItem.setSelected(isTrue ? -1 : 1);
-                change();
+                let danmuModes = ["置顶居中", "顺序滚动", "逆向滚动", "高级弹幕", "置底居中"];
+                hikerPop.selectBottomSettingMenu({
+                    options: [
+                        SettingItem("启用状态", getItem('danmuLrc', '0') == "1", "显示弹幕"),
+                        SettingItem("排版样式", danmuModes[getItem('danmuMode', '1')]),
+                        SettingItem("弹幕颜色", "随机获取"),
+                        SettingItem("字号大小", getItem("danmuSize", "10")),
+                        SettingItem("高级设置", "完善中~"),
+                        SettingItem()
+                    ],
+                    click(s2, officeItem2, change2) {
+                        let isTrue2;
+                        switch (s2) {
+                            case "启用状态":
+                                isTrue2 = officeItem2.getSelected() === 1;
+                                setItem('danmuLrc', isTrue2 ? "0" : "1");
+                                officeItem2.setSelected(isTrue2 ? -1 : 1);
+                                change2();
+                                break;
+                            case "字号大小":
+                                hikerPop.seekCenter({
+                                    title: "设置弹幕字号",
+                                    max: 90,
+                                    pos: officeItem2.getDesc() - 10,
+                                    onChange(pos, max, fromHtml) {
+                                        return fromHtml("当前字号：" + String(pos + 10).fontcolor("red"));
+                                    },
+                                    rightClick(pos, max) {
+                                        let trueRes = String(pos + 10);
+                                        setItem("danmuSize", trueRes);
+                                        officeItem2.setDesc(trueRes);
+                                        change2();
+                                    },
+                                    centerTitle: "取消",
+                                });
+                                break;
+                            case "排版样式":
+                                hikerPop.selectCenterIcon({
+                                    iconList: danmuModes.map(title => ({
+                                        icon: "hiker://images/rule_type_news",
+                                        title: title
+                                    })),
+                                    title: s2,
+                                    columns: 1,
+                                    position: getItem('danmuMode', '1'),
+                                    click(a, i) {
+                                        setItem('danmuMode', i + "");
+                                        officeItem2.setDesc(a);
+                                        change2();
+                                    }
+                                });
+                                break;
+                        }
+                    },
+                    onDismiss() {
+                        officeItem.setSelected(getItem('danmuLrc', "0") == "1" ? 1 : -1);
+                        change();
+                    }
+                });
                 break;
-
             case "图标下载状态":
                 if (officeItem.getDesc() == "文件不全") {
                     officeItem.setSelected(1);
@@ -132,7 +186,31 @@ hikerPop.selectBottomSettingMenu({
                         return "toast://图标初始化成功";
                     });
                 } else {
-                    return "toast://图标已下载~";
+                    hikerPop.selectCenterIcon({
+                        iconList: readDir(_getPath(["image"], 0, 1)).map(title => ({
+                            icon: getImageUrl(title),
+                            title
+                        })),
+                        title: "本地图片劫持",
+                        columns: 2,
+                        click(a, i) {
+                            hikerPop.inputAutoRow({
+                                hint: "本地文件，可改成在线链接",
+                                title: "劫持: " + a,
+                                defaultValue: getItem("image@" + a, "").trim(),
+                                //hideCancel: true,
+                                noAutoSoft: true, //不自动打开输入法
+                                confirm(text) {
+                                    setItem("image@" + a, text.trim());
+                                    return "toast://设置成功\n" + text;
+                                },
+                                cancel() {
+                                    return "hiker://empty";
+                                }
+                            });
+                        }
+                    });
+                    return "hiker://empty";
                 }
                 break;
             case "依赖代理接口":

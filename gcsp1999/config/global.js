@@ -139,57 +139,14 @@ function getHourHint(hour) {
 // 获取本地图片
 function getImageUrl(_type) {
     _type = String(_type || 'rule_type_audio');
+    _type = getItem("image@" + _type, "").trim() || _type;
     if (/^(?!http).+\./i.test(_type)) {
-        return "hiker://files/rules/Thomas/gcsp1999/image/" + _type;
+        return _getPath(["image", _type], 0, 1);
     }
-    switch (_type) {
-        case '设置':
-            return 'http://123.56.105.145/tubiao/messy/30.svg';
-            break;
-        case '收藏':
-            return 'http://123.56.105.145/tubiao/more/129.png';
-            break;
-        case '作者':
-            return 'http://q.qlogo.cn/g?b=qq&nk=1585568865&s=140';
-            break;
-        case 'add':
-            return 'https://cdn.icon-icons.com/icons2/37/PNG/512/addproperty_a%C3%B1adir_3625.png';
-            break;
-
-        case '推荐':
-            return 'https://cf.ghproxy.cc/https://raw.githubusercontent.com/ls125781003/tubiao/main/3d/64.png';
-            break;
-        case '语种':
-            return 'https://cf.ghproxy.cc/https://raw.githubusercontent.com/ls125781003/tubiao/main/3d/182.png';
-            break;
-        case '风格':
-            return 'https://cf.ghproxy.cc/https://raw.githubusercontent.com/ls125781003/tubiao/main/3d/359.png';
-            break;
-        case '场景':
-            return 'https://cf.ghproxy.cc/https://raw.githubusercontent.com/ls125781003/tubiao/main/3d/90.png';
-            break;
-        case '心情':
-            return 'https://cf.ghproxy.cc/https://raw.githubusercontent.com/ls125781003/tubiao/main/3d/131.png';
-            break;
-        case '主题':
-            return 'https://cf.ghproxy.cc/https://raw.githubusercontent.com/ls125781003/tubiao/main/3d/254.png';
-            break;
-        case '年代':
-            return 'https://cf.ghproxy.cc/https://raw.githubusercontent.com/ls125781003/tubiao/main/3d/186.png';
-            break;
-        case '播客':
-            return 'https://cf.ghproxy.cc/https://raw.githubusercontent.com/ls125781003/tubiao/main/3d/172.png';
-            break;
-        case '排行':
-            return 'https://cf.ghproxy.cc/https://raw.githubusercontent.com/ls125781003/tubiao/main/3d/51.png';
-            break;
-        default:
-            if (!/https?\:\/\//i.test(_type)) {
-                _type = 'hiker://images/' + _type
-            }
-            return _type;
-            break;
+    if (!/https?\:\/\//i.test(_type)) {
+        _type = 'hiker://images/' + _type
     }
+    return _type;
 }
 
 
