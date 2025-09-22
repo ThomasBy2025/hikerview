@@ -303,6 +303,62 @@
 
 
 
+    // 酷狗 - token保活
+    if (getItem("kg@userVariables@token") != "" && Number(getItem("kg_refresh_token", "20250921")) < new_time) {
+        let kg = _getPlatform("kg");
+        let {
+            userid,
+            token,
+            appid,
+            signkey
+        } = getUserVariables(kg);
+        log("kg_refresh_token");
+        let new_token = kg.refresh_token(userid, token, appid, signkey);
+        if (new_token == 20018) {
+            log("token获取失败，可能登录掉了，请重新配置");
+        } else if (new_token == 20010) {
+            log("token获取失败，用户数据错误，请重新配置");
+        } else if (new_token) {
+            log("token获取成功  |  是否更改：" + (token != new_token));
+            setItem("kg@userVariables@token", new_token + "");
+        } else {
+            log("token获取失败，原因未知");
+        }
+        if (appid == '3116') {
+            confirm({
+                title: '[酷狗概念版] 听歌领会员',
+                content: '每日听歌即可领取1日酷狗概念版VIP',
+                confirm: $.toString((new_time) => {
+                    setItem("kg_refresh_token", new_time + "");
+                    MY_URL = "";
+                    require(config.preRule);
+                    return _getPlatform("kg").Lite_Signin();
+                }, new_time),
+                cancel: $.toString((new_time) => {
+                    setItem("kg_refresh_token", new_time + "");
+                    return "toast://今日不再提示"
+                }, new_time)
+            });
+        } else {
+            setItem("kg_refresh_token", new_time + "");
+        }
+    }
+
+
+
+    // 腾讯 - token保活  #5天刷新一次
+    if (getItem("tx@userVariables@qm_keyst") != "" && Number(getItem("tx_refresh_token", "20250921")) < new_time) {
+        let tx = _getPlatform("tx").refresh_login();
+        if (tx == undefined) { // 登录成功
+            setItem("tx_refresh_token", (new_time + 5) + "");
+        } else {
+            toast(tx.replace("toast://", "腾讯音乐："));
+            setItem("tx_refresh_token", new_time + "");
+        }
+    }
+
+
+
     // 通过依赖检测规则是否更新
     // 只在首页检测，子页面MY_RULE的version是0
     if (themeType == "home" && MY_RULE.version < 20250902) {
