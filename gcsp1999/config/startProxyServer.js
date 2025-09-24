@@ -74,7 +74,7 @@ $.exports = function(musicItem, quality, mediaType) {
                     }
 
                     // 返回链接
-                    let playUrl = mediaItem.url || mediaItem.urls[0] || mediaItem.audioUrls[0];
+                    let playUrl = mediaItem.url || mediaItem.audioUrls[0] || mediaItem.urls[0];
                     let playHead = mediaItem.headers[0] || {};
                     return {
                         body: fetch(playUrl, {
@@ -105,7 +105,14 @@ $.exports = function(musicItem, quality, mediaType) {
                             return getDanMu(mediaItem, danmuLrc);
                         } else {
                             try {
-                                return fetch(mediaItem.danmu);
+                                return JSON.stringify({
+                                    body: '',
+                                    headers: {
+                                        'Content-Type': 'text/html',
+                                        'Location': mediaItem.danmu
+                                    },
+                                    statusCode: 302
+                                });
                             } catch (e) {}
                         }
                     }
@@ -127,7 +134,8 @@ $.exports = function(musicItem, quality, mediaType) {
         serverPath: "",
         source: musicItem.platform,
         songId: musicItem.mid || musicItem.id || musicItem.vid || musicItem.rid,
-        quality: Quality
+        quality: Quality,
+        mediaType: (quality > 1 ? ".flac" : ".mp3")
     }
     let playNames = [];
     let playUrls = [];
@@ -154,6 +162,19 @@ $.exports = function(musicItem, quality, mediaType) {
     playNames.unshift("原生");
 
 
+    // 原生替代
+    if (isMedia && musicItem.vid) {
+        _par.serverType = "getVideo";
+        playUrls.push(buildUrl(purl, _par));
+        playNames.push("视频");
+    }
+    if (isMedia && musicItem.rid) {
+        _par.serverType = "getRadio";
+        playUrls.push(buildUrl(purl, _par));
+        playNames.push("播客");
+    }
+
+
     // 是否读取链接信息 #checkMetadata=true#
     let _url = "#ignoreImg=true#" + getItem('checkMetadata', '');
     // 强制识别音频 #isMusic=true#
@@ -163,7 +184,12 @@ $.exports = function(musicItem, quality, mediaType) {
     for (let i in playUrls) {
         let u = String(playUrls[i]);
         // 是否记忆播放进度 &memoryPosition=null
-        if (u) u = u.replace(/$/, (u.includes("?") ? "&" : "?") + getItem('memoryPosition', '')) + _url;
+        if (u) {
+            let n = getItem('memoryPosition', '');
+            u = u.replace(/$/, function() {
+                return n ? ((u.includes("?") ? "&" : "?") + n) : ""
+            }) + _url;
+        }
         playUrls[i] = u;
     }
     return JSON.stringify({
