@@ -63,9 +63,9 @@
                     description: plugin.description || "",
                     platformProxy: plugin.platformProxy,
                     userVariables: plugin.userVariables,
+                    loginUrl: plugin.loginRule && plugin.loginRule.loginUrl && true,
                     supportedSearchType: Array.isArray(plugin.supportedSearchType) ? plugin.supportedSearchType : ["单曲", "歌单", "专辑", "歌手", "视频", "歌词", "电台", "播客"],
                     import_url: plugin.import_url && true,
-                    // 登录相关还没写 - 完善中
                 };
                 if (plugin.search) {
                     search1.push(detail);
@@ -84,7 +84,7 @@
                         musicfree[regName] = plugin.platform;
                     }
                 }
-                getUserVariables(detail);// 初始化用户变量
+                getUserVariables(detail); // 初始化用户变量
                 details.push(detail);
             } catch (e) {
                 log("标识: " + platform + " 的插件异常，无法获取");

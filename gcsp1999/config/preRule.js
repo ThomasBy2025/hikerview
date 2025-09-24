@@ -659,6 +659,7 @@ function getThemeData(themeType) {
 
         case "search":
         case "collection":
+        case "loginRule":
             getGitHub(["config", themeType + ".js"], true);
             break;
         case "executeThemeIndex":

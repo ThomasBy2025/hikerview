@@ -175,7 +175,8 @@ else details.map((_, i) => {
                                                             onlyHeaders: true,
                                                             timeout: 3000
                                                         })).headers.location || "";
-                                                        return (s_t2_1[0].split("/").length > 4 ? s_t2_1[0] : s_t2) || s_t2;
+                                                        let s_t2_2 = s_t2_1[0].split("/").length;
+                                                        return (s_t2_2 > 5 ? s_t2_1[0] : s_t2) || s_t2;
                                                     } catch (noFetch) {};
                                                     return s_t2;
                                                 }(urlLike);
@@ -339,7 +340,20 @@ else details.map((_, i) => {
                                     hikerPop.selectBottomSettingMenu({
                                         options,
                                         click(s, officeItem, change) {
-                                            if ("登录" == s) return "toast://完善中";
+                                            if ("登录" == s) {
+                                                if (_.loginUrl) {
+                                                    return buildUrl("hiker://page/home", {
+                                                        p: "nopage",
+                                                        t: "loginRule",
+                                                        s: "#noHistory##noRecordHistory#",
+                                                        platform: _.platform,
+                                                        pageTitle: _.title + " - 登录账号",
+                                                        rule: MY_RULE.title,
+                                                    });
+                                                } else {
+                                                    return "toast://该插件不支持网站登录";
+                                                }
+                                            }
                                             let [_title, _key] = s.split("\r\n\n\n");
                                             let _key2 = _.platform + "@userVariables@" + _key;
                                             hikerPop.inputAutoRow({
@@ -349,6 +363,7 @@ else details.map((_, i) => {
                                                 //hideCancel: true,
                                                 noAutoSoft: true, //不自动打开输入法
                                                 confirm(text) {
+                                                    globalMap0.clearVar(rule_id + "@userVariables@" + _.platform);
                                                     setItem(_key2, text);
                                                     officeItem.setDesc((text && text.slice(0, 16)) || hintMap[_key]);
                                                     change();
