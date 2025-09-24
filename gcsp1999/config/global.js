@@ -246,11 +246,15 @@ function getDownData(_json) {
 
 // 获取插件的用户变量
 function getUserVariables(_) {
-    let userVariables = {};
-    if (Array.isArray(_.userVariables) && _.userVariables.length) {
-        _.userVariables.map(__ => {
-            userVariables[__.key] = getItem(_.platform + "@userVariables@" + __.key, "");
-        });
+    let userVariables = globalMap0.getVar(rule_id + "@userVariables@" + _.platform);
+    if (userVariables == "") {
+        userVariables = {};
+        if (Array.isArray(_.userVariables) && _.userVariables.length) {
+            _.userVariables.map(__ => {
+                userVariables[__.key] = getItem(_.platform + "@userVariables@" + __.key, "");
+            });
+        }
+        globalMap0.putVar(rule_id + "@userVariables@" + _.platform, userVariables);
     }
     return userVariables;
 }

@@ -84,6 +84,7 @@
                         musicfree[regName] = plugin.platform;
                     }
                 }
+                getUserVariables(detail);// 初始化用户变量
                 details.push(detail);
             } catch (e) {
                 log("标识: " + platform + " 的插件异常，无法获取");
