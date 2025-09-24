@@ -15,7 +15,7 @@ function formatMusicItem(_) {
                 'h': "standard",
                 'sq': "high",
                 'hr': "super"
-            } [k];
+            }[k];
             qualities[t] = {};
             qualities[t].size = _[k].size;
             // qualities[t].url = "";
@@ -351,15 +351,21 @@ let platformObj = {
     title: "网易音乐", // 插件名称☆
     type: "音频", // 插件分类☆ 随便写：视频 / 音频 / 其他
     author: "Thomas喲", // 插件作者
-    version: "2025.09.20", // 插件版本
+    version: "2025.09.24", // 插件版本
     icon: "https://android-artworks.25pp.com/fs08/2025/08/29/0/110_e8f7db85c17637c2d54309fcf535cadc_con_130x130.png", //插件封面☆
     srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/wy.js", // 在线链接
     description: [{ // 更新内容/简介☆
-        "title": "2025.09.20",
+        "title": "2025.09.24",
         "records": [
             "““反馈Q群@365976134””",
+            "““更新””: 登录逻辑函数",
+            "‘‘修复’’: 试听链接判断"
+        ]
+    }, {
+        "title": "2025.09.20",
+        "records": [
             "““更新””: 资源导入相关逻辑",
-            "‘‘修复’’: 45秒试听链接不返回"
+            "‘‘优化’’: 试听链接不返回"
         ]
     }, {
         "title": "2025.09.08",
@@ -377,6 +383,13 @@ let platformObj = {
         name: "用户数据",
         hint: "music_u / music_a"
     }],
+    loginRule: { // 实现登录，
+        loginUrl: "https://y.music.163.com/m/login",
+        music_u: {
+            reg: /music_[ua]=([^;]+)/i,
+            index: 1
+        }
+    },
     debug_musicItem: {
         "platform": "wy",
         "type": "1",
@@ -406,10 +419,14 @@ let platformObj = {
 
 
 
+
+
+
+
     // 插件已适配musicfree☆
     // musicfree版本的platform需要和插件名称一致
     musicfree: {
-        srcUrl: "", // 插件musicfree版本在线链接
+        srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/musicfree/refs/heads/main/plugins/wy.js", // 插件musicfree版本在线链接
         regNames: ["网易音乐", "网易云音乐", "网易云", "小芸音乐", "简繁音乐", "云音乐", "元力WY", "网抑云", "网易", "NeteaseMusic"] // 插件在musicfree的同源名称
     },
 
@@ -460,7 +477,7 @@ let platformObj = {
                 t: "voice",
                 m: formatRadioItem
             }
-        } [type];
+        }[type];
         let _ = searchBase(query, page, stype.t, stype.v || "");
         let list = _.resources || _.albums || _.artists || [];
 
@@ -705,7 +722,7 @@ let platformObj = {
                 "path2": "hotAlbums",
                 "mapJs": formatAlbumItem
             },
-        } [artistType || "歌曲"];
+        }[artistType || "歌曲"];
         let res = ajax3(T.path1 + artistId, {});
         if (T.path2 == "hotSongs") {
             res[T.path2] = platformObj.getMusicInfo(res[T.path2]);
@@ -802,7 +819,8 @@ let platformObj = {
             level: qualityMap[quality]
         }, header).data;
         if (_ && _[0] && _[0].code == 404) return false;
-        if (_ && _[0] && _[0].url && !(_[0].freeTrialInfo && _[0].freeTrialInfo.end == 45)) {
+        // log(_)
+        if (_ && _[0] && _[0].url && !_[0].freeTrialInfo) {
             url = String(_[0].url).split("?")[0];
         }
         if (url && url != "") {
@@ -899,7 +917,7 @@ let platformObj = {
                     '480': '【高清】 ',
                     '360': '【标清】 ',
                     '240': '【流畅】 '
-                } [_.r] + _.r + 'P';
+                }[_.r] + _.r + 'P';
                 names.push(_r);
                 urls.push(_.url);
             });
