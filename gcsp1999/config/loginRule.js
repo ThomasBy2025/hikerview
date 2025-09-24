@@ -1,12 +1,14 @@
 addListener("onClose", () => clearMyVar("cookie"));
 platform = getParam('platform');
-let loginRule = _getPlatform(platform).loginRule;
+let loginUrl = _getPlatform(platform).loginRule.loginUrl;
 d.push({
     title: "““确认登录””",
-    url: $("#noLoading#").lazyRule((rule_id, platform, loginRule) => {
+    url: $("#noLoading#").lazyRule((platform) => {
+        require(config.preRule);
+        let loginRule = _getPlatform(platform).loginRule;
         delete loginRule.loginUrl;
         let cookie = String(getMyVar("cookie", ""));
-        let isLogin = false;
+        let isLogin;
         let userVariables = {};
         for (let key in loginRule) {
             try {
@@ -17,7 +19,11 @@ d.push({
                     value = cookie.match(value.reg)[value.index] || "";
                 }
                 userVariables[key] = value;
-                isLogin = true;
+                if (isLogin === undefined || isLogin) {
+                    isLogin = true;
+                } else {
+                    isLogin = false;
+                }
             } catch (e) {
                 isLogin = false;
             }
@@ -32,7 +38,7 @@ d.push({
         } else {
             return "toast://未登录";
         }
-    }, rule_id, platform, loginRule),
+    }, platform),
     desc: "““””" + "点击头像可以退出账号重新登录".small(),
     col_type: "text_center_1"
 });
@@ -41,7 +47,7 @@ d.push({
 });
 d.push({
     col_type: "x5_webview_single",
-    url: loginRule.loginUrl,
+    url: loginUrl,
     desc: "list&&screen-150",
     extra: {
         ua: MOBILE_UA,
@@ -51,6 +57,6 @@ d.push({
                 cookie = fba.getCookie(durl);
                 fba.putVar(title + "@cookie", cookie);
             }, 500);
-        }, MY_RULE.title, loginRule.loginUrl)
+        }, MY_RULE.title, loginUrl)
     }
 });
