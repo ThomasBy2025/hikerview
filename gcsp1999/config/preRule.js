@@ -1367,7 +1367,7 @@ function getMedia(musicItem, quality, mediaType) {
     if (0 > quality || quality > 3) {
         return "toast://无法解析";
     }
-    if (mediaType != "down" && getItem("startProxyServer", "0") == "1") { // 播放链接加密
+    if (mediaType != "0" && getItem("startProxyServer", "0") == "1") { // 播放链接加密
         return $.require(getGitHub(["config", "startProxyServer.js"]))(musicItem, quality, mediaType);
     }
     let Quality = ["low", "standard", "high", "super"][quality];
@@ -1474,7 +1474,7 @@ function getMedia(musicItem, quality, mediaType) {
         }
 
         // 获取链接设置
-        if (mediaType != "down") {
+        if (mediaType != "0") {
             // 是否读取链接信息 #checkMetadata=true#
             let _url = getItem('checkMetadata', '');
             // 强制识别音频 #isMusic=true#
