@@ -17,7 +17,7 @@ d.push({
         const hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
 
         function up(a) {
-            let list = findItemsByCls(id + ':addlist') || [];
+            let list = findItemsByCls(id + ':itemlist') || [];
             for (let it of list) {
                 updateItem(it.extra.id, {
                     col_type: a

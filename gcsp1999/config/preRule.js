@@ -29,11 +29,8 @@ const rule_id = "gcsp1999";
 let is_down = getMyVar('music_down', '0') == '1';
 let themeType = getParam('t', '');
 getGitHub(["config", "global.js"], true);
-getGitHub(["config", "initialization.js"], true);
-
-// 本地文件夹操作
-function getDirectory(path) {
-    return getGitHub(["config", "Flie.js"], true);
+if (!MY_PARAMS.startProxyServer) { // 不是在startProxyServer环境
+    getGitHub(["config", "initialization.js"], true);
 }
 
 
@@ -1370,6 +1367,9 @@ function getMedia(musicItem, quality, mediaType) {
     if (0 > quality || quality > 3) {
         return "toast://无法解析";
     }
+    if (mediaType != "down" && getItem("startProxyServer", "0") == "1") { // 播放链接加密
+        return $.require(getGitHub(["config", "startProxyServer.js"]))(musicItem, quality, mediaType);
+    }
     let Quality = ["low", "standard", "high", "super"][quality];
     let mediaItem;
     let mediaPlatform = {
@@ -1378,8 +1378,8 @@ function getMedia(musicItem, quality, mediaType) {
         getVideo: () => false,
         getRadio: () => false,
     };
-    let isMedia = musicItem.type != 8 && musicItem.type != 9;
     let _cachePath = _getPath(["mediaCache", musicItem.platform, musicItem.mid || musicItem.id || musicItem.vid || musicItem.rid, Quality + ".json"], "_cache", 1);
+    let isMedia = musicItem.type != 8 && musicItem.type != 9;
     let timeout = new Date().getTime();
     let isCache = getItem('MediaCache', '1') == "1";
 
@@ -1459,12 +1459,14 @@ function getMedia(musicItem, quality, mediaType) {
         }
         mediaItem.urls = mediaItem.urls.filter(Boolean); // 去除假链接
         if (!mediaItem.urls.length) return "toast://无法解析";
+
         // 获取LRC歌词
         if (!mediaItem.lyric) {
             try {
                 mediaItem.lyric = mediaPlatform.getLyric(musicItem);
             } catch (e) {}
         }
+
         // 缓存直链数据
         if (isCache) {
             mediaItem.timeout = Number(mediaItem.timeout) + Number(timeout);
@@ -1488,115 +1490,19 @@ function getMedia(musicItem, quality, mediaType) {
         }
 
         // 格式化歌词
-        mediaItem.lyric = String(mediaItem.lyric).replace(/\<\/?(br|p)\/?\>/gi, "\n")
-            .replace(/^data\:text\/plain\,\s*|\<\s*\-?\d+\s*\,\s*\-?\d+\s*\>/gi, "") // 目前不支持逐字歌词
-            .replace(/(\[\d+\:\d+)\:(\d+\])/gi, "$1.$2");
-        if (!mediaItem.lyric.match(/^\s*https?\:\/\/|\d+\:\d+/i)) { // 不是 标准lrc / lrcurl
-            mediaItem.lyric = function(lrc, time) {
-                let time = String(time || 200);
-                if (time.match(/\d+\:\d+/)) {
-                    time = function(time) {
-                        let sp = time.split(":");
-                        let l3 = sp.length == 3;
-                        let h = l3 ? sp[0] : sp[3] || 0;
-                        let m = l3 ? sp[1] : sp[0] || 0;
-                        let s = l3 ? sp[2] : sp[1] || 0;
-                        return (h * 60 * 60) + (m * 60) + s;
-                    }(time.replace(/^\s*0+\:/gi, ""));
-                } else if (time.match(/\D/)) {
-                    time = 200;
-                }
-                time = Number(time) || 200;
-                let n = String(lrc).replace(/\s*((\n|(\u003c|<)\/?(br|p)\/?(\u003e|>))\s*)+\s*/gi, '\n').trim().split(/\n/);
-                return n.map((lineLyric, i) => {
-                    let itime = i / n.length * time;
-                    let s = ((itime - 0) % 60).toFixed(3).padStart(6, '0');
-                    let m = ((itime - s) / 60).toFixed(0).padStart(2, '0');
-                    return `[${m}:${s}]` + lineLyric;
-                }).join('\n');
-            }(mediaItem.lyric, musicItem.duration || 200);
-        }
+        mediaItem.lyric = getLyric(mediaItem);
+
         // 显示弹幕歌词
         if (getItem('danmuLrc', '0') == "1" && !mediaItem.danmu) {
-            mediaItem.danmu = function(lrcText) {
-                try {
-                    if (!lrcText.match(/\d+\:\d+/) && lrcText.match(/^\s*https?\:\/\//)) { // 可能是lrc链接
-                        lrcText = fetch(lrcText);
-                        mediaItem.lyric = lrcText;
-                    }
-                    // return _getPath(["danmuLRC.xml"], "_cache", 1);
-
-                    let result = [];
-                    let lrcTime = [];
-                    String(lrcText).split(/\n/).map((t, i) => {
-                        let mat = String(t).trim().split(/\]\s*/);
-                        let txt = String(mat.slice(1).join(']')).replace(/\&/gi, "＆").replace(/"/gi, "\\\"").trim();
-                        let tme = mat[0].slice(1).split(':');
-                        if (txt.length) {
-                            try {
-                                let minutes = parseInt(tme[0], 10) * 60;
-                                let seconds = tme.slice(1).join(".");
-                                minutes += parseFloat(seconds);
-
-                                let size = getItem("danmuSize", "10");
-                                let mode = [5, 1, 6, 7, 4][getItem('danmuMode', '1')];
-                                let ran_color = function(isTop) { // 随机颜色
-                                    let h = Math.floor(Math.random() * 360); // 色相（0-359）
-                                    let s = Math.floor(Math.random() * 50 + 50) / 100; // 饱和度（50%-100%）
-                                    let l = Math.floor(Math.random() * 50 + 50) / 100; // 亮度（50%-100%，避免过暗）
-                                    let c = (1 - Math.abs(2 * l - 1)) * s,
-                                        x = c * (1 - Math.abs((h / 60) % 2 - 1)),
-                                        m = l - c / 2,
-                                        // 根据色相计算 RGB 分量（0-1 范围）
-                                        [r1, g1, b1] = h < 60 ? [c, x, 0] :
-                                        h < 120 ? [x, c, 0] :
-                                        h < 180 ? [0, c, x] :
-                                        h < 240 ? [0, x, c] :
-                                        h < 300 ? [x, 0, c] : [c, 0, x],
-                                        // 转换为 0-255 整数
-                                        r = Math.floor((r1 + m) * 255),
-                                        g = Math.floor((g1 + m) * 255),
-                                        b = Math.floor((b1 + m) * 255);
-
-                                    // 计算十进制 RGB 值：R*65536 + G*256 + B
-                                    return r * 65536 + g * 256 + b;
-                                }
-
-                                // 时间(s)，模式，字号，颜色
-                                let s = minutes.toFixed(5);
-                                lrcTime[i] = s;
-                                switch (String(mode)) {
-                                    case "4": // 4 - 置底居中
-                                        result.push(`<d p="${s},4,${size},${ran_color()}">\t${txt}\t</d>`);
-                                        break;
-                                    case "6": // 6 - 逆向滚动
-                                        result.push(`<d p="${s},6,${size},${ran_color()}">${txt}\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t</d>`);
-                                        break;
-                                    case "5": // 5 - 置顶居中
-                                        result.push(`<d p="${s},5,${size},${ran_color(true)}">${txt}</d>`);
-                                        break;
-                                    case "7": // 7 - 高级弹幕
-                                        if ((lrcTime[i - 1] || !i || s) != s) { // 重叠的歌词不获取
-                                            result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r",0,0,0,0.2,4800,0,1,"SimHei",1]</d>`);
-                                            result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"1-${i}",5,"${txt}\r\r\r",0,0,0.15,0.35,4800,0,1,"SimHei",1]</d>`);
-                                            result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r\r\r",0,0,0.3,0.5,4800,0,1,"SimHei",1]</d>`);
-                                            result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r\r\r\r",0,0,0.45,0.65,4800,0,1,"SimHei",1]</d>`);
-                                        }
-                                    default:
-                                    case "1": // 1 - 顺序滚动
-                                        result.push(`<d p="${s},1,${size},${ran_color()}">\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t${txt}</d>`);
-                                        break;
-                                }
-                            } catch (nolrc) {}
-                        }
-                    });
-
-                    let danmuLRC = _getPath(["danmuLRC.xml"], "_cache", 1);
-                    saveFile(danmuLRC, `<xml version="1.0" encoding="UTF-8">\n<i>\n${result.join("\n")}\n</i>`);
-                    return danmuLRC;
-                } catch (e) {}
-                return "";
-            }(mediaItem.lyric);
+            let danmuLrc = getDanMu(mediaItem, {
+                mode: [5, 1, 6, 7, 4][getItem('danmuMode', '1')],
+                open: getItem('danmuLrc', '0') == "1",
+                size: getItem("danmuSize", "10")
+            });
+            if (danmuLrc) {
+                mediaItem.danmu = _getPath(["danmuLRC.xml"], "_cache", 1);
+                saveFile(mediaItem.danmu, danmuLrc);
+            }
         }
         return JSON.stringify(mediaItem);
     } else {
@@ -1614,6 +1520,129 @@ function getMedia(musicItem, quality, mediaType) {
         }
     }
 }
+
+
+
+
+function getLyric(item) {
+    let lrcText = String(item.lyric || "").replace(/\<\/?(br|p)\/?\>/gi, "\n")
+        .replace(/^data\:text\/plain\,\s*|\<\s*\-?\d+\s*\,\s*\-?\d+\s*\>/gi, "") // 目前不支持逐字歌词
+        .replace(/(\[\d+\:\d+)\:(\d+\])/gi, "$1.$2");
+    if (!lrcText.match(/^\s*https?\:\/\/|\d+\:\d+/i)) { // 不是 标准lrc / lrcurl
+        return function(lrc, time) {
+            let time = String(time || 200);
+            if (time.match(/\d+\:\d+/)) {
+                time = function(time) {
+                    let sp = time.split(":");
+                    let l3 = sp.length == 3;
+                    let h = l3 ? sp[0] : sp[3] || 0;
+                    let m = l3 ? sp[1] : sp[0] || 0;
+                    let s = l3 ? sp[2] : sp[1] || 0;
+                    return (h * 60 * 60) + (m * 60) + s;
+                }(time.replace(/^\s*0+\:/gi, ""));
+            } else if (time.match(/\D/)) {
+                time = 200;
+            }
+            time = Number(time) || 200;
+            let n = String(lrc).replace(/\s*((\n|(\u003c|<)\/?(br|p)\/?(\u003e|>))\s*)+\s*/gi, '\n').trim().split(/\n/);
+            return n.map((lineLyric, i) => {
+                let itime = i / n.length * time;
+                let s = ((itime - 0) % 60).toFixed(3).padStart(6, '0');
+                let m = ((itime - s) / 60).toFixed(0).padStart(2, '0');
+                return `[${m}:${s}]` + lineLyric;
+            }).join('\n');
+        }(lrcText, item.duration || 200000);
+    }
+    if (!lrcText.match(/\d+\:\d+/) && lrcText.match(/^\s*https?\:\/\//)) { // 可能是lrc链接
+        try {
+            return fetch(lrcText, {
+                timeout: 3000
+            });
+        } catch (e) {
+            return "";
+        }
+    }
+    return lrcText;
+}
+
+
+
+function getDanMu(item, danmuLrc) {
+    try {
+        let result = [];
+        let lrcTime = [];
+        String(item.lyric).split(/\n/).map((t, i) => {
+            let mat = String(t).trim().split(/\]\s*/);
+            let txt = String(mat.slice(1).join(']')).replace(/\&/gi, "＆").replace(/"/gi, "\\\"").trim();
+            let tme = mat[0].slice(1).split(':');
+            if (txt.length) {
+                try {
+                    let minutes = parseInt(tme[0], 10) * 60;
+                    let seconds = tme.slice(1).join(".");
+                    minutes += parseFloat(seconds);
+
+                    let size = danmuLrc.size;
+                    let mode = danmuLrc.mode;
+                    let ran_color = function(isTop) { // 随机颜色
+                        let h = Math.floor(Math.random() * 360); // 色相（0-359）
+                        let s = Math.floor(Math.random() * 50 + 50) / 100; // 饱和度（50%-100%）
+                        let l = Math.floor(Math.random() * 50 + 50) / 100; // 亮度（50%-100%，避免过暗）
+                        let c = (1 - Math.abs(2 * l - 1)) * s,
+                            x = c * (1 - Math.abs((h / 60) % 2 - 1)),
+                            m = l - c / 2,
+                            // 根据色相计算 RGB 分量（0-1 范围）
+                            [r1, g1, b1] = h < 60 ? [c, x, 0] :
+                            h < 120 ? [x, c, 0] :
+                            h < 180 ? [0, c, x] :
+                            h < 240 ? [0, x, c] :
+                            h < 300 ? [x, 0, c] : [c, 0, x],
+                            // 转换为 0-255 整数
+                            r = Math.floor((r1 + m) * 255),
+                            g = Math.floor((g1 + m) * 255),
+                            b = Math.floor((b1 + m) * 255);
+
+                        // 计算十进制 RGB 值：R*65536 + G*256 + B
+                        return r * 65536 + g * 256 + b;
+                    }
+
+                    // 时间(s)，模式，字号，颜色
+                    let s = minutes.toFixed(5);
+                    lrcTime[i] = s;
+                    switch (String(mode)) {
+                        case "4": // 4 - 置底居中
+                            result.push(`<d p="${s},4,${size},${ran_color()}">\t${txt}\t</d>`);
+                            break;
+                        case "6": // 6 - 逆向滚动
+                            result.push(`<d p="${s},6,${size},${ran_color()}">${txt}\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t</d>`);
+                            break;
+                        case "5": // 5 - 置顶居中
+                            result.push(`<d p="${s},5,${size},${ran_color(true)}">${txt}</d>`);
+                            break;
+                        case "7": // 7 - 高级弹幕
+                            if ((lrcTime[i - 1] || !i || s) != s) { // 重叠的歌词不获取
+                                result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r",0,0,0,0.2,4800,0,1,"SimHei",1]</d>`);
+                                result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"1-${i}",5,"${txt}\r\r\r",0,0,0.15,0.35,4800,0,1,"SimHei",1]</d>`);
+                                result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r\r\r",0,0,0.3,0.5,4800,0,1,"SimHei",1]</d>`);
+                                result.push(`<d p="${s},7,${size},${ran_color()}">[1,0,"${i}-1",5,"${txt}\r\r\r\r\r",0,0,0.45,0.65,4800,0,1,"SimHei",1]</d>`);
+                            }
+                        default:
+                        case "1": // 1 - 顺序滚动
+                            result.push(`<d p="${s},1,${size},${ran_color()}">\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t${txt}</d>`);
+                            break;
+                    }
+                } catch (nolrc) {}
+            }
+        });
+        return `<xml version="1.0" encoding="UTF-8">\n<i>\n${result.join("\n")}\n</i>`;
+    } catch (e) {}
+    return "";
+}
+
+
+
+
+
+
 
 
 

@@ -26,9 +26,10 @@ let pop = hikerPop.selectBottomSettingMenu({
         SettingItem("预加载预解析", MediaPreNames[MediaPreIndex]),
         SettingItem(),
         SettingItem("音频直链缓存", getItem('MediaCache', '1') == "1"),
-        SettingItem("播放进度记忆", getItem('memoryPosition', '') == ""),
+        SettingItem("记忆播放进度", getItem('memoryPosition', '') == ""),
         SettingItem("获取链接信息", getItem('checkMetadata', '') == ""),
         SettingItem("强制识别音频", getItem('mediaIsMusic', '') != ""),
+        SettingItem("播放链接加密", getItem('startProxyServer', '0') == "1"),
         SettingItem("显示弹幕歌词", getItem('danmuLrc', '0') == "1"),
         SettingItem(),
 
@@ -92,11 +93,7 @@ let pop = hikerPop.selectBottomSettingMenu({
                     cancelTitle: "算了算了",
                     hideCancel: false, //隐藏取消按钮
                     confirm() {
-                        let _json2 = JSON.parse(fetch(getGitHub(["config", "update.json"])).replace(/^\(|\)$/g, ""));
-                        for (let _key in _json2) {
-                            log("清除依赖：" + _key);
-                            deleteCache(getGitHub(["config", _key]));
-                        }
+                        deleteCache();
                         pop.dismiss();
                         return "hiker://清除成功";
                     },
@@ -154,7 +151,13 @@ let pop = hikerPop.selectBottomSettingMenu({
                 officeItem.setSelected(isTrue ? -1 : 1);
                 change();
                 break;
-            case "播放进度记忆":
+            case "播放链接加密":
+                isTrue = officeItem.getSelected() === 1;
+                setItem('startProxyServer', isTrue ? "0" : "1");
+                officeItem.setSelected(isTrue ? -1 : 1);
+                change();
+                break;
+            case "记忆播放进度":
                 isTrue = officeItem.getSelected() === 1;
                 setItem('memoryPosition', isTrue ? "memoryPosition=null" : "");
                 officeItem.setSelected(isTrue ? -1 : 1);

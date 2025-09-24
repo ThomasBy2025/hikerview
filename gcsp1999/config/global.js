@@ -9,9 +9,17 @@ try {
 }
 try {
     MY_URL = input;
-    MY_PARAMS = {};
 } catch (NO_LazyRule) {
-    MY_URL = MY_URL;
+    try {
+        MY_URL = MY_URL;
+    } catch (NO_MY_URL) {
+        MY_URL = "";
+    }
+}
+try {
+    MY_PARAMS = MY_PARAMS || {};
+} catch (NO_MY_PARAMS) {
+    MY_PARAMS = {}
 }
 d = [];
 
@@ -24,7 +32,7 @@ function Color(test, color) {
 
 // 标记文本
 function Rich(test) {
-    test = String(test || "").replace(/<\/?em[^>]*>/gi, '')
+    test = String(test || "").trim().replace(/<\/?em[^>]*>/gi, '')
         .replace(/&(lt|gt|nbsp|amp|quot);/gi, ($0, $1) => ({
             'lt': '<',
             'gt': '>',
@@ -67,7 +75,6 @@ function readDir(path) {
             path = getPath(path);
         }
         let file = new java.io.File(path.replace("file://", ""));
-
         if (!(file.exists() && file.isDirectory())) return names;
         for (let it of file.listFiles()) {
             names.push(String(it.getName()));
@@ -158,12 +165,7 @@ function getImageUrl(_type) {
 
 // 获取数字图标
 function getLenSvg(len) {
-    let Svg = `
-  <svg width="1000" height="800" xmlns="http://www.w3.org/2000/svg">
-    <rect x="25" y="25" width="950" height="750" rx="250" ry="250" fill="#5BA946" stroke="#5BA946" stroke-width="25"/>
-    <text x="510" y="600" font-family="Arial, sans-serif" text-anchor="middle" dominant-baseline="middle" font-size="600" fill="#ffffff" stroke="#ffffff" stroke-width="30">${len}</text>
-</svg>
-`;
+    let Svg = `<svg width="1000" height="800" xmlns="http://www.w3.org/2000/svg"><rect x="25" y="25" width="950" height="750" rx="250" ry="250" fill="#5BA946" stroke="#5BA946" stroke-width="25"/><text x="510" y="600" font-family="Arial, sans-serif" text-anchor="middle" dominant-baseline="middle" font-size="600" fill="#ffffff" stroke="#ffffff" stroke-width="30">${len}</text></svg>`;
     return "data:image/svg+xml;base64," + base64Encode(Svg);
 }
 
