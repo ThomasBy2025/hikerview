@@ -207,7 +207,10 @@ let platformObj = {
         key1: {// 对应用户变量的 key1
             reg: /music_[ua]=([^;]+)/i,
             index: 1
-        }
+        },
+        key1: {// 对应用户变量的 key2
+            reg: "114514"// 是字符串，且没有index时为默认变量
+        },
     },
     debug_musicItem: {},// 测试登录/解析时需要调用
 
