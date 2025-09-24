@@ -10,8 +10,13 @@ d.push({
         let userVariables = {};
         for (let key in loginRule) {
             try {
-                let value = loginRule[key]
-                userVariables[key] = cookie.match(value.reg)[value.index] || "";
+                let value = loginRule[key];
+                if (typeof value.reg === 'string') {
+                    value = value.reg;
+                } else {
+                    value = cookie.match(value.reg)[value.index] || "";
+                }
+                userVariables[key] = value;
                 isLogin = true;
             } catch (e) {
                 isLogin = false;
