@@ -202,6 +202,13 @@ let platformObj = {
         name: "标题2",
         hint: "注释2"
     }],
+    loginRule: { // 实现登录，
+        loginUrl: "", // 网站登录链接
+        key1: {// 对应用户变量的 key1
+            reg: /music_[ua]=([^;]+)/i,
+            index: 1
+        }
+    },
     debug_musicItem: {},// 测试登录/解析时需要调用
 
 
