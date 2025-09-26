@@ -63,7 +63,7 @@
                     description: plugin.description || "",
                     platformProxy: plugin.platformProxy,
                     userVariables: plugin.userVariables,
-                    loginUrl: plugin.loginRule && plugin.loginRule.loginUrl && true,
+                    loginUrl: plugin.loginRule && plugin.loginRule.loginUrl,
                     supportedSearchType: Array.isArray(plugin.supportedSearchType) ? plugin.supportedSearchType : ["单曲", "歌单", "专辑", "歌手", "视频", "歌词", "电台", "播客"],
                     import_url: plugin.import_url && true,
                 };
@@ -306,26 +306,8 @@
 
     // 酷狗 - token保活
     if (getItem("kg@userVariables@token") != "" && Number(getItem("kg_refresh_token", "20250921")) < new_time) {
-        let kg = _getPlatform("kg");
-        let {
-            userid,
-            token,
-            appid,
-            signkey
-        } = getUserVariables(kg);
-        log("kg_refresh_token");
-        let new_token = kg.refresh_token(userid, token, appid, signkey);
-        if (new_token == 20018) {
-            log("token获取失败，可能登录掉了，请重新配置");
-        } else if (new_token == 20010) {
-            log("token获取失败，用户数据错误，请重新配置");
-        } else if (new_token) {
-            log("token获取成功  |  是否更改：" + (token != new_token));
-            setItem("kg@userVariables@token", new_token + "");
-        } else {
-            log("token获取失败，原因未知");
-        }
-        if (appid == '3116') {
+        let kg = _getPlatform("kg").refresh_token();
+        if (kg && getItem("kg@userVariables@appid") == '3116') {
             confirm({
                 title: '[酷狗概念版] 听歌领会员',
                 content: '每日听歌即可领取1日酷狗概念版VIP',

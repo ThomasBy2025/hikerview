@@ -119,7 +119,7 @@ $.exports = function(musicItem, quality, mediaType) {
                 }
             }
         } catch (err) {
-            log(String(err.toString()));
+            // log(String(err.toString()));
         }
         return "";
     }, config, musicItem, getItem('MediaCache', '1') == "1", {

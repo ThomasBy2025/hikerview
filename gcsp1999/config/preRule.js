@@ -1882,12 +1882,12 @@ function setCollectionData(musicItem, run) {
             let fun = _getPlatform(musicItem.platform)[["getMediaSource", "getMediaSource", "getMusicSheetInfo", "getTopListDetail", "getAlbumInfo", "getArtistWorks", "getUserInfo", "getProgramInfo", "getRadio", "getVideo", "getLyric", "getMusicComments"][musicItem.type] || musicItem.type];
 
             // 手动遍历歌单数据
-            let e = 0;
+            let e = 1;
             page = 1;
             d = [];
             do {
                 try {
-                    showLoading('获取页面数据_' + page + "_" + (e + 1));
+                    showLoading('获取页面数据_' + page + "_" + e);
                     let {
                         isEnd,
                         data
@@ -1897,11 +1897,11 @@ function setCollectionData(musicItem, run) {
                         break;
                     }
                 } catch (err) {
-                    log(err)
-                    if (e > 3) {
+                    log(e + ": " + String(err));
+                    if (e >= 3) {
                         break;
                     } else {
-                        page--;
+                        page-=2;
                         e++;
                     }
                 }

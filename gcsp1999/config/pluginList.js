@@ -347,6 +347,7 @@ else details.map((_, i) => {
                                                         t: "loginRule",
                                                         s: "#noHistory##noRecordHistory#",
                                                         platform: _.platform,
+                                                        loginUrl: encodeURIComponent(_.loginUrl),
                                                         pageTitle: _.title + " - 登录账号",
                                                         rule: MY_RULE.title,
                                                     });

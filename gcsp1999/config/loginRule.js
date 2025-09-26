@@ -1,6 +1,5 @@
 addListener("onClose", () => clearMyVar("cookie"));
-platform = getParam('platform');
-let loginUrl = _getPlatform(platform).loginRule.loginUrl;
+let loginUrl = decodeURIComponent(getParam('loginUrl'));
 d.push({
     title: "““确认登录””",
     url: $("#noLoading#").lazyRule((platform) => {
@@ -13,9 +12,7 @@ d.push({
         for (let key in loginRule) {
             try {
                 let value = loginRule[key];
-                if (typeof value.reg === 'string') {
-                    value = value.reg;
-                } else {
+                if (typeof value !== 'string') {
                     value = cookie.match(value.reg)[value.index] || "";
                 }
                 userVariables[key] = value;
@@ -38,7 +35,7 @@ d.push({
         } else {
             return "toast://未登录";
         }
-    }, platform),
+    }, getParam('platform')),
     desc: "““””" + "点击头像可以退出账号重新登录".small(),
     col_type: "text_center_1"
 });
