@@ -306,24 +306,28 @@
 
     // 酷狗 - token保活
     if (getItem("kg@userVariables@token") != "" && Number(getItem("kg_refresh_token", "20250921")) < new_time) {
-        let kg = _getPlatform("kg").refresh_token();
-        if (kg && getItem("kg@userVariables@appid") == '3116') {
-            confirm({
-                title: '[酷狗概念版] 听歌领会员',
-                content: '每日听歌即可领取1日酷狗概念版VIP',
-                confirm: $.toString((new_time) => {
-                    setItem("kg_refresh_token", new_time + "");
-                    MY_URL = "";
-                    require(config.preRule);
-                    return _getPlatform("kg").Lite_Signin();
-                }, new_time),
-                cancel: $.toString((new_time) => {
-                    setItem("kg_refresh_token", new_time + "");
-                    return "toast://今日不再提示"
-                }, new_time)
-            });
-        } else {
-            setItem("kg_refresh_token", new_time + "");
+        try {
+            let kg = _getPlatform("kg").refresh_token();
+            if (kg && getItem("kg@userVariables@appid") == '3116') {
+                confirm({
+                    title: '[酷狗概念版] 听歌领会员',
+                    content: '每日听歌即可领取1日酷狗概念版VIP',
+                    confirm: $.toString((new_time) => {
+                        setItem("kg_refresh_token", new_time + "");
+                        MY_URL = "";
+                        require(config.preRule);
+                        return _getPlatform("kg").Lite_Signin();
+                    }, new_time),
+                    cancel: $.toString((new_time) => {
+                        setItem("kg_refresh_token", new_time + "");
+                        return "toast://今日不再提示"
+                    }, new_time)
+                });
+            } else {
+                setItem("kg_refresh_token", new_time + "");
+            }
+        } catch (e) {
+            log("酷狗音乐，token保活失败");
         }
     }
 
@@ -331,12 +335,16 @@
 
     // 腾讯 - token保活  #5天刷新一次
     if (getItem("tx@userVariables@qm_keyst") != "" && Number(getItem("tx_refresh_token", "20250921")) < new_time) {
-        let tx = _getPlatform("tx").refresh_login();
-        if (tx == undefined) { // 登录成功
-            setItem("tx_refresh_token", (new_time + 5) + "");
-        } else {
-            toast(tx.replace("toast://", "腾讯音乐："));
-            setItem("tx_refresh_token", new_time + "");
+        try {
+            let tx = _getPlatform("tx").refresh_login();
+            if (tx == undefined) { // 登录成功
+                setItem("tx_refresh_token", (new_time + 5) + "");
+            } else {
+                toast(tx.replace("toast://", "腾讯音乐："));
+                setItem("tx_refresh_token", new_time + "");
+            }
+        } catch (e) {
+            log("腾讯音乐，token保活失败");
         }
     }
 
