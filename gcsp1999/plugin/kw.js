@@ -1,7 +1,7 @@
 // 格式化歌曲信息
 function formatMusicItem(_) {
     let Reg = (k, _) => reg = (_.N_MINFO || "").match(new RegExp('bitrate:' + k + ',format:[^,]+,size:([^;]+)'));
-    let name = _.songName || _.name || _.SONGNAME;
+    let name = _.songName || _.name || _.SONGNAME || _.songname;
     let singer = _.artist || _.ARTIST;
     let songId = _.MUSICRID ? _.MUSICRID.split('_')[1].split('&')[0] : (_.rid || _.id);
     let albumName = _.album || _.ALBUM;
@@ -293,13 +293,19 @@ let platformObj = {
     title: "酷我音乐", // 插件名称☆
     type: "音频", // 插件分类☆ 随便写：视频 / 音频 / 其他
     author: "Thomas喲", // 插件作者
-    version: "2025.09.20", // 插件版本
+    version: "2025.09.27", // 插件版本
     icon: "https://android-artworks.25pp.com/fs08/2025/08/19/6/110_7a4a098a92bb3f1b506acfda21a038e4_con_130x130.png", //插件封面☆
     srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/kw.js", // 在线链接
     description: [{ // 更新内容/简介☆
-        "title": "2025.09.20",
+        "title": "2025.09.27",
         "records": [
             "““反馈Q群@365976134””",
+            "““更新””: 完善formatMusicItem函数",
+            "‘‘优化’’: 适配主题 - 酷我音乐"
+        ]
+    }, {
+        "title": "2025.09.20",
+        "records": [
             "““更新””: 资源导入相关逻辑",
             "‘‘修复’’: 免费歌曲无法获取",
             "‘‘增加’’: 支持搜索电台(听书)"
@@ -827,5 +833,7 @@ let platformObj = {
     share_url: function(mediaItem) {
         // 返回平台链接的字符串 或者false
     },
+
+    formatMusicItem
 }
 $.exports = platformObj;
