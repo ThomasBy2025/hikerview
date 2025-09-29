@@ -352,20 +352,36 @@
 
     // 通过依赖检测规则是否更新
     // 只在首页检测，子页面MY_RULE的version是0
-    if (themeType == "home" && MY_RULE.version < 20250902) {
-        confirm({
-            title: '更新提示',
-            content: '检测到你的规则版本小于服务器版本，是否立即更新？',
-            confirm: $.toString((rule_url) => {
-                for (let i = 1; i < 4; i++) {
-                    try {
-                        return fetch(rule_url);
-                    } catch (e) {
-                        log("更新失败: " + i)
+    if (themeType == "home") {
+        if (MY_RULE.version < 20250902) {
+            confirm({
+                title: '更新提示',
+                content: '检测到你的规则版本小于服务器版本，是否立即更新？',
+                confirm: $.toString((rule_url) => {
+                    for (let i = 1; i < 4; i++) {
+                        try {
+                            return fetch(rule_url);
+                        } catch (e) {
+                            log("更新失败: " + i)
+                        }
                     }
-                }
-                return "toast://网络异常，无法更新";
-            }, getGitHub(["home_rule.hiker"]))
-        });
+                    return "toast://网络异常，无法更新";
+                }, getGitHub(["home_rule.hiker"]))
+            });
+        } else if (readDir(_getPath(["image"], 0, 1)).length < 23) {
+            confirm({
+                title: '文件不全',
+                content: '检测到你的规则图标文件异常，是否下载图标？',
+                confirm: $.toString((imagePath2, imagePath1) => {
+                    let imageNames = ["open.svg", "icon.png", "down.png", "shut.svg", "Loading.gif", "2.png", "1.png", "3.png", "topImg.png", "play.png", "jump.png", "update.svg", "edit.svg", "share.svg", "proxy.svg", "uninstall.svg", "account.svg", "import.svg", "hijack.svg", "unhijack.svg", "selected.svg", "unselected.svg", "sorted.svg"];
+                    for (let imageName of imageNames) {
+                        showLoading('加载图标: ' + imageName)
+                        downloadFile(imagePath1 + imageName, imagePath2 + imageName);
+                    }
+                    hideLoading();
+                    return "toast://图标初始化成功";
+                }, _getPath(["image", ""], 0, 1), getGitHub(["image", ""]))
+            });
+        }
     }
 })();
