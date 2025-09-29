@@ -148,7 +148,7 @@ function formatSheetItem(_) {
         artist: (_.artist && _.artist.name) || (_.creator && _.creator.nickname),
         /* 封面图 */
         // coverImg: "",
-        artwork: _.coverImgUrl || _.picUrl || _.coverImg || _.coverUrl,
+        artwork: _.coverImgUrl || _.picUrl || _.coverImg || _.coverUrl || _.cover,
         /* 描述 */
         description: _.description || _.updateFrequency,
         /* 作品总数 */
@@ -351,10 +351,16 @@ let platformObj = {
     title: "网易音乐", // 插件名称☆
     type: "音频", // 插件分类☆ 随便写：视频 / 音频 / 其他
     author: "Thomas喲", // 插件作者
-    version: "2025.09.24", // 插件版本
+    version: "2025.09.29", // 插件版本
     icon: "https://android-artworks.25pp.com/fs08/2025/08/29/0/110_e8f7db85c17637c2d54309fcf535cadc_con_130x130.png", //插件封面☆
     srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/wy.js", // 在线链接
     description: [{ // 更新内容/简介☆
+        "title": "2025.09.29",
+        "records": [
+            "““反馈Q群@365976134””",
+            "““更新””: 适配主题：网易音乐"
+        ]
+    }, {
         "title": "2025.09.24",
         "records": [
             "““反馈Q群@365976134””",
@@ -972,10 +978,9 @@ let platformObj = {
             });
         }
         if (id = (urlLike.match(/playlist(.*?[\?\&]id=|\/)(\d+)/i) || [])[2]) { // type: 2/3
-            _ = ajax3("/api/v6/playlist/detail", {
-                n: 1,
-                id: id
-            }).playlist;
+            _ = ajax3("/api/tag/tab/playlists", {
+                ids: id
+            }).data[0];
             return formatSheetItem(_);
         }
         if (id = (urlLike.match(/album(.*?[\?\&]id=|\/)(\d+)/i) || [])[2]) { // type: 4
@@ -1019,5 +1024,7 @@ let platformObj = {
     share_url: function(mediaItem) {
         // 返回平台链接的字符串 或者false
     },
+    
+    ajax3
 }
 $.exports = platformObj;
