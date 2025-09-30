@@ -23,19 +23,23 @@ d.push({
                     col_type: a
                 });
             }
+            setItem("col_type", a);
             return "hiker://empty";
         }
+        let options = getColTypes();
+        let position = options.indexOf(getItem("col_type", "text_1"));
+        options[position] = "““" + options[position] + "””";
         let pop = hikerPop.selectBottom({
             title: "请选择显示样式",
-            options: getColTypes(),
+            options,
             columns: 2,
             height: 0.6, //0-1
-            position: 1,
+            position,
             click(a) {
-                return up(a)
+                return up(a);
             },
             longClick(a) {
-                return up(a)
+                return up(a);
             }
         });
         return "hiker://empty";
@@ -162,7 +166,7 @@ if (c_info === undefined) {
             let __ = Extra(_, {
                 title: Rich("$title" + ("　-　$artist").small().small().sub()),
                 desc: "📼 $duration\n📀 $album",
-                col_type: "text_1"
+                col_type: getItem("col_type", "text_1")
             }, 1);
             __.extra.longClick[1].title = "复制";
             __.extra.longClick.splice(1, 0, {
