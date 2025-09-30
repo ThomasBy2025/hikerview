@@ -1,6 +1,18 @@
 (() => { // 初始化本地信息
 
 
+    // 每小时重置一次变量
+    let new_time = new Date().getHours();
+    let hour = Number(getItem("initialization_hour", "0"));
+    if (hour < new_time || (!new_time && hour == 23)) {
+        setItem("initialization_hour", hour + "");
+        putMyVar("pluginInitialization", "3");
+        putMyVar("proxyInitialization", "0");
+        putMyVar("collectionInitialization", "0");
+        putMyVar("themeInitialization", "0");
+    }
+
+
 
     // 获取排序后的数组
     let getFiledirs = (fileArr1, fileArr2) => {
@@ -19,7 +31,8 @@
 
 
     // 插件初始化
-    if (getMyVar("pluginInitialization", "0") == "0") {
+    hour = getMyVar("pluginInitialization", "0") == "3";
+    if (getMyVar("pluginInitialization", "0") == "0" || hour) {
 
         // 本地存在的插件
         let filedirs = getFiledirs(["plugin", "plugins"], ["plugin", "sorted.json"]);
@@ -96,7 +109,7 @@
         saveFile(path4, JSON.stringify(topLists));
         saveFile(path5, JSON.stringify(artists));
         saveFile(path6, JSON.stringify(musicfree));
-        putMyVar("pluginInitialization", "1");
+        putMyVar("pluginInitialization", hour ? "2" : "1");
         log("插件初始化成功");
     }
 
@@ -219,7 +232,7 @@
 
 
 
-    let new_time = Number($.dateFormat(new Date().getTime(), 'yyyyMMdd'));
+    new_time = Number($.dateFormat(new Date().getTime(), 'yyyyMMdd'));
     if (Number(getItem("ghproxy_url_update", "20250921")) < new_time) {
         log("github代理保活");
         if (getItem("ghproxy", "") != "") {
@@ -382,6 +395,55 @@
                     return "toast://图标初始化成功";
                 }, _getPath(["image", ""], 0, 1), getGitHub(["image", ""]))
             });
+        } else if (getItem("plugin_update", "0") == "1" && getMyVar("pluginInitialization", "0") == "1") {
+            putMyVar("pluginInitialization", "2");
+            let newPath = _getPath(["plugin", "newPlatform.js"], "_cache", 1);
+            details = _getPath(_getPath(["plugin", "details.json"], "_cache", 1));
+            for (let _ of details) {
+                showLoading('更新插件: ' + _.title);
+                if (_.srcUrl) {
+                    try {
+                        let newPlatform = fetch(_.srcUrl);
+                        if (newPlatform && newPlatform != "") {
+                            saveFile(newPath, newPlatform);
+                            newPath = $.require(newPath);
+                            if (newPath.platform == _.platform) {
+                                let v1 = String(_.version || "0");
+                                let v2 = String(newPath.version || "0");
+                                let v3 = v1 != v2; // 版本是否一致
+                                if (v3) {
+                                    v1 = v1.split(".");
+                                    v2 = v2.split(".");
+                                    v3 = false;
+                                    for (let v4 in v1) {
+                                        if (v1[v4] < v2[v4]) {
+                                            v3 = true;
+                                            break;
+                                        }
+                                    }
+                                    if (v3) {
+                                        saveFile(pluginPath, newPlatform);
+                                        clearMyVar('pluginInitialization');
+                                        log("标识为 " + _.platform + " 的插件自动更新成功\n" + v1.join(".") + "=>" + v2.join("."));
+                                    }
+                                }
+                                if (!v3) {
+                                    log("标识为 " + _.platform + " 的插件已经是最新版");
+                                }
+                            } else {
+                                log("标识为 " + _.platform + " 的插件不能更新：新旧插件标识不一致");
+                            }
+                        } else {
+                            log("标识为 " + _.platform + " 的插件无法获取");
+                        }
+                    } catch (e) {
+                        log("标识为 " + _.platform + " 的插件更新失败");
+                    }
+                } else {
+                    log("标识为 " + _.platform + " 的插件不支持在线更新");
+                }
+            }
+            hideLoading();
         }
     }
 })();

@@ -649,6 +649,12 @@ function getThemeData(themeType) {
                     log("主题索引异常：" + theme_Info.title + "=>" + t_index);
                 }
             });
+            if (page == 1 && d.length < 2) getColType({
+                type: "#主题切换#",
+                title: Rich(Color("主题元素太少").bold().big()),
+                desc: Rich("是不是遇到bug了".small()),
+                col_type: "text_center_1"
+            });
             break;
         case "themeList":
         case "themeEdit":
@@ -1901,7 +1907,7 @@ function setCollectionData(musicItem, run) {
                     if (e >= 3) {
                         break;
                     } else {
-                        page-=2;
+                        page -= 2;
                         e++;
                     }
                 }

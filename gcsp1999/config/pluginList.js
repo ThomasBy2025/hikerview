@@ -6,9 +6,9 @@ getTopImage({
 });
 d.push({
     title: "新增插件",
-    url: $("#noLoading#").lazyRule((url1, url2, url3) => {
+    url: $("").lazyRule((url1, url2, url3) => {
         if (!fileExist(url1)) {
-            saveFile(url1, fetch(url2));
+            saveFile(url1, fetch(url2) || "数据获取失败，，，\n长按新增插件，清除缓存以重新获取");
         }
         return "editFile://" + url1 + "@js=" + $.toString((url3) => {
             input = "file://" + input;

@@ -1,6 +1,7 @@
-/* 用途不明
+/* 用不到
 const FileUtil = com.example.hikerview.utils.FileUtil;
 const DeflaterInputStream = java.util.zip.DeflaterInputStream;
+const Inflater = java.util.zip.Inflater; // 解压zlib
 */
 const Byte = java.lang.Byte;
 const Base64 = java.util.Base64;
@@ -8,7 +9,7 @@ const javaString = java.lang.String;
 const StringBuffer = java.lang.StringBuffer;
 const newInstance = java.lang.reflect.Array.newInstance;
 
-const Deflater = java.util.zip.Deflater; // 创建zip
+const Deflater = java.util.zip.Deflater; // 创建zlib
 const GZIPOutputStream = java.util.zip.GZIPOutputStream; // gzip压缩
 const GZIPInputStream = java.util.zip.GZIPInputStream; // gzip解压
 const DeflaterOutputStream = java.util.zip.DeflaterOutputStream; // zip压缩
@@ -22,14 +23,24 @@ const ByteArrayInputStream = java.io.ByteArrayInputStream; // 传递byte
 function zip(text, isGzip, mode) {
     let baseStr = new javaString(text);
     let baos = new ByteArrayOutputStream();
-    if (isGzip) { // gzip压缩
+    if (isGzip == "zlib") { // zlib压缩
+        let deflater = new Deflater();
+        deflater.setInput(baseStr.getBytes("UTF-8"));
+        deflater.finish();
+        let buffer = newInstance(Byte.TYPE, 1024);
+        while (!deflater.finished()) {
+            let count = deflater.deflate(buffer);
+            baos.write(buffer, 0, count);
+        }
+        deflater.end();
+    } else if (isGzip) { // gzip压缩
         let gzos = new GZIPOutputStream(baos);
         gzos.write(baseStr.getBytes("UTF-8"));
         gzos.close();
     } else { // zip压缩
-        let deflater = new Deflater();
-        deflater.setLevel(Deflater.BEST_COMPRESSION);
-        let dos = new DeflaterOutputStream(baos, deflater);
+        let deflater2 = new Deflater();
+        deflater2.setLevel(Deflater.BEST_COMPRESSION);
+        let dos = new DeflaterOutputStream(baos, deflater2);
         dos.write(baseStr.getBytes("UTF-8"));
         dos.finish();
         dos.close();
@@ -43,8 +54,6 @@ function zip(text, isGzip, mode) {
 
 // hexText = fetch(path, {toHex:true});
 function unzip(hexText, isGzip, mode) {
-
-    // hex文本 转换成byte
     let compressedData = Base64.getDecoder().decode(hexToBase64(hexText));
     let bais = new ByteArrayInputStream(compressedData);
     let baos = new ByteArrayOutputStream();
@@ -71,22 +80,17 @@ function unzip(hexText, isGzip, mode) {
 
 
 // 异或字符串
-function xor(str1, str2, mode, Charset) {
+function xor(str1, str2, mode, Charset, offset) {
     let bufarr = typeof str1 === 'string' ? javaString(str1).getBytes() : str1;
     let bufkey = typeof str2 === 'string' ? javaString(str2).getBytes() : str2;
     let bufarrlen = bufarr.length;
     let bufkeylen = bufkey.length;
-    let a = javaString(str1).getBytes();
-    let i = 0;
-    while (i < bufarrlen) {
-        let j = 0
-        while (j < bufkeylen && i < bufarrlen) {
-            a[i] = bufarr[i] ^ bufkey[j];
-            i++;
-            j++;
-        }
+    let xorarr = [];
+    offset = offset || 0; // 偏移，处理 有符号数值 的异或，一般是128
+    for (let i = 0; i < bufarrlen; i++) {
+        xorarr[i] = ((bufarr[i] + offset) ^ bufkey[i % bufkeylen]) - offset;
     }
-    return getMode(a, mode, Charset);
+    return getMode(xorarr, mode, Charset);
 }
 
 

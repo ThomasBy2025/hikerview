@@ -10,9 +10,9 @@ getTopImage({
 });
 d.push({
     title: "新增解析",
-    url: $("#noLoading#").lazyRule((url1, url2, url3) => {
+    url: $("").lazyRule((url1, url2, url3) => {
         if (!fileExist(url1)) {
-            saveFile(url1, fetch(url2));
+            saveFile(url1, fetch(url2) || "数据获取失败，，，\n长按新增解析，清除缓存以重新获取");
         }
         return "editFile://" + url1 + "@js=" + $.toString((url3) => {
             input = "file://" + input;
@@ -196,7 +196,7 @@ if (jx_list.length == 0) {
                                             if (musicItem) {
                                                 if (musicItem.qualities && musicItem.qualities[quality]) {
                                                     hikerPop.runOnNewThread(() => {
-                                                        let _Jiexi_url = _Jiexi.getMediaSource(musicItem, quality);
+                                                        let _Jiexi_url = _Jiexi.getMediaSource(musicItem, quality) || "";
                                                         hikerPop.confirm({
                                                             content: JSON.stringify(_Jiexi_url).replace(/^"|"$/g, "") || "没有链接",
                                                             title: "解析成功",

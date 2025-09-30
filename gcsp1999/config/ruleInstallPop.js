@@ -35,6 +35,7 @@ let pop = hikerPop.selectBottomSettingMenu({
 
         SettingItem("图标下载状态", readDir(_getPath(["image"], 0, 1)).length == 23 ? true : "文件不全"),
         SettingItem("依赖代理接口", getItem("ghproxy", "").slice(0, 16) || "hiker://empty"),
+        SettingItem("插件更新设置", getItem("plugin_update", "0") == "1" ? "自动更新" : "手动更新"),
         SettingItem("清除依赖缓存", "更新依赖"),
         SettingItem("查看温馨提示", "编辑修改"),
         SettingItem("页面标识设置", pageHomeTypes[pageHomeIndex]),
@@ -173,6 +174,12 @@ let pop = hikerPop.selectBottomSettingMenu({
                 isTrue = officeItem.getSelected() === 1;
                 setItem('mediaIsMusic', isTrue ? "" : "#isMusic=true#");
                 officeItem.setSelected(isTrue ? -1 : 1);
+                change();
+                break;
+            case "插件更新设置":
+                isTrue = officeItem.getDesc() == "自动更新";
+                setItem('plugin_update', isTrue ? "0" : "1");
+                officeItem.setDesc(isTrue ? "手动更新" : "自动更新");
                 change();
                 break;
             case "显示弹幕歌词":
