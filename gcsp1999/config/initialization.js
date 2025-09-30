@@ -5,7 +5,7 @@
     let new_time = new Date().getHours();
     let hour = Number(getItem("initialization_hour", "0"));
     if (hour < new_time || (!new_time && hour == 23)) {
-        setItem("initialization_hour", hour + "");
+        setItem("initialization_hour", new_time + "");
         putMyVar("pluginInitialization", "3");
         putMyVar("proxyInitialization", "0");
         putMyVar("collectionInitialization", "0");
