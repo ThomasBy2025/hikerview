@@ -153,10 +153,10 @@ function getHourHint(hour, noEval) {
 function getImageUrl(_type) {
     _type = String(_type || 'rule_type_audio');
     _type = getItem("image@" + _type, "").trim() || _type;
-    if (/^(?!http).+\./i.test(_type)) {
-        return _getPath(["image", _type], 0, 1);
-    }
-    if (!/https?\:\/\//i.test(_type)) {
+    if (!/(https?|data)\:/i.test(_type)) {
+        if (/.+\./i.test(_type)) {
+            return _getPath(["image", _type], 0, 1);
+        }
         _type = 'hiker://images/' + _type
     }
     return _type;
