@@ -85,6 +85,12 @@ theme_Data.map((_, i) => {
                 }, {
                     title: "启用主题",
                     icon: getImageUrl("selected.svg")
+                }, {
+                    title: "预览主题",
+                    icon: getImageUrl("update.svg")
+                }, {
+                    title: "排序主题",
+                    icon: getImageUrl("sorted.svg")
                 }],
                 title: "主题操作",
                 columns: 2,
@@ -112,11 +118,37 @@ theme_Data.map((_, i) => {
                             refreshPage(false);
                             return 'hiker://empty';
                             break;
-                        case '排序':
-                            return 'hiker://empty';
+                        case '预览主题':
+                            return MY_URL.replace("themeList", themeType2 + "&t_id=" + _.path).replace("&s=#immersiveTheme#", "&s=#noHistory##noRecordHistory#");
                             break;
-                        case '预览':
-                            return 'hiker://empty';
+                        case '排序主题':
+                            let detailp = _getPath(["theme", themeType2, "details.json"], "_cache", 1);
+                            let details = JSON.parse(readFile(detailp) || "[]") || [];
+                            details.splice(i, 1);
+                            details = details.map(_ => {
+                                _.title += "\r\n\n\n" + _.path;
+                                return _;
+                            });
+                            return $(details.concat({
+                                title: '最后面'
+                            }), 2, '插件移动到').select((set, list, i1, set2) => {
+                                let i2
+                                if (input == '最后面') {
+                                    i2 = list.length;
+                                } else {
+                                    i2 = list.map(_ => _.title).indexOf(input);
+                                }
+                                let data = JSON.parse(readFile(set) || "[]") || [];
+                                let i3 = data[i1];
+                                data.splice(i1, 1);
+                                data.splice(i2, 0, i3);
+                                saveFile(set, JSON.stringify(data, 0, 1));
+                                let data2 = data.map(_ => _.path);
+                                saveFile(set2, JSON.stringify(data2));
+                                refreshPage();
+                                return "toast://更改成功";
+                            }, detailp, details, i, _getPath(["theme", themeType2, "sorted.json"], 0, 1));
+                            return "hiker://empty";
                             break;
                     }
                     return 'hiker://empty';
