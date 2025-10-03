@@ -163,8 +163,9 @@ if (t_index === "") {
             d.push({
                 title: (_.open ? "☑︎" : "☒") + " " + _.name,
                 desc: "翻页: " + (_.page ? "☒" : "☑︎") + "　数量: " + (_.length || 1) + "　样式: " + _.type,
-                url: $(["移动", "编辑", (_.open ? '禁用' : '启用'), "删除"], 1, '选择扩展操作').select((path, i, EditUrl) => {
+                url: $(["移动", "编辑", (_.open ? '禁用' : '启用'), "删除", "预览"], 1, '选择扩展操作').select((path, i, EditUrl) => {
                     if (input == "编辑") return EditUrl + "#noHistory##noRecordHistory#";
+                    if (input == "预览") return EditUrl.replace("=themeEdit", "=executeThemeIndex").replace("&s=#immersiveTheme#", "&s=#noHistory##noRecordHistory#");
                     let data = JSON.parse(readFile(path) || "{}");
                     let list = data.data || [];
                     let _ = list[i];
@@ -261,16 +262,6 @@ if (t_index === "") {
         img: "http://123.56.105.145/tubiao/messy/" + (t2_open ? 55 : 63) + ".svg",
         col_type: 'text_icon'
     });
-
-    function getSvg(len) {
-        let Svg = `
-  <svg width="1000" height="800" xmlns="http://www.w3.org/2000/svg">
-    <rect x="25" y="25" width="950" height="750" rx="250" ry="250" fill="#5BA946" stroke="#5BA946" stroke-width="25"/>
-    <text x="510" y="600" font-family="Arial, sans-serif" text-anchor="middle" dominant-baseline="middle" font-size="600" fill="#ffffff" stroke="#ffffff" stroke-width="30">${len}</text>
-</svg>
-`;
-        return "data:image/svg+xml;base64," + base64Encode(Svg);
-    }
     d.push({
         title: "获取元素数量",
         url: $('#noLoading#').lazyRule((yn, getSvg) => {
@@ -285,8 +276,8 @@ if (t_index === "") {
                 refreshPage();
                 return 'hiker://empty';
             });
-        }, t2_length, getSvg),
-        img: getSvg(t2_length),
+        }, t2_length, getLenSvg),
+        img: getLenSvg(t2_length),
         col_type: 'text_icon'
     });
     d.push({
