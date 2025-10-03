@@ -27,13 +27,11 @@ function _getPlatform(platform) {
 
 const rule_id = "gcsp1999";
 let is_down = getMyVar('music_down', '0') == '1';
-let themeType = getParam('t', '');
 getGitHub(["config", "global.js"], true);
+let themeType = getParam('t', '');
 if (!MY_PARAMS.startProxyServer) { // 不是在startProxyServer环境
     getGitHub(["config", "initialization.js"], true);
 }
-
-
 
 
 let themeType_TwoSwitch = false;
@@ -642,14 +640,20 @@ function getThemeData(themeType) {
                     lineVisible: false
                 }
             });
-            else theme_Item.map((_, t_index) => {
-                try {
-                    eval(String(_.data || "").replace(/\$name/g, _.name || "").replace(/\$type/g, _.type || "").replace(/\$length/g, _.length || "1"));
-                } catch (e) {
-                    log("主题索引异常：" + theme_Info.title + "=>" + t_index);
-                }
-            });
-            if (page == 1 && d.length < 2) getColType({
+            else {
+                if (page == 1 && (MY_PARAMS.newWindow || (getCurrentActivity() instanceof com.example.hikerview.ui.home.RuleWindowActivity))) getTopImage({
+                    pic_url: "http://123.56.105.145/img/top.png",
+                    url: "func://background"
+                });
+                theme_Item.map((_, t_index) => {
+                    try {
+                        eval(String(_.data || "").replace(/\$name/g, _.name || "").replace(/\$type/g, _.type || "").replace(/\$length/g, _.length || "1"));
+                    } catch (e) {
+                        log("主题索引异常：" + theme_Info.title + "=>" + t_index);
+                    }
+                });
+            }
+            if (page == 1 && d.length < 3) getColType({
                 type: "#主题切换#",
                 title: Rich(Color("主题元素太少").bold().big()),
                 desc: Rich("是不是遇到bug了".small()),
@@ -718,7 +722,7 @@ function getColType(_json) {
                     }, themeType == "search", s_type),
                     col_type: "input",
                     extra: {
-                        id: rule_id + ":search1",
+                        id: rule_id + ":search",
                         pageTitle: "高级搜索",
                         defaultValue: getMyVar("s_query"),
                         onChange: "putMyVar('s_query', input)"
@@ -961,15 +965,8 @@ function getColType(_json) {
                                                         _.qualities[quality] = obj;
                                                     }
                                                 }
-                                                if (!isNaN(Number(_.duration))) {
-                                                    _.duration = Number(_.duration);
-                                                    if (_.duration < 999) {
-                                                        _.duration *= 1000;
-                                                    }
-                                                    let t_Arr = $.dateFormat(_.duration, 'hh:mm:ss').split(':');
-                                                    if ((t_Arr[0] -= 8) < 10) t_Arr[0] = '0' + t_Arr[0];
-                                                    _.duration = t_Arr.join(":");
-                                                }
+                                                _.duration = dateFormat(_.duration)
+
                                                 delete _.$timestamp;
                                                 delete _.$sortIndex;
                                                 delete _.qualitys;
@@ -1115,12 +1112,15 @@ const Extra = (_, _extra, run) => {
     delete _.col_type;
     let _type = ["单曲", "单曲", "歌单", "榜单", "专辑", "歌手", "用户", "电台", "播客", "视频", "歌词", "评论"][_.type] || "未知";
 
+    _.duration = dateFormat(_.duration);
+
+
 
     // let _wid = "$" + rule_id + "$" + Math.random();
     let _mid = [_.platform, _.type, _.mid || _.id].join("$");
     let json = Object.assign({
         title: _.title + (isMedia && _.artist ? " - " + _.artist : ""),
-        desc: isMedia ? ((_.album || "") + " " + (_.duration || "")) : (_.description || ""),
+        desc: isMedia ? ("📼 " + _.duration + "　📀 " + (_.album || _.title)) : (_.description || _.desc || ""),
         content: _type,
         col_type,
         pic_url,
@@ -1151,7 +1151,7 @@ const Extra = (_, _extra, run) => {
         .replace(/\$title|\$nickName/g, _.title || _.nickName || "")
         .replace(/\$artist/g, _.artist || "");
     json.desc = String(json.desc || "")
-        .replace(/\$duration/g, _.duration || "00:00:00")
+        .replace(/\$duration/g, _.duration || "")
         .replace(/\$artist/g, _.artist || "")
         .replace(/\$album/g, _.album || _.title || "")
     json.pic_url = String(json.pic_url || json.img || "")
@@ -1190,7 +1190,6 @@ const Extra = (_, _extra, run) => {
 
     _.title = Rich(_.title || _.name + ((_.singer && ' - ' + _.singer) || ""))
         .replace(/^‘‘’’|\s*\-?\s*$/gi, "")
-        .replace("　-　".small().small().sub(), "")
 }
 
 function getDataExtra(platform, tag, type) {
@@ -1338,7 +1337,6 @@ function getQuality(musicItem, down) {
         }
         return $(arr1, 1, '选择下载音质').select((musicItem, arr1) => {
             let quality = arr1.indexOf(input);
-            MY_URL = "";
             require(config.preRule);
             try {
                 let playUrl = JSON.parse(getMedia(musicItem, quality, "0"));
@@ -1371,10 +1369,10 @@ function getQuality(musicItem, down) {
 }
 
 function getMedia(musicItem, quality, mediaType) {
-    if (0 > quality || quality > 3) {
-        return "toast://无法解析";
+    if ((0 > quality) || (quality > 3)) { // 换源
+        return switchPluginSource(musicItem);
     }
-    if (mediaType != "0" && getItem("startProxyServer", "0") == "1") { // 播放链接加密
+    if (mediaType != "0" && mediaType != "4" && getItem("startProxyServer", "0") == "1") { // 播放链接加密
         return $.require(getGitHub(["config", "startProxyServer.js"]))(musicItem, quality, mediaType);
     }
     let Quality = ["low", "standard", "high", "super"][quality];
@@ -1515,8 +1513,13 @@ function getMedia(musicItem, quality, mediaType) {
     } else {
         switch (mediaType) {
             case "0": // 精准下载
-            case "3": // 没有音质
                 return "toast://解析失败";
+                break;
+            case "4": // 换源播放
+                return null;
+                break;
+            case "3": // 没有音质
+                return switchPluginSource(musicItem); // 换源
                 break;
             case "1":
                 return getMedia(musicItem, quality + 1, mediaType);
@@ -1527,6 +1530,55 @@ function getMedia(musicItem, quality, mediaType) {
         }
     }
 }
+
+
+// 实现换源
+function switchPluginSource(musicItem) { // 默认返回标准音质
+    let details = _getPath(_getPath(["plugin", "details.json"], "_cache", 1)) || [];
+    let plugins = _getPath(["plugin", "enableds.json"]) || {};
+    plugins = details.filter(_ => plugins[_.platform] && _.platform != musicItem.platform);
+    let tasks = plugins.map(it => {
+        it.musicItem = musicItem;
+        return {
+            func: function(plugin) {
+                let musicItem = plugin.musicItem;
+                let keyword = musicItem.title + " - " + musicItem.artist;
+                let SEARCH = _getPlatform(plugin.platform).search(keyword, 1, "单曲") || {};
+                let new_musicItem = (SEARCH.data || [])[0] || {};
+                if (new_musicItem) {
+                    return getMedia(new_musicItem, 0, "4");
+                } else {
+                    return null;
+                }
+            },
+            param: it,
+            id: rule_id + "@" + it.platform
+        }
+    });
+    let switchPluginMedia = false;
+    batchExecute(tasks, {
+        func: function(param, id, error, playUrl) {
+            if (playUrl && playUrl != "" && !/^toast/.test(playUrl)) {
+                switchPluginMedia = playUrl;
+                return 'break';
+            }
+        },
+        param: {}
+    });
+    return switchPluginMedia || "toast://无法解析";
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

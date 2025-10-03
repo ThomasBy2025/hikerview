@@ -258,3 +258,21 @@ function getUserVariables(_) {
     }
     return userVariables;
 }
+
+
+// 格式化歌曲时间
+function dateFormat(duration) {
+    duration = duration || "00:00:00";
+    if (!isNaN(Number(duration))) {
+        duration = Number(duration);
+        if (duration < 999) {
+            duration *= 1000;
+        }
+        let t_Arr = $.dateFormat(duration, 'hh:mm:ss').split(':');
+        if ((t_Arr[0] -= 8) < 10) t_Arr[0] = '0' + t_Arr[0];
+        duration = t_Arr.join(":");
+    } else if (String(duration).length == 5) {
+        duration = "00:" + duration;
+    }
+    return duration;
+}
