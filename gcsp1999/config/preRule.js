@@ -1443,10 +1443,11 @@ function getMedia(musicItem, quality, mediaType) {
     if (mediaItem) { // 返回的字符串链接改成json
         if (typeof mediaItem === 'string') {
             if (mediaItem.includes("hiker://") || mediaItem.includes("toast://")) {
-                return mediaItem;
-            }
-            mediaItem = {
-                url: mediaItem
+                mediaItem = false;
+            } else {
+                mediaItem = {
+                    urls: [mediaItem]
+                }
             }
         }
         mediaItem = Object.assign({
@@ -1460,11 +1461,12 @@ function getMedia(musicItem, quality, mediaType) {
         }, mediaItem || {});
         if (!mediaItem.urls.length && mediaItem.url) {
             mediaItem.urls.push(mediaItem.url);
-            // delete mediaItem.url;
+            delete mediaItem.url;
         }
         mediaItem.urls = mediaItem.urls.filter(Boolean); // 去除假链接
-        if (!mediaItem.urls.length) return "toast://无法解析";
+    }
 
+    if (mediaItem && ((mediaItem.urls && mediaItem.urls.length) || (mediaItem.audioUrls && mediaItem.audioUrls.length))) {
         // 获取LRC歌词
         if (!mediaItem.lyric) {
             try {
@@ -1511,7 +1513,7 @@ function getMedia(musicItem, quality, mediaType) {
         }
         return JSON.stringify(mediaItem);
     } else {
-        switch (mediaType) {
+        switch (String(mediaType)) {
             case "0": // 精准下载
                 return "toast://解析失败";
                 break;

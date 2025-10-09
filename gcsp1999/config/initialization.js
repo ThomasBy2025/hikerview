@@ -318,7 +318,7 @@
 
 
     // 酷狗 - token保活
-    if (getItem("kg@userVariables@token") != "" && Number(getItem("kg_refresh_token", "20250921")) < new_time) {
+    if (getItem("kg@userVariables@token", "") != "" && Number(getItem("kg_refresh_token", "20250921")) < new_time) {
         try {
             let kg = _getPlatform("kg").refresh_token();
             if (kg && getItem("kg@userVariables@appid") == '3116') {
@@ -327,7 +327,6 @@
                     content: '每日听歌即可领取1日酷狗概念版VIP',
                     confirm: $.toString((new_time) => {
                         setItem("kg_refresh_token", new_time + "");
-                        MY_URL = "";
                         require(config.preRule);
                         return _getPlatform("kg").Lite_Signin();
                     }, new_time),
@@ -347,7 +346,7 @@
 
 
     // 腾讯 - token保活  #5天刷新一次
-    if (getItem("tx@userVariables@qm_keyst") != "" && Number(getItem("tx_refresh_token", "20250921")) < new_time) {
+    if (getItem("tx@userVariables@qm_keyst", "") != "" && Number(getItem("tx_refresh_token", "20250921")) < new_time) {
         try {
             let tx = _getPlatform("tx").refresh_login();
             if (tx == undefined) { // 登录成功
@@ -366,7 +365,7 @@
     // 通过依赖检测规则是否更新
     // 只在首页检测，子页面MY_RULE的version是0
     if (themeType == "home") {
-        if (MY_RULE.version < 20250902) {
+        if (MY_RULE.version != 0 && MY_RULE.version < 20250902) {
             confirm({
                 title: '更新提示',
                 content: '检测到你的规则版本小于服务器版本，是否立即更新？',
