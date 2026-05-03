@@ -7,7 +7,7 @@
         ]
     },
     "global.js": {
-        "version": 20250902,
+        "version": 20250924,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: js优化"
@@ -21,11 +21,12 @@
         ]
     },
     "preRule.js": {
-        "version": 20250918,
+        "version": 20250924,
         "records": [
             "““更新””: 云端链接",
             "‘‘支持’’: 本地导入，格式如下",
-            "落雪音乐备份，MusicFree备份，插件文本(.js)，解析文本(.js)，导入口令"
+            "落雪音乐备份，MusicFree备份，插件文本(.js)，解析文本(.js)，导入口令",
+            "增加播放链接加密函数"
         ]
     },
     "pluginList.js": {
@@ -64,10 +65,10 @@
         ]
     },
     "collection.js": {
-        "version": 20250918,
+        "version": 20250924,
         "records": [
             "““更新””: 云端链接",
-            "‘‘修复’’: 支持本地导入"
+            "‘‘修复’’: 修复无法切换样式"
         ]
     },
     "search.js": {
@@ -85,10 +86,10 @@
         ]
     },
     "ruleInstallPop.js": {
-        "version": 20250908,
+        "version": 20250924,
         "records": [
             "““更新””: 云端链接",
-            "‘‘支持’’: 软件规则设置"
+            "‘‘支持’’: 播放链接加密"
         ]
     },
     "KuwoDES.js": {
@@ -115,8 +116,15 @@
             "‘‘解压’’: javaGzip.unzip(hexStr, isGzip, mode);"
         ]
     },
+    "startProxyServer.js": : {
+        "version": 20250924,
+        "records": [
+            "““更新””: 云端链接",
+            "‘‘修复’’: 实现播放链接加密"
+        ]
+    },
     "update.json": {
-        "version": 20250918,
+        "version": 20250924,
         "records": [
             "““更新””: 云端链接",
             "‘‘修复’’: 跟进依赖版本"

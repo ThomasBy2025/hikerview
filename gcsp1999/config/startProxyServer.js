@@ -3,8 +3,8 @@ $.exports = function(musicItem, quality, mediaType) {
     let isMedia = musicItem.type != 8 && musicItem.type != 9;
     let purl = startProxyServer($.toString((Config, musicItem, isCache, danmuLrc) => {
         try {
-            MY_URL = "";
             config = Config;
+            MY_URL = "";
             require(config.preRule);
             let serverType = MY_PARAMS.serverType[0];
             let serverPath = decodeURIComponent(MY_PARAMS.serverPath[0]);
@@ -33,6 +33,7 @@ $.exports = function(musicItem, quality, mediaType) {
                 }
             }
 
+
             if (serverType != "getLyric" && serverType != "danmu") { // 获取链接
                 if (!mediaItem) {
                     try { // 获取插件函数
@@ -42,31 +43,34 @@ $.exports = function(musicItem, quality, mediaType) {
                         mediaItem = mediaPlatform[serverType](musicItem, Quality);
                     } catch (e) {}
                 }
+
                 if (mediaItem) { // 返回的字符串链接改成json
                     if (typeof mediaItem === 'string') {
                         if (mediaItem.includes("hiker://") || mediaItem.includes("toast://")) {
-                            return mediaItem;
-                        }
-                        mediaItem = {
-                            url: mediaItem
+                            mediaItem = false;
+                        } else {
+                            mediaItem = {
+                                urls: [mediaItem]
+                            }
                         }
                     }
                     mediaItem = Object.assign({
                         urls: [],
                         names: [],
                         headers: [],
-                        audioUrls: [],
+                        // audioUrls: [],
                         lyric: "",
                         danmu: "",
                         timeout: (mediaPlatform.playurl_timeout || 60 * 10) * 1000
                     }, mediaItem || {});
                     if (!mediaItem.urls.length && mediaItem.url) {
                         mediaItem.urls.push(mediaItem.url);
-                        // delete mediaItem.url;
+                        delete mediaItem.url;
                     }
                     mediaItem.urls = mediaItem.urls.filter(Boolean); // 去除假链接
-                    if (!mediaItem.urls.length) return "toast://无法解析";
+                }
 
+                if (mediaItem && ((mediaItem.urls && mediaItem.urls.length) || (mediaItem.audioUrls && mediaItem.audioUrls.length))) {
                     // 缓存直链数据
                     if (isCache) {
                         mediaItem.timeout = Number(mediaItem.timeout) + Number(timeout);

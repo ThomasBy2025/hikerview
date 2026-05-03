@@ -1,3 +1,12 @@
+addListener('onClose', $.toString(() => {
+    try {
+        let extra = findItem("gcsp1999:search").extra;
+        extra.defaultValue = getMyVar("s_query", "");
+        updateItem({
+            extra: extra
+        });
+    } catch (noInput) {}
+}));
 if (platforms.length === 0) {
     if (page == 1) {
         getTopImage({

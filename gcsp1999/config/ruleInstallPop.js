@@ -29,6 +29,7 @@ let pop = hikerPop.selectBottomSettingMenu({
         SettingItem("记忆播放进度", getItem('memoryPosition', '') == ""),
         SettingItem("获取链接信息", getItem('checkMetadata', '') == ""),
         SettingItem("强制识别音频", getItem('mediaIsMusic', '') != ""),
+        SettingItem("启用插件换源", getItem('switchPluginSource', '1') == "1"),
         SettingItem("播放链接加密", getItem('startProxyServer', '0') == "1"),
         SettingItem("显示弹幕歌词", getItem('danmuLrc', '0') == "1"),
         SettingItem(),
@@ -145,7 +146,6 @@ let pop = hikerPop.selectBottomSettingMenu({
                     }
                 });
                 break;
-
             case "音频直链缓存":
                 isTrue = officeItem.getSelected() === 1;
                 setItem('MediaCache', isTrue ? "0" : "1");
@@ -155,6 +155,12 @@ let pop = hikerPop.selectBottomSettingMenu({
             case "播放链接加密":
                 isTrue = officeItem.getSelected() === 1;
                 setItem('startProxyServer', isTrue ? "0" : "1");
+                officeItem.setSelected(isTrue ? -1 : 1);
+                change();
+                break;
+            case "启用插件换源":
+                isTrue = officeItem.getSelected() === 1;
+                setItem('switchPluginSource', isTrue ? "0" : "1");
                 officeItem.setSelected(isTrue ? -1 : 1);
                 change();
                 break;

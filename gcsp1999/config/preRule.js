@@ -1,3 +1,5 @@
+// .js :getCurrentActivity() instanceof com.example.hikerview
+// .ui.home.RuleWindowActivity?"#gameTheme#":"**"
 function _getPath(Paths, fileType, run) {
     if (Paths === true || Paths === false) {
         return Paths;
@@ -34,15 +36,20 @@ if (!MY_PARAMS.startProxyServer) { // 不是在startProxyServer环境
 }
 
 
+
+
+var s_types, s_type;
+var platformPath1, platformAll, platforms, platform, platformItem;
+var themeType2, theme_Id, theme_Data, theme_Info, theme_Index, theme_Item;
 let themeType_TwoSwitch = false;
 switch (themeType) {
     case "search":
     case "searchFind":
-        let s_types = [
+        s_types = [
             "单曲", "歌单", "专辑", "歌手",
             "视频", "歌词", "电台", "播客",
         ];
-        let s_type = getMyVar('s_type', getItem('s_type', '单曲'));
+        s_type = getMyVar('s_type', getItem('s_type', '单曲'));
         if (themeType == "searchFind") break;
     case "getTopLists":
     case "getRecommendSheetsByTag":
@@ -55,13 +62,13 @@ switch (themeType) {
         }));
         themeType_TwoSwitch = true;
 
-        let platformPath1 = _getPath(["plugin", themeType + ".json"], "_cache", 1);
-        let platformAll = JSON.parse(readFile(platformPath1) || "[]") || [];
-        let platforms = _getPath(["plugin", "enableds.json"]) || {};
+        platformPath1 = _getPath(["plugin", themeType + ".json"], "_cache", 1);
+        platformAll = JSON.parse(readFile(platformPath1) || "[]") || [];
+        platforms = _getPath(["plugin", "enableds.json"]) || {};
         platforms = platformAll.filter(_ => platforms[_.platform]);
 
-        let platform = getMyVar('platform', (platforms[0] && platforms[0].platform) || "");
-        let platformItem = platforms.find(_ => _.platform == platform) || {};
+        platform = getMyVar('platform', (platforms[0] && platforms[0].platform) || "");
+        platformItem = platforms.find(_ => _.platform == platform) || {};
 
         function getPlatformItems(_json) {
             if (((_json || {}).type || "").match("聚合")) {
@@ -114,14 +121,14 @@ switch (themeType) {
     case "getMusicSheetInfo":
     case "getAlbumInfo":
     case "getArtistWorks":
-        let {
+        ({
             themeType2,
             theme_Id,
             theme_Data,
             theme_Info,
             theme_Index,
             theme_Item
-        } = getThemeType(themeType);
+        }) = getThemeType(themeType);
         break;
 }
 if (themeType_TwoSwitch) switch (themeType) {
@@ -226,7 +233,7 @@ if (themeType_TwoSwitch) switch (themeType) {
                 TopLists = _getPlatform(platform).getTopLists() || [];
                 storage0.putMyVar(platform + "_iTop", TopLists);
             } catch (e) {
-                log("标识为：" + platform + " 的插件异常，无法获取榜单列表");
+                log("标识为：" + platform + " 的插件异常，无法获取榜单列表\n" + e);
                 TopLists = [];
             }
         }
@@ -641,7 +648,7 @@ function getThemeData(themeType) {
                 }
             });
             else {
-                if (page == 1 && (MY_PARAMS.newWindow || (getCurrentActivity() instanceof com.example.hikerview.ui.home.RuleWindowActivity))) getTopImage({
+                if (page == 1 && (MY_PARAMS.newWindow || (MY_URL.includes("#gameTheme#") && (getCurrentActivity() instanceof com.example.hikerview.ui.home.RuleWindowActivity)))) getTopImage({
                     pic_url: "http://123.56.105.145/img/top.png",
                     url: "func://background"
                 });
@@ -649,7 +656,7 @@ function getThemeData(themeType) {
                     try {
                         eval(String(_.data || "").replace(/\$name/g, _.name || "").replace(/\$type/g, _.type || "").replace(/\$length/g, _.length || "1"));
                     } catch (e) {
-                        log("主题索引异常：" + theme_Info.title + "=>" + t_index);
+                        log("主题索引异常：" + theme_Info.title + "=>" + t_index + "\n" + e);
                     }
                 });
             }
@@ -851,14 +858,13 @@ function getColType(_json) {
                             for (let _ of data) {
                                 if (_.list && _.list.length) {
                                     let __ = {
-                                        platform: _.source || _.id.split("_")[0].replace("default", "userlist"),
+                                        platform: _.source || _.id.split("_")[0].replace(/default|love/, "userlist"),
                                         id: _.sourceListId || _.id.split("_")[1] || _.id.split("_")[0],
                                         icon: _.picUrl || "http://p.qlogo.cn/gh/365976134/365976134_3/0",
                                         title: _.name,
                                         type: "2",
                                         // locationUpdateTime: _.locationUpdateTime || new Date().getTime()
                                     };
-
                                     let sourceListId = String(__.id).replace(/^(id|digest\-8_)_(\d+)$/i, "$2");
                                     if (/https?\:\/\//i.test(sourceListId)) {
                                         let ListIdmatch;
@@ -868,18 +874,20 @@ function getColType(_json) {
                                         } else if (__.platform == "tx") {
                                             ListIdmatch = sourceListId.match(/.*(\/details\/.*id=|\/playlist\/|playlist_v2.*?[\?&]id=)(\d+)/i);
                                             sourceListId = ListIdmatch && ListIdmatch[2] || sourceListId;
+                                        } else if (__.platform == "wy") {
+                                            ListIdmatch = sourceListId.match(/.*playlist.*?[\?&]id=(\d+)/i);
+                                            sourceListId = ListIdmatch && ListIdmatch[1] || sourceListId;
                                         }
-
                                         if (/https?\:\/\//i.test(sourceListId)) {
-                                            sourceListId = base64Encode(sourceListId);
+                                            sourceListId = base64Encode(sourceListId).replace(/\+/g, "-").replace(/\//g, "_").replace(/\=/g, "");
                                         }
                                     }
-                                    __.id = sourceListId;
+                                    __.id = sourceListId.replace(/^(default|love)$/, new Date().getTime() + sourceListId.length);
 
                                     // 分组歌曲数据 #list
                                     __.musicList = _.list.map(_ => {
                                         let meta = _.meta;
-                                        delete _.id;
+                                        // delete _.id;
                                         delete _.meta;
                                         delete meta._qualitys;
                                         meta.qualitys = meta.qualitys.filter(_ => /^(128k|320k|flac|flac24bit)$/i.test(_.type));
@@ -891,7 +899,9 @@ function getColType(_json) {
                                         // 转化成musicfree格式
                                         _.platform = _.source;
                                         delete _.source;
-                                        _.id = _.songId;
+                                        _.id = String(_.id).replace(_.platform + "_", "");
+                                        _.mid = String(_.songId).replace(_.id, "");
+                                        if (!_.mid) delete _.mid;
                                         delete _.songId;
                                         _.title = _.name;
                                         delete _.name;
@@ -1160,6 +1170,12 @@ const Extra = (_, _extra, run) => {
 
 
     let _url = json.url || _.url;
+    if (_url && (json.lyric || _.lyric)) {
+        _url = JSON.stringify({
+            lyric: json.lyric || _.lyric,
+            urls: [_url]
+        });
+    }
     let _url2 = buildUrl(isMedia ? "hiker://empty" : "hiker://page/home", {
         p: isMedia ? "nopage" : "fypage",
         t: ["getMediaSource", "getMediaSource", "getMusicSheetInfo", "getTopListDetail", "getAlbumInfo", "getArtistWorks", "getUserInfo", "getProgramInfo", "getRadio", "getVideo", "getLyric", "getMusicComments"][_.type] || _.type || "",
@@ -1251,7 +1267,7 @@ function getCollectionItems(c_json, isPop) {
         });
     }
     return collectionItems.map((it, c_index) => {
-        it.type = ["免费", "会员", "歌单", "榜单", "专辑", "歌手", "用户", "电台", "播客", "视频", "歌词", "评论"][it.type] || "未知";
+        let typeName = ["免费", "会员", "歌单", "榜单", "专辑", "歌手", "用户", "电台", "播客", "视频", "歌词", "评论"][it.type] || "未知";
         it.path = encodeURIComponent(it.path);
         let _json = Object.assign({
             url: c_json != undefined ? buildUrl("hiker://page/home", {
@@ -1282,8 +1298,8 @@ function getCollectionItems(c_json, isPop) {
         _json.title = String(_json.title || it.title || "").replace(/\$title|\$name/gi, it.title || "");
         _json.pic_url = String(_json.pic_url || _json.img || it.icon || "").replace(/\$pic_url|\$img|\$icon/gi, it.icon || "");
 
-        _json.desc = String(_json.desc || ("‘‘类别’’: " + it.type + "　　" + "““数量””: " + (it.worksNum || "未知")).small())
-            .replace(/\$length|\$worksNum/gi, it.worksNum || "未知").replace(/\$type/gi, it.type);
+        _json.desc = String(_json.desc || ("‘‘类别’’: " + typeName + "　　" + "““数量””: " + (it.worksNum || "未知")).small())
+            .replace(/\$length|\$worksNum/gi, it.worksNum || "未知").replace(/\$type/gi, typeName);
         return isPop ? {
             title: it.title + "\r\n\n\n" + it.path,
             icon: it.icon
@@ -1374,6 +1390,8 @@ function getMedia(musicItem, quality, mediaType) {
     }
     if (mediaType != "0" && mediaType != "4" && getItem("startProxyServer", "0") == "1") { // 播放链接加密
         return $.require(getGitHub(["config", "startProxyServer.js"]))(musicItem, quality, mediaType);
+    } else if (mediaType == "0" && musicItem.url && Object.keys(musicItem.qualities || {}).length < 2) { // 返回下载
+        return JSON.stringify(musicItem);
     }
     let Quality = ["low", "standard", "high", "super"][quality];
     let mediaItem;
@@ -1385,7 +1403,7 @@ function getMedia(musicItem, quality, mediaType) {
     };
     let _cachePath = _getPath(["mediaCache", musicItem.platform, musicItem.mid || musicItem.id || musicItem.vid || musicItem.rid, Quality + ".json"], "_cache", 1);
     let isMedia = musicItem.type != 8 && musicItem.type != 9;
-    let timeout = new Date().getTime();
+    let timeout = Number(new Date().getTime());
     let isCache = getItem('MediaCache', '1') == "1";
 
     if (isCache) { // 读取缓存
@@ -1536,6 +1554,7 @@ function getMedia(musicItem, quality, mediaType) {
 
 // 实现换源
 function switchPluginSource(musicItem) { // 默认返回标准音质
+    if (getItem('switchPluginSource', '1') != "1") return false;
     let details = _getPath(_getPath(["plugin", "details.json"], "_cache", 1)) || [];
     let plugins = _getPath(["plugin", "enableds.json"]) || {};
     plugins = details.filter(_ => plugins[_.platform] && _.platform != musicItem.platform);
@@ -1610,9 +1629,9 @@ function getLyric(item) {
                 let itime = i / n.length * time;
                 let s = ((itime - 0) % 60).toFixed(3).padStart(6, '0');
                 let m = ((itime - s) / 60).toFixed(0).padStart(2, '0');
-                return `[${m}:${s}]` + lineLyric;
-            }).join('\n');
-        }(lrcText, item.duration || 200000);
+                return `[${m}:${s}]`.replace(/\-/g, "0") + lineLyric;
+            }).join('\n')
+        }(lrcText, item.duration || 200);
     }
     if (!lrcText.match(/\d+\:\d+/) && lrcText.match(/^\s*https?\:\/\//)) { // 可能是lrc链接
         try {
@@ -1819,7 +1838,9 @@ function setCollectionGroup(input, path) {
                     cancelTitle: "算了算了",
                     hideCancel: false, //隐藏取消按钮
                     confirm() {
-                        return setCollectionData(c_info);
+                        hikerPop.runOnNewThread(() => {
+                            return setCollectionData(c_info);
+                        });
                     },
                     cancel() {
                         return "hiker://empty";
@@ -1981,7 +2002,9 @@ function setCollectionData(musicItem, run) {
                     author: musicItem.author,
                     icon: musicItem.icon,
                     type: musicItem.type || "2",
-                    worksNum: musicItem.musicList.length
+                    worksNum: musicItem.musicList.length,
+                    id: musicItem.mid || musicItem.id,
+                    platform: musicItem.platform
                 }
 
                 // 选择位置

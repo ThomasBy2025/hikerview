@@ -184,7 +184,9 @@
                     author: cObj.author,
                     icon: cObj.icon,
                     type: cObj.type || "2",
-                    worksNum: cObj.musicList.length
+                    worksNum: cObj.musicList.length,
+                    id: cObj.mid || cObj.id,
+                    platform: cObj.platform
                 });
             } catch (e) {
                 log("地址: " + cPath + " 的收藏异常，无法获取");
