@@ -1552,9 +1552,14 @@ function getMedia(musicItem, quality, mediaType) {
 
 
 // 实现换源
-function switchPluginSource(musicItem) { // 默认返回标准音质
+function switchPluginSource(musicItem, isAll) { // 默认返回标准音质
     if (getItem('switchPluginSource', '1') != "1") return false;
-    let details = _getPath(_getPath(["plugin", "details.json"], "_cache", 1)) || [];
+    let details = _getPath(_getPath(["plugin", "isProxyPlugin.json"], "_cache", 1)) || [];
+    if (isAll) {
+        let detaila = _getPath(_getPath(["plugin", "details.json"], "_cache", 1)) || [];
+        details = details.map(_ => _.platform);
+        details = detaila.filter(_ => !details.includes(_.platform))
+    }
     let plugins = _getPath(["plugin", "enableds.json"]) || {};
     plugins = details.filter(_ => plugins[_.platform] && _.platform != musicItem.platform);
     let tasks = plugins.map(it => {
@@ -1585,7 +1590,7 @@ function switchPluginSource(musicItem) { // 默认返回标准音质
         },
         param: {}
     });
-    return switchPluginMedia || "toast://无法解析";
+    return switchPluginMedia || (isAll ? "toast://无法解析" : switchPluginSource(musicItem, 1));
 }
 
 

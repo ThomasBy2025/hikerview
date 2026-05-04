@@ -61,6 +61,10 @@
         let path6 = _getPath(["plugin", "musicfree.json"], "_cache", 1);
         let musicfree = {};
 
+        // 插件是通用解析
+        let path7 = _getPath(["plugin", "isProxyPlugin.json"], "_cache", 1);
+        let proxyp = []
+
         // 保存插件信息
         for (let platform of filedirs) {
             try {
@@ -80,7 +84,9 @@
                     supportedSearchType: Array.isArray(plugin.supportedSearchType) ? plugin.supportedSearchType : ["单曲", "歌单", "专辑", "歌手", "视频", "歌词", "电台", "播客"],
                     import_url: plugin.import_url && true,
                 };
-                if (plugin.search) {
+                if (detail.type == "解析" || detail.type == "proxy") {
+                    proxyp.push(detail);
+                } else if (plugin.search) {
                     search1.push(detail);
                 }
                 if (plugin.getRecommendSheetTags) {
@@ -109,6 +115,7 @@
         saveFile(path4, JSON.stringify(topLists));
         saveFile(path5, JSON.stringify(artists));
         saveFile(path6, JSON.stringify(musicfree));
+        saveFile(path7, JSON.stringify(proxyp));
         putMyVar("pluginInitialization", hour ? "2" : "1");
         log("插件初始化成功");
     }
