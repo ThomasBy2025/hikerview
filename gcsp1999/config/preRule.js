@@ -1284,20 +1284,19 @@ function getCollectionItems(c_json, isPop) {
                 return 'hiker://empty';
             }, it.path),
             col_type: "icon_1_left_pic",
-            extra: {
-                inheritTitle: false,
-                longClick: ["更新资源", "分享分组", "编辑分组", "删除分组", "合并分组", "新增分组", "更改排序"].map(title => ({
-                    title,
-                    js: $.toString((input, c_path) => {
-                        require(config.preRule);
-                        return setCollectionGroup(input, c_path);
-                    }, title, it.path)
-                }))
-            }
         }, c_json || {});
+        _json.extra = Object.assign({
+            inheritTitle: false,
+            longClick: ["更新资源", "分享分组", "编辑分组", "删除分组", "合并分组", "新增分组", "更改排序"].map(title => ({
+                title,
+                js: $.toString((input, c_path) => {
+                    require(config.preRule);
+                    return setCollectionGroup(input, c_path);
+                }, title, it.path)
+            }))
+        }, (c_json || {}).extra || {});
         _json.title = String(_json.title || it.title || "").replace(/\$title|\$name/gi, it.title || "");
         _json.pic_url = String(_json.pic_url || _json.img || it.icon || "").replace(/\$pic_url|\$img|\$icon/gi, it.icon || "");
-
         _json.desc = String(_json.desc || ("‘‘类别’’: " + typeName + "　　" + "““数量””: " + (it.worksNum || "未知")).small())
             .replace(/\$length|\$worksNum/gi, it.worksNum || "未知").replace(/\$type/gi, typeName);
         return isPop ? {
@@ -1564,7 +1563,7 @@ function switchPluginSource(musicItem) { // 默认返回标准音质
             func: function(plugin) {
                 let musicItem = plugin.musicItem;
                 let keyword = musicItem.title + " - " + musicItem.artist;
-                let SEARCH = _getPlatform(plugin.platform).search(keyword, 1, "单曲") || {};
+                let SEARCH = _getPlatform(plugin.platform).search(keyword, 1, "单曲", musicItem) || {};
                 let new_musicItem = (SEARCH.data || [])[0] || {};
                 if (new_musicItem) {
                     return getMedia(new_musicItem, 0, "4");
