@@ -1581,7 +1581,7 @@ function switchPluginSource(musicItem, isAll) { // 默认返回标准音质
         }
     });
     let switchPluginMedia = false;
-    batchExecute(tasks, {
+    if (tasks.length) batchExecute(tasks, {
         func: function(param, id, error, playUrl) {
             if (playUrl && playUrl != "" && !/^toast/.test(playUrl)) {
                 switchPluginMedia = playUrl;
