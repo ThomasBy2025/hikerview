@@ -1447,9 +1447,10 @@ function getMedia(musicItem, quality, mediaType) {
             } catch (e) {}
         }
 
-        if (!mediaItem && isMedia) { // 通过公用解析获取链接
+        if (!mediaItem && isMedia && mediaType != "4") { // 通过公用解析获取链接
             try {
-                mediaItem = switchPluginSource(musicItem, quality);
+                let old_musicItem = JSON.parse(JSON.stringify(musicItem));
+                mediaItem = switchPluginSource(old_musicItem, quality);
                 mediaItem = JSON.parse(mediaItem.replace('"lyric":"[00:00.000]",', ""));
             } catch (e) {
                 mediaItem = false;
@@ -1569,7 +1570,7 @@ function switchPluginSource(musicItem, quality) { // 默认返回标准音质
     if (quality === undefined) {
         let detaila = _getPath(_getPath(["plugin", "details.json"], "_cache", 1)) || [];
         details = details.map(_ => _.platform);
-        details = detaila.filter(_ => !details.includes(_.platform))
+        details = detaila.filter(_ => !details.includes(_.platform));
     }
     let plugins = _getPath(["plugin", "enableds.json"]) || {};
     plugins = details.filter(_ => plugins[_.platform] && _.platform != musicItem.platform);
