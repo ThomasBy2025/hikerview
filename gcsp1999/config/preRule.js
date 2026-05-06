@@ -1402,7 +1402,7 @@ function getMedia(musicItem, quality, mediaType) {
     };
     let _cachePath = _getPath(["mediaCache", musicItem.platform, musicItem.mid || musicItem.id || musicItem.vid || musicItem.rid, Quality + ".json"], "_cache", 1);
     let isMedia = musicItem.type != 8 && musicItem.type != 9;
-    let timeout = Number(new Date().getTime());
+    let timeout = Number(Date.now());
     let isCache = getItem('MediaCache', '1') == "1";
 
     if (isCache) { // 读取缓存
@@ -1432,7 +1432,7 @@ function getMedia(musicItem, quality, mediaType) {
             }
         } catch (e) {}
 
-        if (!mediaItem && isMedia) { // 通过解析获取链接
+        if (!mediaItem && isMedia) { // 通过私有解析获取链接
             try {
                 let proxyPaths = _getPath(_getPath(["proxy", musicItem.platform, Quality + ".json"], "_cache", 1)) || [];
                 let enableds = _getPath(["proxy", musicItem.platform, "open.json"]) || {};
@@ -1447,7 +1447,16 @@ function getMedia(musicItem, quality, mediaType) {
             } catch (e) {}
         }
 
-        if (!mediaItem && isMedia && mediaType != "0" && (musicItem.vid || musicItem.rid)) { // 获取视频链接代替
+        if (!mediaItem && isMedia) { // 通过公用解析获取链接
+            try {
+                mediaItem = switchPluginSource(musicItem, quality);
+                mediaItem = JSON.parse(mediaItem.replace('"lyric":"[00:00.000]",', ""));
+            } catch (e) {
+                mediaItem = false;
+            }
+        }
+
+        if (!mediaItem && isMedia && (musicItem.vid || musicItem.rid)) { // 获取视频链接代替
             try {
                 if (musicItem.vid) {
                     mediaItem = mediaPlatform.getVideo(musicItem, Quality);
@@ -1457,7 +1466,8 @@ function getMedia(musicItem, quality, mediaType) {
             } catch (e) {}
         }
     }
-    if (mediaItem) { // 返回的字符串链接改成json
+
+    if (mediaItem) {
         if (typeof mediaItem === 'string') {
             if (mediaItem.includes("hiker://") || mediaItem.includes("toast://")) {
                 mediaItem = false;
@@ -1474,7 +1484,7 @@ function getMedia(musicItem, quality, mediaType) {
             // audioUrls: [],
             lyric: "",
             danmu: "",
-            timeout: (mediaPlatform.playurl_timeout || 60 * 10) * 1000
+            timeout: (mediaPlatform.playurl_timeout || 600) * 1000
         }, mediaItem || {});
         if (!mediaItem.urls.length && mediaItem.url) {
             mediaItem.urls.push(mediaItem.url);
@@ -1538,7 +1548,7 @@ function getMedia(musicItem, quality, mediaType) {
                 return null;
                 break;
             case "3": // 没有音质
-                return switchPluginSource(musicItem); // 换源
+                return switchPluginSource(musicItem); // 换插件来源
                 break;
             case "1":
                 return getMedia(musicItem, quality + 1, mediaType);
@@ -1551,11 +1561,12 @@ function getMedia(musicItem, quality, mediaType) {
 }
 
 
+
 // 实现换源
-function switchPluginSource(musicItem, isAll) { // 默认返回标准音质
+function switchPluginSource(musicItem, quality) { // 默认返回标准音质
     if (getItem('switchPluginSource', '1') != "1") return false;
     let details = _getPath(_getPath(["plugin", "isProxyPlugin.json"], "_cache", 1)) || [];
-    if (isAll) {
+    if (quality === undefined) {
         let detaila = _getPath(_getPath(["plugin", "details.json"], "_cache", 1)) || [];
         details = details.map(_ => _.platform);
         details = detaila.filter(_ => !details.includes(_.platform))
@@ -1571,7 +1582,7 @@ function switchPluginSource(musicItem, isAll) { // 默认返回标准音质
                 let SEARCH = _getPlatform(plugin.platform).search(keyword, 1, "单曲", musicItem) || {};
                 let new_musicItem = (SEARCH.data || [])[0] || {};
                 if (new_musicItem) {
-                    return getMedia(new_musicItem, 0, "4");
+                    return getMedia(new_musicItem, quality || 0, "4");
                 } else {
                     return null;
                 }
@@ -1590,7 +1601,7 @@ function switchPluginSource(musicItem, isAll) { // 默认返回标准音质
         },
         param: {}
     });
-    return switchPluginMedia || (isAll ? "toast://无法解析" : switchPluginSource(musicItem, 1));
+    return switchPluginMedia || "toast://无法解析";
 }
 
 
