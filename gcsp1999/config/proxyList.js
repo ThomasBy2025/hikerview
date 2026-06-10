@@ -100,6 +100,54 @@ let selects = _getPath(selectp) || [];
 
 
 
+
+
+
+// 过滤
+let groups = ["全部", "启用", "禁用"];
+let group = getMyVar("proxy_filter", "全部");
+jx_list = jx_list.filter(_ => {
+    let _type = _.type || "未知";
+    if (!groups.includes(_type)) {
+        groups.push(_type);
+    }
+    switch (group) {
+        case "全部":
+            return true;
+            break;
+        case "启用":
+            return enableds[_.path];
+            break;
+        case "禁用":
+            return !enableds[_.path];
+            break;
+        default:
+            return _type == group;
+            break
+    }
+});
+d.push({
+    col_type: "big_blank_block"
+});
+groups.map((name, ii) => {
+    d.push({
+        title: Rich(Color(name, group != name && "Gray").bold()),
+        url: $('#noLoading#').lazyRule((s_type) => {
+            putMyVar('proxy_filter', s_type);
+            refreshPage();
+            return 'hiker://empty';
+        }, name),
+        col_type: 'scroll_button',
+    });
+});
+d.push({
+    col_type: "big_blank_block"
+});
+
+
+
+
+
 if (jx_list.length == 0) {
     d.push({
         title: Rich(Color("没有解析数据").bold().big()),
@@ -125,7 +173,7 @@ if (jx_list.length == 0) {
             desc: Color(desc1, "#2E5D8E"),
             pic_url: _.icon,
             col_type: 'avatar',
-            url: $("#noLoading#").lazyRule((_, i, _id, sObj) => {
+            url: $("#noLoading#").lazyRule((_, i, _id, isS) => {
                 require(config.preRule);
                 const hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
                 hikerPop.selectCenterIcon({
@@ -141,7 +189,13 @@ if (jx_list.length == 0) {
                     }, {
                         title: "位置排序",
                         icon: getImageUrl("sorted.svg")
-                    }, sObj, {
+                    }, (isS ? {
+                        title: "取消选中",
+                        icon: getImageUrl("unselected.svg")
+                    } : {
+                        title: "选中解析",
+                        icon: getImageUrl("selected.svg")
+                    }), {
                         title: "测试解析",
                         icon: getImageUrl("hijack.svg")
                     }],
@@ -196,18 +250,17 @@ if (jx_list.length == 0) {
                                             if (musicItem) {
                                                 if (musicItem.qualities && musicItem.qualities[quality]) {
                                                     hikerPop.runOnNewThread(() => {
-                                                        let _Jiexi_url = _Jiexi.getMediaSource(musicItem, quality) || "";
+                                                        let _Jiexi_url = _Jiexi.getMediaSource(musicItem, quality);
+                                                        _Jiexi_url = formatMediaItem(_Jiexi_url);
+                                                        _Jiexi_url = _Jiexi_url && JSON.stringify(_Jiexi_url);
                                                         hikerPop.confirm({
-                                                            content: JSON.stringify(_Jiexi_url).replace(/^"|"$/g, "") || "没有链接",
+                                                            content: _Jiexi_url || "没有链接",
                                                             title: "解析成功",
                                                             okTitle: "播放看看",
                                                             cancelTitle: "我知道了",
                                                             hideCancel: false, //隐藏取消按钮
                                                             confirm() {
-                                                                if (_Jiexi_url.url && !(Array.isArray(_Jiexi_url.urls) && _Jiexi_url.urls.length)) {
-                                                                    _Jiexi_url.urls = [_Jiexi_url.url];
-                                                                }
-                                                                return JSON.stringify(_Jiexi_url).replace(/^"|"$/g, "") || "toast://解析失败，没有链接";
+                                                                return _Jiexi_url || "toast://解析失败，没有链接";
                                                             },
                                                             cancel() {
                                                                 return "hiker://empty";
@@ -281,13 +334,7 @@ if (jx_list.length == 0) {
                     }
                 });
                 return "hiker://empty";
-            }, _, i, _id, isS ? {
-                title: "取消选中",
-                icon: getImageUrl("unselected.svg")
-            } : {
-                title: "选中解析",
-                icon: getImageUrl("selected.svg")
-            })
+            }, _, i, _id, isS)
         });
         d.push({
             title: [_.platform, _.type, _.srcUrl].join("┃"),

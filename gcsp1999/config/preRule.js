@@ -1160,7 +1160,7 @@ const Extra = (_, _extra, run) => {
     json.title = String(json.title || "")
         .replace(/\$title|\$nickName/g, _.title || _.nickName || "")
         .replace(/\$artist/g, _.artist || "");
-    json.desc = String(json.desc || "")
+    json.desc = String(_.viewDesc || json.desc || "")
         .replace(/\$duration/g, _.duration || "")
         .replace(/\$artist/g, _.artist || "")
         .replace(/\$album/g, _.album || _.title || "")
@@ -1350,6 +1350,7 @@ function getQuality(musicItem, down) {
                 }
             }
         }
+        if (down == "debug") return arr1;
         return $(arr1, 1, '选择下载音质').select((musicItem, arr1) => {
             let quality = arr1.indexOf(input);
             require(config.preRule);
@@ -1432,6 +1433,7 @@ function getMedia(musicItem, quality, mediaType) {
             }
         } catch (e) {}
 
+        mediaItem = formatMediaItem(mediaItem);
         if (!mediaItem && isMedia) { // 通过私有解析获取链接
             try {
                 let proxyPaths = _getPath(_getPath(["proxy", musicItem.platform, Quality + ".json"], "_cache", 1)) || [];
@@ -1447,6 +1449,7 @@ function getMedia(musicItem, quality, mediaType) {
             } catch (e) {}
         }
 
+        mediaItem = formatMediaItem(mediaItem);
         if (!mediaItem && isMedia && mediaType != "4") { // 通过公用解析获取链接
             try {
                 let old_musicItem = JSON.parse(JSON.stringify(musicItem));
@@ -1457,6 +1460,7 @@ function getMedia(musicItem, quality, mediaType) {
             }
         }
 
+        mediaItem = formatMediaItem(mediaItem);
         if (!mediaItem && isMedia && (musicItem.vid || musicItem.rid)) { // 获取视频链接代替
             try {
                 if (musicItem.vid) {
@@ -1468,33 +1472,8 @@ function getMedia(musicItem, quality, mediaType) {
         }
     }
 
+    mediaItem = formatMediaItem(mediaItem, mediaPlatform.playurl_timeout);
     if (mediaItem) {
-        if (typeof mediaItem === 'string') {
-            if (mediaItem.includes("hiker://") || mediaItem.includes("toast://")) {
-                mediaItem = false;
-            } else {
-                mediaItem = {
-                    urls: [mediaItem]
-                }
-            }
-        }
-        mediaItem = Object.assign({
-            urls: [],
-            names: [],
-            headers: [],
-            // audioUrls: [],
-            lyric: "",
-            danmu: "",
-            timeout: (mediaPlatform.playurl_timeout || 600) * 1000
-        }, mediaItem || {});
-        if (!mediaItem.urls.length && mediaItem.url) {
-            mediaItem.urls.push(mediaItem.url);
-            delete mediaItem.url;
-        }
-        mediaItem.urls = mediaItem.urls.filter(Boolean); // 去除假链接
-    }
-
-    if (mediaItem && ((mediaItem.urls && mediaItem.urls.length) || (mediaItem.audioUrls && mediaItem.audioUrls.length))) {
         // 获取LRC歌词
         if (!mediaItem.lyric) {
             try {
@@ -1560,6 +1539,40 @@ function getMedia(musicItem, quality, mediaType) {
         }
     }
 }
+
+
+
+// 格式化链接
+function formatMediaItem(mediaItem, playurl_timeout) {
+    if (typeof mediaItem === 'string') {
+        if (mediaItem.includes("hiker://") || mediaItem.includes("toast://")) {
+            mediaItem = false;
+        } else {
+            mediaItem = {
+                urls: [mediaItem]
+            }
+        }
+    }
+    mediaItem = Object.assign({
+        urls: [],
+        names: [],
+        headers: [],
+        audioUrls: [],
+        lyric: "",
+        danmu: "",
+        timeout: (playurl_timeout || 600) * 1000
+    }, mediaItem || {});
+    if (!mediaItem.urls.length && mediaItem.url) {
+        mediaItem.urls.push(mediaItem.url);
+        delete mediaItem.url;
+    }
+    mediaItem.urls = mediaItem.urls.filter(Boolean); // 去除假链接
+    mediaItem.audioUrls = mediaItem.audioUrls.filter(Boolean);
+    let len = mediaItem.urls.length || mediaItem.audioUrls.length;
+    return len && mediaItem;
+}
+
+
 
 
 
