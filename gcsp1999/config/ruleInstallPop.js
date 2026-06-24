@@ -33,11 +33,9 @@ let pop = hikerPop.selectBottomSettingMenu({
         SettingItem("播放链接加密", getItem('startProxyServer', '0') == "1"),
         SettingItem("显示弹幕歌词", getItem('danmuLrc', '0') == "1"),
         SettingItem(),
-
         SettingItem("图标下载状态", readDir(_getPath(["image"], 0, 1)).length == 23 ? true : "文件不全"),
-        SettingItem("依赖代理接口", getItem("ghproxy", "").slice(0, 16) || "hiker://empty"),
-        SettingItem("插件更新设置", getItem("plugin_update", "0") == "1" ? "自动更新" : "手动更新"),
-        SettingItem("清除依赖缓存", "更新依赖"),
+        SettingItem("依赖更新管理", false),
+        SettingItem("二级样式设置", false),
         SettingItem("查看温馨提示", "编辑修改"),
         SettingItem("页面标识设置", pageHomeTypes[pageHomeIndex]),
         SettingItem("默认搜索类型", "搜索" + s_type),
@@ -84,23 +82,6 @@ let pop = hikerPop.selectBottomSettingMenu({
                                 return "hiker://empty";
                             }
                         });
-                    }
-                });
-                break;
-            case '清除依赖缓存':
-                hikerPop.confirm({
-                    content: "清除后需要能打开github的网络，进行初始化",
-                    title: "确定清除依赖缓存吗？",
-                    okTitle: "确定清除",
-                    cancelTitle: "算了算了",
-                    hideCancel: false, //隐藏取消按钮
-                    confirm() {
-                        deleteCache();
-                        pop.dismiss();
-                        return "hiker://清除成功";
-                    },
-                    cancel() {
-                        return "hiker://empty";
                     }
                 });
                 break;
@@ -182,12 +163,7 @@ let pop = hikerPop.selectBottomSettingMenu({
                 officeItem.setSelected(isTrue ? -1 : 1);
                 change();
                 break;
-            case "插件更新设置":
-                isTrue = officeItem.getDesc() == "自动更新";
-                setItem('plugin_update', isTrue ? "0" : "1");
-                officeItem.setDesc(isTrue ? "手动更新" : "自动更新");
-                change();
-                break;
+
             case "显示弹幕歌词":
                 let danmuModes = ["置顶居中", "顺序滚动", "逆向滚动", "高级弹幕", "置底居中"];
                 hikerPop.selectBottomSettingMenu({
@@ -294,24 +270,215 @@ let pop = hikerPop.selectBottomSettingMenu({
                     return "hiker://empty";
                 }
                 break;
-            case "依赖代理接口":
-                hikerPop.inputAutoRow({
-                    hint: "github代理链接",
-                    title: s,
-                    defaultValue: getItem("ghproxy", ""),
-                    //hideCancel: true,
-                    noAutoSoft: true, //不自动打开输入法
-                    confirm(text) {
-                        text = String(text).trim();
-                        setItem('ghproxy', text);
-                        config.ghproxy = 0;
-                        eval(MY_RULE.preRule);
-                        officeItem.setDesc(text || "hiker://empty");
-                        change();
-                        return "toast://设置成功\n" + config.ghproxy;
-                    },
-                    cancel() {
-                        return "toast://取消";
+            case "依赖更新管理":
+                hikerPop.selectBottomSettingMenu({
+                    options: [
+                        SettingItem("依赖代理接口", getItem("ghproxy", "").slice(0, 16) || "hiker://empty"),
+                        SettingItem("插件更新设置", getItem("plugin_update", "0") == "1" ? "自动更新" : "手动更新"),
+                        SettingItem("清除依赖缓存", "更新依赖"),
+                        SettingItem()
+                    ],
+                    click(s2, officeItem2, change2) {
+                        let isTrue2;
+                        switch (s2) {
+                            case "依赖代理接口":
+                                hikerPop.inputAutoRow({
+                                    hint: "github代理链接",
+                                    title: s2,
+                                    defaultValue: getItem("ghproxy", ""),
+                                    //hideCancel: true,
+                                    noAutoSoft: true, //不自动打开输入法
+                                    confirm(text) {
+                                        text = String(text).trim();
+                                        if (!/http/.test(text)) {
+                                            return "toast://不是http地址";
+                                        }
+                                        hikerPop.runOnNewThread(() => {
+                                            try {
+                                                let verify_url = 'https://raw.githubusercontent.com/src48597962/hk/master/verify';
+                                                let content = fetch(text + verify_url, {
+                                                    timeout: 5000
+                                                });
+                                                if (content && content.trim() == "ok") {
+                                                    setItem('ghproxy', text);
+                                                    config.ghproxy = 0;
+                                                    eval(MY_RULE.preRule);
+                                                    officeItem2.setDesc(text || "hiker://empty");
+                                                    change2();
+                                                    return "toast://设置成功\n" + text;
+                                                }
+                                            } catch (e) {}
+                                            return 'toast://设置失败';
+                                        });
+                                    },
+                                    cancel() {
+                                        return "toast://取消";
+                                    }
+                                });
+                                break;
+                            case "插件更新设置":
+                                isTrue2 = officeItem2.getDesc() == "自动更新";
+                                setItem('plugin_update', isTrue2 ? "0" : "1");
+                                officeItem2.setDesc(isTrue2 ? "手动更新" : "自动更新");
+                                change2();
+                                break;
+                            case '清除依赖缓存':
+                                hikerPop.confirm({
+                                    content: "清除后需要能打开github的网络，进行初始化",
+                                    title: "确定清除依赖缓存吗？",
+                                    okTitle: "确定清除",
+                                    cancelTitle: "算了算了",
+                                    hideCancel: false, //隐藏取消按钮
+                                    confirm() {
+                                        deleteCache();
+                                        pop.dismiss();
+                                        return "toast://清除成功";
+                                    },
+                                    cancel() {
+                                        return "hiker://empty";
+                                    }
+                                });
+                                break;
+                        }
+                    }
+                });
+                break;
+            case '二级样式设置':
+                hikerPop.selectBottomSettingMenu({
+                    options: [
+                        SettingItem("简介样式设置", "JS"),
+                        SettingItem("默认列表样式", getItem("col_type", "icon_1_left_pic")),
+                        SettingItem(),
+                        SettingItem("标准音质映射", [
+                            getItem("mediaDesc_quality_low_color", "") || "#3BA600",
+                            getItem("mediaDesc_quality_low_name", "") || "128K"
+                        ].join(" - ")),
+                        SettingItem("高品音质映射", [
+                            getItem("mediaDesc_quality_standard_color", "") || "#62A6FB",
+                            getItem("mediaDesc_quality_standard_name", "") || "320K"
+                        ].join(" - ")),
+                        SettingItem("无损音质映射", [
+                            getItem("mediaDesc_quality_high_color", "") || "#FA7D00",
+                            getItem("mediaDesc_quality_high_name", "") || "FLAC"
+                        ].join(" - ")),
+                        SettingItem("高品无损映射", [
+                            getItem("mediaDesc_quality_super_color", "") || "red",
+                            getItem("mediaDesc_quality_super_name", "") || "Hi-Res"
+                        ].join(" - ")),
+                        SettingItem(),
+                        SettingItem("免费音频映射", [
+                            getItem("mediaDesc_type_0_color", "") || "#008080",
+                            getItem("mediaDesc_type_0_name", "") || "畅听"
+                        ].join(" - ")),
+                        SettingItem("付费音频映射", [
+                            getItem("mediaDesc_type_1_color", "") || "#4B0082",
+                            getItem("mediaDesc_type_1_name", "") || "会员"
+                        ].join(" - ")),
+                        SettingItem(),
+                        SettingItem("插件名称映射", "{}"),
+                    ],
+                    click(s2, officeItem2, change2) {
+                        let isTrue2;
+                        switch (s2) {
+                            case "默认列表样式":
+                                let optionf = ["text_4", "text_5", "text_center_1", "movie_2", "movie_3", "movie_3_marquee", "pic_1", "pic_2", "pic_3", "pic_1_center", "pic_1_card", "pic_2_card", "icon_1_search", "icon_small_3", "long_text", "rich_text", "avatar", "text_icon", "x5_webview_single", "video", "pic_1", "line", "line_blank", "blank_block", "big_blank_block", "big_big_blank_block", "scroll_button", "card_pic_2_2", "card_pic_2_2_left", "input"];
+                                let options = getColTypes().filter(_type => !optionf.includes(_type))
+                                let position = options.indexOf(String(officeItem2.getDesc()));
+                                options[position] = "““" + options[position] + "””";
+                                let pop = hikerPop.selectBottom({
+                                    title: "请选择显示样式",
+                                    options,
+                                    columns: 2,
+                                    height: 0.6, //0-1
+                                    position,
+                                    click(a) {
+                                        setItem("col_type", a);
+                                        officeItem2.setDesc(a);
+                                        change2();
+                                        return "toast://设置成功\n" + a;
+                                    }
+                                });
+                                break;
+                            case "简介样式设置":
+                                hikerPop.inputConfirm({
+                                    hint: "text 或者 js:",
+                                    title: s2,
+                                    defaultValue: getItem("mediaDesc", "") || "js:\nlet tag = [\n    \"$platformName\".fontcolor(\"$platformColor\"),\n    \"$typeName\".fontcolor(\"$typeColor\"),\n    \"$qualityName\".fontcolor(\"$qualityColor\"),\n].join(\"&nbsp;\").bold().small().small().sup();\n`‘‘’’<i>${tag}&nbsp;$duration</i>&nbsp;&nbsp;∙&nbsp;&nbsp;$album`",
+                                    textarea: true, //多行模式
+                                    maxTextarea: true,
+                                    noAutoSoft: true, //不自动打开输入法
+                                    confirm(text) {
+                                        try {
+                                            let t = 'toast://设置成功\n' + eval(text);
+                                            setItem('mediaDesc', text);
+                                            change2();
+                                            return t;
+                                        } catch (e) {
+                                            return 'toast://设置失败\n' + e.toString();
+                                        }
+                                    },
+                                    cancel() {
+                                        return "toast://取消";
+                                    }
+                                });
+                                break;
+                            case "插件名称映射":
+                                hikerPop.inputConfirm({
+                                    hint: '{ "kw":{"name":"小蜗","color":"red"} }',
+                                    title: s2,
+                                    defaultValue: getItem("platformDesc", ''),
+                                    textarea: true, //多行模式
+                                    maxTextarea: true,
+                                    noAutoSoft: true, //不自动打开输入法
+                                    confirm(text) {
+                                        try {
+                                            let t = JSON.parse(text);
+                                            text = JSON.stringify(t, null, 2);
+                                            setItem('platformDesc', text);
+                                            change2();
+                                            return 'toast://设置成功\n' + (text);
+                                        } catch (e) {
+                                            return 'toast://设置失败\n' + e.toString();
+                                        }
+                                    },
+                                    cancel() {
+                                        return "toast://取消";
+                                    }
+                                });
+                                break;
+                            default:
+                                let xtype1 = /音频/.test(s2) ? "type" : "quality";
+                                let xtype2 = {
+                                    "标准音质映射": "low",
+                                    "高品音质映射": "standard",
+                                    "无损音质映射": "high",
+                                    "高品无损映射": "super",
+                                    "免费音频映射": "0",
+                                    "付费音频映射": "1",
+                                } [s2];
+                                let xtype3 = "mediaDesc" + "_" + xtype1 + "_" + xtype2 + "_";
+                                let xtype4 = String(officeItem2.getDesc()).split(" - ");
+                                hikerPop.inputTwoRow({
+                                    titleHint: "映射名称",
+                                    titleDefault: xtype4[1],
+                                    urlHint: "映射颜色",
+                                    urlDefault: xtype4[0],
+                                    noAutoSoft: true, //不自动打开输入法
+                                    title: s2,
+                                    //hideCancel: true,
+                                    confirm(s1, s2) {
+                                        setItem(xtype3 + 'name', s1);
+                                        setItem(xtype3 + 'color', s2);
+                                        officeItem2.setDesc(s2 + " - " + s1);
+                                        change2();
+                                        return "toast://保存成功\n" + s2 + " - " + s1;
+                                    },
+                                    cancel() {
+                                        return "toast://取消"
+                                    }
+                                });
+                                break;
+                        }
                     }
                 });
                 break;

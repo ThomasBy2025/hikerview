@@ -26,8 +26,9 @@ d.push({
             setItem("col_type", a);
             return "hiker://empty";
         }
-        let options = getColTypes();
-        let position = options.indexOf(getItem("col_type", "text_1"));
+        let optionf = ["text_4", "text_5", "text_center_1", "movie_2", "movie_3", "movie_3_marquee", "pic_1", "pic_2", "pic_3", "pic_1_center", "pic_1_card", "pic_2_card", "icon_1_search", "icon_small_3", "long_text", "rich_text", "avatar", "text_icon", "x5_webview_single", "video", "pic_1", "line", "line_blank", "blank_block", "big_blank_block", "big_big_blank_block", "scroll_button", "card_pic_2_2", "card_pic_2_2_left", "input"];
+        let options = getColTypes().filter(_type=>!optionf.includes(_type))
+        let position = options.indexOf(getItem("col_type", "icon_1_left_pic"));
         options[position] = "““" + options[position] + "””";
         let pop = hikerPop.selectBottom({
             title: "请选择显示样式",
@@ -163,11 +164,7 @@ if (c_info === undefined) {
         });
     } else {
         c_data.map((_, i) => {
-            let __ = Extra(_, {
-                title: Rich("$title" + ("　-　$artist").small().small().sub()),
-                desc: "📼 $duration\n📀 $album",
-                col_type: getItem("col_type", "text_1")
-            }, 1);
+            let __ = Extra(_, 0, 1);
             __.extra.longClick[1].title = "复制";
             __.extra.longClick.splice(1, 0, {
                 title: "修改",

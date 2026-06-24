@@ -274,5 +274,5 @@ function dateFormat(duration) {
     } else if (String(duration).length == 5) {
         duration = "00:" + duration;
     }
-    return duration;
+    return duration.replace(/^0[\+\-]\d+/, "00");
 }

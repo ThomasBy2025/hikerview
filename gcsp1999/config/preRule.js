@@ -1108,6 +1108,40 @@ function getColType(_json) {
 
 
 
+let extraDesc = {
+    mediaDesc: String(getItem("mediaDesc", "") || "js:\nlet tag = [\n    \"$platformName\".fontcolor(\"$platformColor\"),\n    \"$typeName\".fontcolor(\"$typeColor\"),\n    \"$qualityName\".fontcolor(\"$qualityColor\"),\n].join(\"&nbsp;\").bold().small().small().sup();\n`‘‘’’<i>${tag}&nbsp;$duration</i>&nbsp;&nbsp;∙&nbsp;&nbsp;$album`")
+        .replace(/js:([\s\S]+)/, ($0, $1) => eval($1)),
+    platformDesc: JSON.parse(getItem("platformDesc", '{}')),
+    PQ: {
+        name: getItem("mediaDesc_quality_low_name", "") || "128K",
+        color: getItem("mediaDesc_quality_low_color", "") || "#3BA600"
+    },
+    HQ: {
+        name: getItem("mediaDesc_quality_standard_name", "") || "320K",
+        color: getItem("mediaDesc_quality_standard_color", "") || "#62A6FB"
+    },
+    SQ: {
+        name: getItem("mediaDesc_quality_high_name", "") || "FLAC",
+        color: getItem("mediaDesc_quality_high_color", "") || "#FA7D00"
+    },
+    ZQ: {
+        name: getItem("mediaDesc_quality_super_name", "") || "Hi-Res",
+        color: getItem("mediaDesc_quality_super_color", "") || "red"
+    },
+    type0: {
+        name: getItem("mediaDesc_type_0_name", "") || "畅听",
+        color: getItem("mediaDesc_type_0_color", "") || "#008080"
+    },
+    type1: {
+        name: getItem("mediaDesc_type_1_name", "") || "会员",
+        color: getItem("mediaDesc_type_1_color", "") || "#4B0082"
+    }
+}
+
+
+
+
+
 
 const Extra = (_, _extra, run) => {
     for (let _key in _) {
@@ -1118,19 +1152,17 @@ const Extra = (_, _extra, run) => {
     let isExtra = typeof _extra === 'object';
     let isMedia = ["0", "1", "8", "9", "10"].indexOf(_.type) != -1;
     let pic_url = String(_.artwork || _.coverImg || _.avatar || _.pic_url || _.img || "").replace(/{size}/gi, '480');
-    let col_type = _.col_type || 'card_pic_3';
+    let col_type = _.col_type || getItem("col_type", "icon_1_left_pic"); // card_pic_3 / text_1
     delete _.col_type;
     let _type = ["单曲", "单曲", "歌单", "榜单", "专辑", "歌手", "用户", "电台", "播客", "视频", "歌词", "评论"][_.type] || "未知";
 
     _.duration = dateFormat(_.duration);
 
-
-
     // let _wid = "$" + rule_id + "$" + Math.random();
     let _mid = [_.platform, _.type, _.mid || _.id].join("$");
     let json = Object.assign({
-        title: _.title + (isMedia && _.artist ? " - " + _.artist : ""),
-        desc: isMedia ? ("📼 " + _.duration + "　📀 " + (_.album || _.title)) : (_.description || _.desc || ""),
+        title: Rich(_.title) + (isMedia && _.artist ? "&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;$artist".small().small().small().sub() : ""),
+        desc: isMedia ? extraDesc.mediaDesc : (_.description || _.desc || ""),
         content: _type,
         col_type,
         pic_url,
@@ -1157,6 +1189,7 @@ const Extra = (_, _extra, run) => {
         }
     }, isExtra ? _extra : {});
 
+    let qualityName = _.qualities ? _.qualities.super ? "ZQ" : _.qualities.high ? "SQ" : _.qualities.standard ? "HQ" : "PQ" : "PQ";
     json.title = String(json.title || "")
         .replace(/\$title|\$nickName/g, _.title || _.nickName || "")
         .replace(/\$artist/g, _.artist || "");
@@ -1164,6 +1197,12 @@ const Extra = (_, _extra, run) => {
         .replace(/\$duration/g, _.duration || "")
         .replace(/\$artist/g, _.artist || "")
         .replace(/\$album/g, _.album || _.title || "")
+        .replace(/\$platformName/g, extraDesc.platformDesc[_.platform]?.name || _.platform)
+        .replace(/\$platformColor/g, extraDesc.platformDesc[_.platform]?.color || "Gray")
+        .replace(/\$qualityName/g, extraDesc[qualityName].name)
+        .replace(/\$qualityColor/g, extraDesc[qualityName].color)
+        .replace(/\$typeName/g, extraDesc[_.type == 1 ? "type1" : "type0"].name)
+        .replace(/\$typeColor/g, extraDesc[_.type == 1 ? "type1" : "type0"].color)
     json.pic_url = String(json.pic_url || json.img || "")
         .replace(/\$artwork|\$coverImg|\$avatar/g, _.artwork || _.coverImg || _.avatar || pic_url || "");
 
@@ -1199,13 +1238,9 @@ const Extra = (_, _extra, run) => {
     } else {
         json.url = _url || _url2;
     }
-    json.title = json.title.replace("　-　", "&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;");
+    // json.title = json.title.replace("　-　", "&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;");
     if (run == true) return json;
     d.push(json);
-    return true;
-
-    _.title = Rich(_.title || _.name + ((_.singer && ' - ' + _.singer) || ""))
-        .replace(/^‘‘’’|\s*\-?\s*$/gi, "")
 }
 
 function getDataExtra(platform, tag, type) {
@@ -1594,7 +1629,7 @@ function switchPluginSource(musicItem, quality) { // 默认返回标准音质
                 let musicItem = plugin.musicItem;
                 let keyword = musicItem.title + " - " + musicItem.artist;
                 let SEARCH = _getPlatform(plugin.platform).search(keyword, 1, "单曲", musicItem) || {};
-                let new_musicItem = (SEARCH.data || [])[0] || {};
+                let new_musicItem = (SEARCH.data || [])[0];
                 if (new_musicItem) {
                     return getMedia(new_musicItem, quality || 0, "4");
                 } else {
@@ -1606,15 +1641,26 @@ function switchPluginSource(musicItem, quality) { // 默认返回标准音质
         }
     });
     let switchPluginMedia = false;
-    if (tasks.length) batchExecute(tasks, {
-        func: function(param, id, error, playUrl) {
-            if (playUrl && playUrl != "" && !/^toast/.test(playUrl)) {
-                switchPluginMedia = playUrl;
-                return 'break';
+    if (tasks.length) {
+        if (quality === undefined) {
+            batchExecute(tasks, {
+                func: function(param, id, error, playUrl) {
+                    if (playUrl != "" && !/^toast/.test(playUrl)) {
+                        switchPluginMedia = playUrl;
+                        return 'break';
+                    }
+                },
+                param: {}
+            });
+        } else {
+            for (let proxy of tasks) {
+                try {
+                    switchPluginMedia = proxy.func(proxy.param);
+                } catch (e) {}
+                if (switchPluginMedia) break;
             }
-        },
-        param: {}
-    });
+        }
+    }
     return switchPluginMedia || "toast://无法解析";
 }
 
