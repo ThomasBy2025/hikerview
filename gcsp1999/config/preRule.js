@@ -1190,6 +1190,7 @@ const Extra = (_, _extra, run) => {
     }, isExtra ? _extra : {});
 
     let qualityName = _.qualities ? _.qualities.super ? "ZQ" : _.qualities.high ? "SQ" : _.qualities.standard ? "HQ" : "PQ" : "PQ";
+    let platformDesc = extraDesc.platformDesc[_.platform] || {};
     json.title = String(json.title || "")
         .replace(/\$title|\$nickName/g, _.title || _.nickName || "")
         .replace(/\$artist/g, _.artist || "");
@@ -1197,8 +1198,8 @@ const Extra = (_, _extra, run) => {
         .replace(/\$duration/g, _.duration || "")
         .replace(/\$artist/g, _.artist || "")
         .replace(/\$album/g, _.album || _.title || "")
-        .replace(/\$platformName/g, extraDesc.platformDesc[_.platform]?.name || _.platform)
-        .replace(/\$platformColor/g, extraDesc.platformDesc[_.platform]?.color || "Gray")
+        .replace(/\$platformName/g, platformDesc.name || _.platform)
+        .replace(/\$platformColor/g, platformDesc.color || "Gray")
         .replace(/\$qualityName/g, extraDesc[qualityName].name)
         .replace(/\$qualityColor/g, extraDesc[qualityName].color)
         .replace(/\$typeName/g, extraDesc[_.type == 1 ? "type1" : "type0"].name)
