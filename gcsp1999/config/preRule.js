@@ -136,7 +136,7 @@ if (themeType_TwoSwitch) switch (themeType) {
         s_types = platformItem.supportedSearchType || s_types;
         s_types.unshift("热搜");
         if (s_types.indexOf(s_type) == -1) s_type = s_types[0];
-        var s_query = String(getMyVar('s_query', '')).replace(/^[\s\S]*?(https?\:\/\/[^\n\r]+)[\s\S]*/i, '$1').split(/\s+\@QQ音乐/i)[0];
+        var s_query = String(getMyVar('s_query', '')).replace(/^[\s\S]*?(https?\:\/\/[^\n\r]+)[\s\S]*/i, '$1').split(/\s+\@\S+音乐/i)[0];
 
         // 搜索内容有链接时调用
         if (/https?\:\/\//.test(s_query)) {
@@ -504,10 +504,7 @@ function selectThemePop(themeType) {
     }) = getThemeType(themeType);
     let hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
     let pop = hikerPop.selectCenterIcon({
-        iconList: theme_Data.map(_ => {
-            _.title += "\n\r" + _.path
-            return _
-        }),
+        iconList: theme_Data,
         title: "主题切换",
         extraMenu: new hikerPop.IconExtraMenu(() => {
             pop.dismiss();
@@ -521,8 +518,8 @@ function selectThemePop(themeType) {
         }),
         columns: 1,
         position: theme_Index,
-        click(a) {
-            let theme_Id = a.split("\n\r")[1];
+        click(a, i) {
+            let theme_Id = theme_Data[i].path
             saveFile(_getPath(["theme", themeType2, "select.txt"], 0, 1), theme_Id);
             refreshPage();
             return "hiker://empty";
@@ -1289,9 +1286,9 @@ function getDataExtra(platform, tag, type) {
 
 
 
-function getCollectionItems(c_json, isPop) {
+function getCollectionItems(c_json) {
     let collectionItems = _getPath(_getPath(["collection", "details.json"], "_cache", 1)) || [];
-    if (collectionItems.length == 0 && !isPop && c_json != undefined) {
+    if (collectionItems.length == 0 && c_json != undefined) {
         d.push({
             title: "没有本地收藏",
             url: $("#noLoading#").lazyRule(() => {
@@ -1335,10 +1332,7 @@ function getCollectionItems(c_json, isPop) {
         _json.pic_url = String(_json.pic_url || _json.img || it.icon || "").replace(/\$pic_url|\$img|\$icon/gi, it.icon || "");
         _json.desc = String(_json.desc || ("‘‘类别’’: " + typeName + "　　" + "““数量””: " + (it.worksNum || "未知")).small())
             .replace(/\$length|\$worksNum/gi, it.worksNum || "未知").replace(/\$type/gi, typeName);
-        return isPop ? {
-            title: it.title + "\r\n\n\n" + it.path,
-            icon: it.icon
-        } : (c_json != undefined ? d.push(_json) : it);
+        return c_json != undefined ? d.push(_json) : it;
     });
 }
 
@@ -2028,10 +2022,7 @@ function setCollectionData(musicItem, run) {
     let hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
     let isMedia = ["0", "1", "8", "9", "10"].indexOf(musicItem.type) != -1;
     let detailp = _getPath(["collection", "details.json"], "_cache", 1);
-    let iconList = (_getPath(detailp) || []).map((_, i) => ({
-        title: _.title + '\r\n\n\n' + _.path + '\r\n\n\n' + i,
-        icon: _.icon
-    }));
+    let iconList = _getPath(detailp) || []
     let isBack = run === true;
     if (!isMedia) {
         try {
@@ -2091,24 +2082,19 @@ function setCollectionData(musicItem, run) {
                     title: "请选择分组位置",
                     columns: 2,
                     // position: 0,
-                    click(input) {
+                    click(input, i3) {
                         // 保存详情
-                        let data = _getPath(detailp) || [];
-                        let i2 = data.findIndex(_ => _.path == cPath);
-                        if (i2 != -1) {
-                            data.splice(i2, 1, cObj);
+                        let i2 = iconList.findIndex(_ => _.path == cPath);
+                        if (i2 != -1) { // 防止重复
+                            iconList.splice(i2, 1, cObj);
                         } else {
-                            if (input == '最后面') {
-                                i2 = iconList.length;
-                            } else {
-                                i2 = input.split("\r\n\n\n")[2];
-                            }
-                            data.splice(i2, 0, cObj);
+                            i2 = i3;
+                            iconList.splice(i2, 0, cObj);
                         }
-                        saveFile(detailp, JSON.stringify(data, 0, 1));
+                        saveFile(detailp, JSON.stringify(iconList, 0, 1));
 
                         // 保存排序
-                        let data2 = data.map(_ => _.path.split("/collections/")[1]);
+                        let data2 = iconList.map(_ => _.path.split("/collections/")[1]);
                         saveFile(_getPath(["collection", "sorted.json"], 0, 1), JSON.stringify(data2));
 
                         // 保存数据
@@ -2166,23 +2152,21 @@ function setCollectionData(musicItem, run) {
         }),
         columns: 2,
         // position: 0,
-        click(input) {
-            let [title, path] = input.split("\r\n\n\n");
+        click(input, i) {
+            let path = iconList[i].path;
             let zy = JSON.parse(readFile(path) || "{}") || {};
-            let zu = (zy.musicList || []).map((_, i) => _.title + '\r\n\n\n' + i);
-            return $(zu.concat("最后面"), 2, '请选择资源位置').select((zy, zu, path, musicItem, isBack) => {
-                let i;
-                if ("最后面" == input) {
-                    i = zu.length;
-                } else {
-                    i = zu.indexOf(input);
+            hikerPop.selectCenterIcon({
+                iconList: zy.musicList || [],
+                title: "请选择资源",
+                columns: 2,
+                click(input, i) {
+                    zy.musicList.splice(i, 0, musicItem);
+                    saveFile(path, JSON.stringify(zy));
+                    clearMyVar('collectionInitialization');
+                    isBack && back(true);
+                    return "toast://导入歌曲成功";
                 }
-                zy.musicList.splice(i, 0, musicItem);
-                saveFile(path, JSON.stringify(zy));
-                clearMyVar('collectionInitialization');
-                isBack && back(true);
-                return "toast://导入歌曲成功";
-            }, zy, zu, path, musicItem, isBack);
+            });
         }
     });
     return "hiker://empty";

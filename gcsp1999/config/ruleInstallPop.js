@@ -231,7 +231,7 @@ let pop = hikerPop.selectBottomSettingMenu({
                     officeItem.setDesc("");
                     change();
                     hikerPop.runOnNewThread(() => {
-                        let imageNames = ["open.svg", "icon.png", "down.png", "shut.svg", "Loading.gif", "2.png", "1.png", "3.png", "topImg.png", "play.png", "jump.png", "update.svg", "edit.svg", "share.svg", "proxy.svg", "uninstall.svg", "account.svg", "import.svg", "hijack.svg", "unhijack.svg", "selected.svg", "unselected.svg", "sorted.svg"];
+                        let imageNames = ["icon.png", "1.png", "2.png", "3.png", "down.png", "play.png", "open.svg", "shut.svg", "Loading.gif", "topImg.png", "jump.png", "update.svg", "edit.svg", "share.svg", "proxy.svg", "uninstall.svg", "account.svg", "import.svg", "hijack.svg", "unhijack.svg", "selected.svg", "unselected.svg", "sorted.svg"];
                         let imagePath2 = _getPath(["image", ""], 0, 1);
                         let imagePath1 = getGitHub(["image", ""]);
                         for (let imageName of imageNames) {

@@ -73,7 +73,7 @@ let c_url = $("#noLoading#").lazyRule((options, c_path, c_title, i) => {
     options.splice(1, 0, "切换样式");
     const hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
     require(config.preRule);
-    let c_Items = getCollectionItems(false, true);
+    let c_Items = getCollectionItems();
     let spen = Number(getMyVar("collection_columns", "2"));
     let inputBox;
     let pop = hikerPop.selectBottomResIcon({
@@ -84,10 +84,9 @@ let c_url = $("#noLoading#").lazyRule((options, c_path, c_title, i) => {
         position: 20,
         toPosition: 20,
         position: i,
-        click(a) {
-            let path = a.title.split("\r\n\n\n")[1];
+        click(a, i) {
             setPageParams({
-                path
+                path: c_Items[i].path
             });
             refreshPage();
             return 'hiker://empty';
