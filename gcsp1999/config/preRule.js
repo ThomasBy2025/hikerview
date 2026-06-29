@@ -2156,7 +2156,9 @@ function setCollectionData(musicItem, run) {
             let path = iconList[i].path;
             let zy = JSON.parse(readFile(path) || "{}") || {};
             hikerPop.selectCenterIcon({
-                iconList: zy.musicList || [],
+                iconList: zy.musicList.concat([{
+                    title: "最后面"
+                }]),
                 title: "请选择资源",
                 columns: 2,
                 click(input, i) {

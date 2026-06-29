@@ -272,8 +272,6 @@ else details.map((_, i) => {
                                     let newPath = _getPath(["plugin", "newPlatform.js"], "_cache", 1);
                                     try {
                                         let newPlatform = fetch(_.srcUrl);
-                                        log(_.srcUrl);
-                                        log(newPlatform);
                                         if (newPlatform && newPlatform != "") {
                                             saveFile(newPath, newPlatform);
                                             newPath = $.require(newPath);
