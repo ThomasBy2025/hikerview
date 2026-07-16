@@ -674,6 +674,7 @@ function getThemeData(themeType) {
         case "search":
         case "collection":
         case "loginRule":
+        case "getMusicInfo":
             getGitHub(["config", themeType + ".js"], true);
             break;
         case "executeThemeIndex":
@@ -1206,14 +1207,8 @@ const Extra = (_, _extra, run) => {
 
 
 
-    let _url = json.url || _.url;
-    if (_url && (json.lyric || _.lyric)) {
-        _url = JSON.stringify({
-            lyric: json.lyric || _.lyric,
-            urls: [_url]
-        });
-    }
-    let _url2 = buildUrl(isMedia ? "hiker://empty" : "hiker://page/home", {
+
+    json.url = buildUrl(isMedia ? "hiker://empty" : "hiker://page/home", {
         p: isMedia ? "nopage" : "fypage",
         t: ["getMediaSource", "getMediaSource", "getMusicSheetInfo", "getTopListDetail", "getAlbumInfo", "getArtistWorks", "getUserInfo", "getProgramInfo", "getRadio", "getVideo", "getLyric", "getMusicComments"][_.type] || _.type || "",
         s: isMedia ? "#noHistory##noRecordHistory#" : getItem('pageHomeType', '#immersiveTheme#'),
@@ -1223,18 +1218,30 @@ const Extra = (_, _extra, run) => {
     });
     if (isMedia) {
         json.extra.longClick.unshift({
+            title: "★ 歌曲详情 ★",
+            js: $.toString((_id) => {
+                let _ = findItem(_id).extra.item;
+                return buildUrl("hiker://page/home", {
+                    p: "nopage",
+                    t: "getMusicInfo",
+                    s: "#noHistory##noRecordHistory#" + getItem('pageHomeType', '#immersiveTheme#'),
+                    rule: MY_RULE.title,
+                    platform: _.platform,
+                    id: encodeURIComponent(String(_.mid || _.id)),
+                });
+            }, _mid)
+        });
+        json.extra.longClick.unshift({
             title: "★ 下载资源 ★",
             js: $.toString((_id) => {
                 require(config.preRule);
                 return getQuality(findItem(_id).extra.item, true);
             }, _mid)
         });
-        json.url = _url || $(_url2).lazyRule((musicItem) => {
+        json.url = $(json.url).lazyRule((musicItem) => {
             require(config.preRule);
             return getQuality(musicItem, false);
         }, _);
-    } else {
-        json.url = _url || _url2;
     }
     // json.title = json.title.replace("　-　", "&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;");
     if (run == true) return json;
@@ -1424,7 +1431,7 @@ function getMedia(musicItem, quality, mediaType) {
         return JSON.stringify(musicItem);
     }
     let Quality = ["low", "standard", "high", "super"][quality];
-    let mediaItem;
+    let mediaItem = formatMediaItem(musicItem);
     let mediaPlatform = {
         getMediaSource: () => false,
         getLyric: () => false,
@@ -1436,7 +1443,7 @@ function getMedia(musicItem, quality, mediaType) {
     let timeout = Number(Date.now());
     let isCache = getItem('MediaCache', '1') == "1";
 
-    if (isCache) { // 读取缓存
+    if (!mediaItem && isCache) { // 读取缓存
         try {
             mediaItem = _getPath(_cachePath);
             if (mediaItem.timeout < timeout) {
@@ -1510,6 +1517,7 @@ function getMedia(musicItem, quality, mediaType) {
                 mediaItem.lyric = mediaPlatform.getLyric(musicItem);
             } catch (e) {}
         }
+        delete mediaItem.artwork;
 
         // 缓存直链数据
         if (isCache) {

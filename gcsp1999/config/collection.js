@@ -164,8 +164,8 @@ if (c_info === undefined) {
     } else {
         c_data.map((_, i) => {
             let __ = Extra(_, 0, 1);
-            __.extra.longClick[1].title = "复制";
-            __.extra.longClick.splice(1, 0, {
+            __.extra.longClick[2].title = "复制";
+            __.extra.longClick.splice(2, 0, {
                 title: "修改",
                 js: $.toString((path1, i) => {
                     let path2 = "hiker://files/_cache/Thomas/gcsp1999/collection/edit.json";

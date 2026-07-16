@@ -164,8 +164,9 @@ function getImageUrl(_type) {
 
 
 // 获取数字图标
-function getLenSvg(len) {
-    let Svg = `<svg width="1000" height="800" xmlns="http://www.w3.org/2000/svg"><rect x="25" y="25" width="950" height="750" rx="250" ry="250" fill="#5BA946" stroke="#5BA946" stroke-width="25"/><text x="510" y="600" font-family="Arial, sans-serif" text-anchor="middle" dominant-baseline="middle" font-size="600" fill="#ffffff" stroke="#ffffff" stroke-width="30">${len}</text></svg>`;
+function getLenSvg(len, Col) {
+    let stroke = Col || "#5BA946";
+    let Svg = `<svg width="1000" height="800" xmlns="http://www.w3.org/2000/svg"><rect x="25" y="25" width="950" height="750" rx="250" ry="250" fill="${stroke}" stroke="${stroke}" stroke-width="25"/><text x="510" y="600" font-family="Arial, sans-serif" text-anchor="middle" dominant-baseline="middle" font-size="600" fill="#ffffff" stroke="#ffffff" stroke-width="30">${len}</text></svg>`;
     return "data:image/svg+xml;base64," + base64Encode(Svg);
 }
 

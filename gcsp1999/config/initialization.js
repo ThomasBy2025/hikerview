@@ -241,7 +241,7 @@
 
 
 
-    new_time = Number($.dateFormat(new Date().getTime(), 'yyyyMMdd'));
+    new_time = Number($.dateFormat(Date.now(), 'yyyyMMdd'));
     if (Number(getItem("ghproxy_url_update", "20250921")) < new_time) {
         log("github代理保活");
         if (getItem("ghproxy", "") != "") {

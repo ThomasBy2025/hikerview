@@ -66,6 +66,7 @@ let pop = hikerPop.selectBottomSettingMenu({
                         });
                     }),
                     columns: 1,
+                    noAutoDismiss: true,
                     // position: 0,
                     click(a, i) {
                         hikerPop.inputAutoRow({
