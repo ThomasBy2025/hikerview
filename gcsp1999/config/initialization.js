@@ -340,8 +340,6 @@
 
 
 
-
-
     // 只在首页检测，子页面MY_RULE的version是0
     if (themeType == "home" && MY_RULE.version != 0) {
         if (getItem("usage_statistics", "20261010") < new_time) {
@@ -358,10 +356,10 @@
                         try {
                             let r = fetch(rule_url);
                             setItem("collection_replace", "1"); // 更新收藏
-                            deleteFile("hiker://files/rules/Thomas/gcsp1999/image/icon.png"); // 更新图标
+                            deleteFile(getImageUrl("hiker://files/rules/Thomas/gcsp1999/image/icon.png")); // 更新图标
                             return r;
                         } catch (e) {
-                            log("更新失败: " + i)
+                            log("更新失败: " + i + "\n" + e.toString())
                         }
                     }
                     clearItem('collection_replace');
@@ -462,8 +460,12 @@
                                     v2 = v2.split(".");
                                     v3 = false;
                                     for (let v4 in v1) {
-                                        if (v1[v4] < v2[v4]) {
+                                        let a = parseInt(v1[v4], 10) || 0;
+                                        let b = parseInt(v2[v4], 10) || 0;
+                                        if (a < b) {
                                             v3 = true;
+                                            break;
+                                        } else if (a > b) {
                                             break;
                                         }
                                     }
