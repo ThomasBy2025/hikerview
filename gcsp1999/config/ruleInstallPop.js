@@ -23,7 +23,7 @@ let s_types = [
 let s_type = getItem('s_type', '单曲');
 let pop = hikerPop.selectBottomSettingMenu({
     options: [
-        SettingItem("默认播放音质", qualityArr[getItem('QualityIndex', '0')]),
+        SettingItem("默认播放音质", qualityArr[getItem('QualityIndex', '4')]),
         SettingItem("音质获取失败", getItem('QualityFailure', "向下兼容")),
         SettingItem("资源获取设置", GetMediaTypes[getItem('getMediaType', "0")]),
         SettingItem("预加载预解析", MediaPreNames[MediaPreIndex]),
