@@ -358,7 +358,7 @@
                         try {
                             let r = fetch(rule_url);
                             setItem("collection_replace", "1"); // 更新收藏
-                            deleteFile(getImageUrl("1.png")); // 更新图标
+                            deleteFile("hiker://files/rules/Thomas/gcsp1999/image/icon.png"); // 更新图标
                             return r;
                         } catch (e) {
                             log("更新失败: " + i)
