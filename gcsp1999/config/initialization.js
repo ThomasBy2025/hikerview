@@ -351,12 +351,12 @@
             confirm({
                 title: '更新提示',
                 content: '检测到你的规则版本小于服务器版本，是否立即更新？',
-                confirm: $.toString((rule_url) => {
+                confirm: $.toString((rule_url, pic_url) => {
                     for (let i = 1; i < 4; i++) {
                         try {
                             let r = fetch(rule_url);
                             setItem("collection_replace", "1"); // 更新收藏
-                            deleteFile(getImageUrl("hiker://files/rules/Thomas/gcsp1999/image/icon.png")); // 更新图标
+                            deleteFile(pic_url); // 更新图标
                             return r;
                         } catch (e) {
                             log("更新失败: " + i + "\n" + e.toString())
@@ -364,7 +364,7 @@
                     }
                     clearItem('collection_replace');
                     return "toast://网络异常，无法更新";
-                }, getGitHub(["home_rule.hiker"]))
+                }, getGitHub(["home_rule.hiker"]), getImageUrl("icon.png"))
             });
         } else if (readDir(_getPath(["image"], 0, 1)).length < 23) {
             confirm({
