@@ -25,12 +25,23 @@ if (platforms.length === 0) {
 } else {
     if (page == 1) {
         getTopImage({
-            url: buildUrl("hiker://page/home", {
-                p: "nopage",
-                t: "collection",
-                s: "#immersiveTheme##noHistory##noRecordHistory#",
-                rule: MY_RULE.title
+            url: $("#noLoading#").lazyRule(() => {
+                require(config.preRule);
+                return setColType();
             }),
+            extra: {
+                longClick: [{
+                    title: "★ 本地收藏 ★",
+                    js: $.toString(() => {
+                        return buildUrl("hiker://page/home", {
+                            p: "nopage",
+                            t: "collection",
+                            s: "#immersiveTheme##noHistory##noRecordHistory#",
+                            rule: MY_RULE.title
+                        });
+                    })
+                }]
+            }
         });
         getColType({
             type: '#切换接口_独立#'

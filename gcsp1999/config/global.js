@@ -55,7 +55,11 @@ function Rich(test) {
 function R(x, z) {
     let t, z = z || "1234567890abcdef";
     if (x == "randomUUID") {
-        t = [R(8), R(4), R(4), R(4), R(12)].join("-");
+        t = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
+            let r = Math.random() * 16 | 0,
+                v = c === "x" ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
     } else {
         t = "";
         for (let i = 0; i < x; i++) {
@@ -64,7 +68,6 @@ function R(x, z) {
     }
     return t
 }
-
 
 
 // 获取本地文件夹里面的文件名
@@ -82,7 +85,6 @@ function readDir(path) {
     }
     return names;
 }
-
 
 
 // 返回温馨提示
@@ -171,7 +173,7 @@ function getLenSvg(len, Col) {
 }
 
 
-// 置顶图片(主题切换)
+// 二级页面置顶(主题切换)
 function getTopImage(_json) {
     d.push(Object.assign({
         col_type: 'pic_1_full',
@@ -186,6 +188,7 @@ function getTopImage(_json) {
     }, _json || {}));
 }
 
+
 // 显示过渡动画
 function Loading() {
     d.push({
@@ -198,6 +201,7 @@ function Loading() {
     });
     setPreResult(d);
 };
+
 
 // 更新音乐数据为下载/播放
 function getDownData(_json) {
@@ -245,6 +249,7 @@ function getDownData(_json) {
     };
 }
 
+
 // 获取插件的用户变量
 function getUserVariables(_) {
     let userVariables = globalMap0.getVar(rule_id + "@userVariables@" + _.platform, "");
@@ -276,4 +281,329 @@ function dateFormat(duration) {
         duration = "00:" + duration;
     }
     return duration.replace(/^0[\+\-]\d+/, "00");
+}
+
+
+// 选择二级样式
+function setColType(officeItem2, change2) {
+    let hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
+    let options = [
+        "text_1", "icon_1_left_pic",
+        "card_pic_3_center", "card_pic_3",
+        "movie_1", "icon_2_round",
+        "movie_1_left_pic", "movie_1_vertical_pic",
+        "icon_3_round_fill", "icon_round_4",
+        "icon_round_small_4", "icon_4_card",
+        "movie_1_vertical_pic_blur", "flex_button",
+        "card_pic_1", "card_pic_2",
+        "icon_5_no_crop", "icon_5",
+        "icon_4", "icon_small_4",
+        "text_3", "icon_3_fill",
+        "text_2", "icon_2",
+        "pic_3_square", "pic_1_full",
+    ];
+    let setCol = officeItem2 ? officeItem2.getDesc() :
+        getItem("col_type", "card_pic_3");
+    let getCol = getMyVar("col_type", setCol);
+    let position = options.indexOf(String(setCol));
+    let position2 = options.indexOf(String(getCol));
+    if (position != position2) {
+        options[position2] = "‘‘" + options[position2] + "’’";
+    }
+    options[position] = "““" + options[position] + "””";
+    let pop = hikerPop.selectBottom({
+        title: "请选择显示样式",
+        options,
+        columns: 2,
+        height: 0.6,
+        click(a) { // 点击更改
+            a = a.replace(/[‘’“”]+/g, "");
+            if (officeItem2) {
+                putMyVar("col_type", a);
+                // officeItem2.setDesc(a);
+                change2();
+                return "toast://更改成功\n" + a;
+            } else {
+                let list = findItemsByCls('gcsp1999:itemlist') || [];
+                for (let it of list) {
+                    updateItem(it.extra.id, {
+                        col_type: a
+                    });
+                }
+                putMyVar("col_type", a);
+                return "hiker://empty";
+            }
+        },
+        longClick(a) { // 长按设置
+            a = a.replace(/[‘’“”]+/g, "");
+            if (officeItem2) {
+                putMyVar("col_type", a);
+                setItem("col_type", a);
+                officeItem2.setDesc(a);
+                change2();
+                return "toast://设置成功\n" + a;
+            } else {
+                let list = findItemsByCls('gcsp1999:itemlist') || [];
+                for (let it of list) {
+                    updateItem(it.extra.id, {
+                        col_type: a
+                    });
+                }
+                putMyVar("col_type", a);
+                setItem("col_type", a);
+                return "hiker://empty";
+            }
+        }
+    });
+    return "hiker://empty";
+}
+
+
+
+
+
+// 歌曲音质映射
+var qualityMap = {
+    "25000k": {
+        "title": "DTS:X",
+        "desc": "多维沉浸 声动随心",
+        "abbr": "MA",
+        "alias": ["25000kmmp4"],
+        "sort": -23
+    },
+    "22000k": {
+        "title": "原唱伴唱",
+        "desc": "除母带外 获取加密的最高音质",
+        "abbr": "BC",
+        "alias": ["22000kmgg"],
+        "sort": -22
+    },
+
+
+    "20900k": {
+        "title": "至臻母带2.0",
+        "desc": "还原录音细节 音质提升近一半",
+        "abbr": "MS",
+        "alias": ["20900kmflac", "jymaster", "viper_tape", "master"],
+        "sort": 21
+    },
+    "24000k": {
+        "title": "臻音全景声",
+        "desc": "自研空间音频 如同在三维空间",
+        "abbr": "AT",
+        "alias": ["24000kmflac", "vivid", "viper_clear", "atmos_plus", "clear"],
+        "sort": 19
+    },
+    "20501k": {
+        "title": "沉浸环绕声",
+        "desc": "影院级空间感 声临其境的环绕",
+        "abbr": "3D",
+        "alias": ["20501kmflac", "sky", "viper_atmos", "spatial", "D3", "atmos", "effect"],
+        "sort": 20
+    },
+    "20201k": {
+        "title": "超高清HiFi",
+        "desc": "智能音质增强 补全声场小细节",
+        "abbr": "ZQ",
+        "alias": ["20201kmflac", "jyeffect"],
+        "sort": 18
+    },
+
+
+    "11700k": {
+        "title": "杜比全景声",
+        "desc": "音质无压缩 完全保留创作者原始音频",
+        "abbr": "DB",
+        "alias": ["11700kmp4", "dolby"],
+        "sort": 17
+    },
+    "11600k": {
+        "title": "杜比Digital+",
+        "desc": "支持7.1声道 提供更清晰一致的环绕声体验",
+        "abbr": "UL",
+        "alias": ["11600kmp4"],
+        "sort": 16
+    },
+    "11500k": {
+        "title": "杜比Digital",
+        "desc": "支持5.1声道 高效压缩音频且不损失音质",
+        "abbr": "HV",
+        "alias": ["11500kmp4"],
+        "sort": 15
+    },
+    "11000k": {
+        "title": "杜比AC-4",
+        "desc": "新型音频格式 适配各类音频体验场景",
+        "abbr": "AC",
+        "alias": ["11000kmp4"],
+        "sort": 14
+    },
+
+
+    "20000k": {
+        "title": "臻品质2.0",
+        "desc": "智能获取最高音质[不加密]",
+        "abbr": "ZP",
+        "alias": ["20000kflac", "20000kzp"],
+        "sort": 13
+    },
+    "10501k": {
+        "title": "空间音频",
+        "desc": "模拟环绕声场 让声音围你而动",
+        "abbr": "AR",
+        "alias": ["10501kflac"],
+        "sort": 12
+    },
+    "23000k": {
+        "title": "黑胶转录",
+        "desc": "真实极致的听觉感受",
+        "abbr": "VN",
+        "alias": ["23000kflac", "vinyl"],
+        "sort": 11
+    },
+    "4000k": {
+        "title": "高清无损",
+        "desc": "录音棚级沉浸临场",
+        "abbr": "HR",
+        "alias": ["4000kflac", "hires", "high", "hi_res", "ZQ", "ZQ24", "flac24bit", "super"],
+        "sort": 10
+    },
+    "2000k": {
+        "title": "标清无损",
+        "desc": "CD级无损保真",
+        "abbr": "SQ",
+        "alias": ["2000kflac", "lossless", "flac", "SQ"],
+        "sort": 9
+    },
+    "1000k": {
+        "title": "低清无损",
+        "desc": "满足日常听感的无损音质",
+        "abbr": "AQ",
+        "alias": ["1000kape"],
+        "sort": 8
+    },
+
+
+    "320k": {
+        "title": "极高音质",
+        "desc": "",
+        "abbr": "HQ",
+        "alias": ["320kmp3", "exhigh", "320", "highest", "HQ"],
+        "sort": 7
+    },
+    "300k": {
+        "title": "高品音质",
+        "desc": "",
+        "abbr": "KQ",
+        "alias": ["300kogg"],
+        "sort": 6
+    },
+    "192k": {
+        "title": "较高音质",
+        "desc": "",
+        "abbr": "RQ",
+        "alias": ["192kmp3", "higher", "192kogg"],
+        "sort": 5
+    },
+    "128k": {
+        "title": "普通音质",
+        "desc": "",
+        "abbr": "PQ",
+        "alias": ["128kmp3", "standard", "128", "medium", "PQ", "low", "128kwma"],
+        "sort": 4
+    },
+    "100k": {
+        "title": "标准音质",
+        "desc": "",
+        "abbr": "BQ",
+        "alias": ["100kogg"],
+        "sort": 3
+    },
+    "96k": {
+        "title": "均衡音质",
+        "desc": "",
+        "abbr": "EQ",
+        "alias": ["mgg", "96kwma"],
+        "sort": 2
+    },
+    "48k": {
+        "title": "流畅音质",
+        "desc": "",
+        "abbr": "LQ",
+        "alias": ["48kaac", "LQ"],
+        "sort": 1
+    },
+    "24k": {
+        "title": "极速音质",
+        "desc": "",
+        "abbr": "FQ",
+        "alias": ["24kaac"],
+        "sort": 0
+    },
+
+
+    // 隐藏
+    "3000k": {
+        "title": "dts?",
+        "desc": "",
+        "abbr": "",
+        "alias": [],
+        "sort": 404
+    },
+    "5000k": {
+        "title": "",
+        "desc": "",
+        "abbr": "",
+        "alias": [],
+        "sort": 404
+    },
+    "7000k": {
+        "title": "",
+        "desc": "",
+        "abbr": "",
+        "alias": [],
+        "sort": 404
+    },
+    "10000k": {
+        "title": "",
+        "desc": "",
+        "abbr": "",
+        "alias": [],
+        "sort": 404
+    },
+}
+
+
+// 扩展音质映射
+var qualityArr = [];
+for (let _key in qualityMap) {
+    let f = qualityMap[_key];
+    if (f.sort != 404 && f.sort > -1) {
+        let c = getItem("qualityColor" + f.sort, "") || (f.sort > 17 ? "#AA0000" : f.sort > 13 ? "#E47000" : f.sort > 7 ? "#0080E4" : f.sort > 3 ? "#5BA946" : "Gray");
+        f.icon = getLenSvg(f.abbr, c);
+        f.color = c;
+        f.url = _key;
+        f.title = "【" + f.title + "】(" + _key + "）";
+        if (f.alias.length) {
+            for (let _key2 of f.alias) {
+                qualityMap[_key2] = JSON.parse(JSON.stringify(f));
+                qualityMap[_key2]._url = _key;
+                qualityMap[_key2].url = _key2;
+            }
+        }
+        qualityArr[f.sort] = _key;
+    }
+}
+
+
+// 获取映射音质
+function hijackQuality(_Key, _Arr) {
+    if (!Array.isArray(_Arr)) return _Key;
+    for (let _key of _Arr) {
+        let f = qualityMap[_key];
+        if (f._url == _Key || f.url == _Key) {
+            return _key;
+        }
+    }
+    return _Key;
 }

@@ -153,7 +153,7 @@ else details.map((_, i) => {
     let isS = selects.indexOf(_id) != -1;
 
     d.push({
-        title: (isS ? Color(_.title) : _.title).bold(),
+        title: String(isS ? Color(_.title) : _.title).bold(),
         desc: _.type || "未知",
         url: $("#noLoading#").lazyRule((_, i, isS) => {
             require(config.preRule);
@@ -269,9 +269,11 @@ else details.map((_, i) => {
                         case '更新插件':
                             if (_.srcUrl) {
                                 hikerPop.runOnNewThread(() => {
+                                    showLoading('获取插件中…');
                                     let newPath = _getPath(["plugin", "newPlatform.js"], "_cache", 1);
                                     try {
                                         let newPlatform = fetch(_.srcUrl);
+                                        hideLoading();
                                         if (newPlatform && newPlatform != "") {
                                             saveFile(newPath, newPlatform);
                                             newPath = $.require(newPath);
@@ -284,8 +286,12 @@ else details.map((_, i) => {
                                                     v2 = v2.split(".");
                                                     v3 = false;
                                                     for (let v4 in v1) {
-                                                        if (v1[v4] < v2[v4]) {
+                                                        let a = parseInt(v1[v4], 10) || 0;
+                                                        let b = parseInt(v2[v4], 10) || 0;
+                                                        if (a < b) {
                                                             v3 = true;
+                                                            break;
+                                                        } else if (a > b) {
                                                             break;
                                                         }
                                                     }
@@ -304,6 +310,7 @@ else details.map((_, i) => {
                                             return 'toast://无法获取插件数据';
                                         }
                                     } catch (e) {
+                                        hideLoading();
                                         return "toast://无法更新";
                                     }
                                 });
@@ -436,47 +443,26 @@ else details.map((_, i) => {
                             let pluginItem = $.require(pluginPath)
                             let musicItem = pluginItem.debug_musicItem;
                             if (musicItem) {
-                                let arr1 = getQuality(musicItem, "debug");
-                                hikerPop.selectCenter({
-                                    options: arr1,
-                                    columns: 1,
-                                    title: "请选择测试音质",
-                                    click(a, i) {
-                                        let Quality = ["low", "standard", "high", "super"][i];
-                                        hikerPop.runOnNewThread(() => {
-                                            let mediaItem;
-                                            try { // 通过插件获取链接
-                                                if (musicItem.type == 9) {
-                                                    mediaItem = pluginItem.getVideo(musicItem, Quality);
-                                                } else if (musicItem.type == 8) {
-                                                    mediaItem = pluginItem.getRadio(musicItem, Quality);
-                                                } else {
-                                                    mediaItem = pluginItem.getMediaSource(musicItem, Quality);
-                                                }
-                                                mediaItem = formatMediaItem(mediaItem);
-                                                mediaItem = mediaItem && JSON.stringify(mediaItem);
-                                                hikerPop.confirm({
-                                                    content: mediaItem || "没有链接",
-                                                    title: "解析成功",
-                                                    okTitle: "播放看看",
-                                                    cancelTitle: "我知道了",
-                                                    hideCancel: false, //隐藏取消按钮
-                                                    confirm() {
-                                                        return mediaItem || "toast://获取资源失败，没有链接";
-                                                    },
-                                                    cancel() {
-                                                        return "hiker://empty";
-                                                    }
-                                                });
-                                            } catch (e) {
-                                                return "toast://获取失败，" + e.toString();
-                                            }
-                                        });
-                                    },
-                                    longClick(a) {
-                                        return "hiker://empty";
-                                    }
-                                });
+                                if (Array.isArray(musicItem)) {
+                                    let iconArr = [];
+                                    _getPath(_getPath(["plugin", "details.json"], "_cache", 1)).forEach(_ => {
+                                        if (musicItem.includes(_.platform)) iconArr.push(_);
+                                    });
+                                    hikerPop.selectCenterIcon({
+                                        iconList: iconArr,
+                                        title: "选择测试平台",
+                                        columns: 1,
+                                        click(a, i) {
+                                            musicItem = _getPlatform(iconArr[i].platform).debug_musicItem;
+                                            let keyword = musicItem.title + " - " + musicItem.artist;
+                                            let SEARCH = pluginItem.search(keyword, 1, "单曲", musicItem) || {};
+                                            let new_musicItem = (SEARCH.data || [])[0];
+                                            return getQuality(new_musicItem, "debug");
+                                        }
+                                    });
+                                } else {
+                                    getQuality(musicItem, "debug");
+                                }
                                 return "hiker://empty";
                             } else {
                                 return "toast://插件没有 debug_musicItem 参数";
@@ -498,28 +484,28 @@ else details.map((_, i) => {
                             return "hiker://empty";
                             break;
                         case '位置排序':
+                            if (getMyVar("plugin_filter", "全部") != "全部") {
+                                return "toast://防止位置错乱，请在全部分组排序";
+                            }
                             let detailp = _getPath(["plugin", "details.json"], "_cache", 1);
                             let details = JSON.parse(readFile(detailp) || "[]") || [];
+                            let i3 = details[i];
                             details.splice(i, 1);
-                            return $(details.concat({
-                                title: '最后面'
-                            }), 2, '插件移动到').select((set, list, i1, set2) => {
-                                let i2
-                                if (input == '最后面') {
-                                    i2 = list.length;
-                                } else {
-                                    i2 = list.map(_ => _.title).indexOf(input);
+                            hikerPop.selectCenterIcon({
+                                iconList: [].concat(details, {
+                                    title: '最后面'
+                                }),
+                                title: "插件移动到",
+                                columns: 2,
+                                click(a, i2) {
+                                    details.splice(i2, 0, i3);
+                                    saveFile(detailp, JSON.stringify(details, 0, 1));
+                                    let data2 = details.map(_ => _.platform + ".js");
+                                    saveFile(_getPath(["plugin", "sorted.json"], 0, 1), JSON.stringify(data2));
+                                    refreshPage();
+                                    return "toast://更改成功";
                                 }
-                                let data = JSON.parse(readFile(set) || "[]") || [];
-                                let i3 = data[i1];
-                                data.splice(i1, 1);
-                                data.splice(i2, 0, i3);
-                                saveFile(set, JSON.stringify(data, 0, 1));
-                                let data2 = data.map(_ => _.platform + ".js");
-                                saveFile(set2, JSON.stringify(data2));
-                                refreshPage();
-                                return "toast://更改成功";
-                            }, detailp, details, i, _getPath(["plugin", "sorted.json"], 0, 1));
+                            });
                             return "hiker://empty";
                             break;
                     }

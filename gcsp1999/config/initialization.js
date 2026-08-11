@@ -137,8 +137,10 @@
                 let proxyPath = _getPath(["proxy", plugin, "proxys", proxy], 0, 1);
                 try {
                     let proxyObj = $.require(proxyPath);
-                    let proxyQs = proxyObj.supportedQualityType || ["low"];
-                    for (proxyQa of proxyQs) {
+                    let proxyQs = proxyObj.supportedQualityType || ["128k"];
+                    for (let proxyQa of proxyQs) {
+                        let f = qualityMap[proxyQa];
+                        proxyQa = f._url || f.url;
                         if (!proxyQ[proxyQa]) {
                             proxyQ[proxyQa] = [];
                         }
@@ -242,53 +244,12 @@
 
 
     new_time = Number($.dateFormat(Date.now(), 'yyyyMMdd'));
-    if (Number(getItem("ghproxy_url_update", "20250921")) < new_time) {
-        log("github代理保活");
-        if (getItem("ghproxy", "") != "") {
-            showLoading('更新依赖代理...');
-            try {
-                let ghproxys = [];
-                try {
-                    ghproxys = JSON.parse(fetch("https://www.github-mirrors.zone.id/api/urls")).data.map(url => {
-                        url = url.trim();
-                        if (!url.endsWith("/")) {
-                            url = url + "/";
-                        }
-                        return url;
-                    });
-                } catch (no_zone) {
-                    ghproxys = JSON.parse(fetch(getGitHub(["config", "ghproxys.json"])));
-                }
-                ghproxys.unshift(getItem("ghproxy"));
-                let verify_url = 'https://raw.githubusercontent.com/src48597962/hk/master/verify';
-                let new_ghproxy = function() {
-                    for (let ghproxy of ghproxys) {
-                        try {
-                            let verify_txt = String(fetch(ghproxy + verify_url, {
-                                timeout: 3000
-                            })).trim();
-                            if (verify_txt.match(/^\s*ok\s*$/i)) {
-                                return ghproxy;
-                                break;
-                            }
-                            // log("err: " + ghproxy + " => " + verify_txt);
-                        } catch (e) {}
-                    }
-                    return false;
-                }();
-                if (new_ghproxy && new_ghproxy != "") { // 更新成功
-                    setItem("ghproxy", new_ghproxy);
-                }
-            } catch (err) {}
-            hideLoading();
-        } else {
-            // log("未设置github代理");
+    /*
+        if (Number(getItem("ghproxy_url_update", "20250921")) < new_time) {
+            log("github代理保活");
+            setItem("ghproxy_url_update", new_time + "");
         }
-        setItem("ghproxy_url_update", new_time + "");
-    }
-
-
-
+    */
     if (Number(getItem("require_url_update", "20250921")) < new_time) {
         log("检测并更新依赖");
         try {
@@ -314,7 +275,7 @@
             if (records.length) {
                 deleteCache(update_url);
                 require(update_url);
-                let hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
+                var hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
                 hikerPop.updateRecordsBottom(records);
             }
         } catch (e) {
@@ -323,6 +284,11 @@
         hideLoading();
         setItem("require_url_update", new_time + "");
     }
+
+
+
+
+
 
 
 
@@ -371,21 +337,34 @@
 
 
 
-    // 通过依赖检测规则是否更新
+
+
+
+
+
     // 只在首页检测，子页面MY_RULE的version是0
-    if (themeType == "home") {
-        if (MY_RULE.version != 0 && MY_RULE.version < 20250902) {
+    if (themeType == "home" && MY_RULE.version != 0) {
+        if (getItem("usage_statistics", "20261010") < new_time) {
+            try { // 使用人数统计
+                fetch("https://www.97abc.com/count.php?id=gcsp1999");
+            } catch (e) {}
+            setItem("usage_statistics", new_time + "");
+        } else if (MY_RULE.version < 20261010) {
             confirm({
                 title: '更新提示',
                 content: '检测到你的规则版本小于服务器版本，是否立即更新？',
                 confirm: $.toString((rule_url) => {
                     for (let i = 1; i < 4; i++) {
                         try {
-                            return fetch(rule_url);
+                            let r = fetch(rule_url);
+                            setItem("collection_replace", "1"); // 更新收藏
+                            deleteFile(getImageUrl("1.png")); // 更新图标
+                            return r;
                         } catch (e) {
                             log("更新失败: " + i)
                         }
                     }
+                    clearItem('collection_replace');
                     return "toast://网络异常，无法更新";
                 }, getGitHub(["home_rule.hiker"]))
             });
@@ -403,6 +382,65 @@
                     return "toast://图标初始化成功";
                 }, _getPath(["image", ""], 0, 1), getGitHub(["image", ""]))
             });
+        } else if (getItem("collection_replace", "0") == "1") {
+            clearItem('collection_replace');
+            log("更新收藏音质\nversion@20261010");
+            filedirs = getFiledirs(["collection", "collections"], ["collection", "sorted.json"]);
+            for (let c_path of filedirs) {
+                let cPath = _getPath(["collection", "collections", c_path], 0, 1);
+                try {
+                    let cObj = String(fetch(cPath))
+                        .replace(/"low":/g, '"128k":')
+                        .replace(/"standard":/g, '"320k":')
+                        .replace(/"high":/g, '"2000k":')
+                        .replace(/"super":/g, '"4000k":');
+                    saveFile(cPath, cObj);
+                } catch (e) {
+                    log("地址: " + cPath + " 的收藏异常，无法获取");
+                }
+            }
+
+            var hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
+            hikerPop.updateRecordsBottom([{ // 更新内容/简介☆
+                "title": "2026(v4)",
+                "records": [
+                    "““反馈Q群@365976134””",
+                    "““实现””: 多平台，多音质，多类型解析",
+                    "““注意””: 本次更新会导致““插件和解析失效””\n导入成功后记得更新插件&解析",
+                    "↓2025-2026主要更新内容↓",
+                    "跟进““@另一个书友圈””大佬的修复，适配海阔8.83",
+                    "‘‘更新’’: 插件支持设置为解析，多平台调试更方便",
+                    "‘‘更新’’: GitHub代理弹窗优化，JS逻辑优化",
+                    "‘‘更新’’: 更加精致的本地图标",
+                    "‘‘更新’’: 收藏操作优化，JS优化，弹窗优化\n选分组后支持返回分组列表(点右上角的三)\n支持设置为动态获取参数后再收藏",
+                    "‘‘更新’’: 全新下载弹窗，可以选择资源类型了",
+                    "‘‘更新’’: 增加更多音质插入口\n让解析和插件不再受困于四个音质",
+                    "‘‘更新’’: 插件列表-简易分组筛选，JS优化",
+                    "‘‘更新’’: 解析列表-简易分组筛选，JS优化",
+                    "‘‘更新’’: 二级样式设置\n定义你喜欢的简介格式",
+                    "‘‘更新’’: 支持在设置关闭插件换源，免得“解析穿透”",
+                    "‘‘更新’’: 新增页面支持\n歌曲详情、批量处理",
+                ]
+            }, {
+                "title": "2025(v3)",
+                "records": [
+                    "““版本””: 歌词适配(新)",
+                    "‘‘实现’’: 多平台四音质解析"
+                ]
+            }, {
+                "title": "2024(v2)",
+                "records": [
+                    "““版本””: 歌词适配(旧)",
+                    "‘‘实现’’: 五平台四音质解析"
+                ]
+            }, {
+                "title": "2023(v1)",
+                "records": [
+                    "““版本””: TGX音乐(kw)",
+                    "‘‘实现’’: 单平台单音质解析"
+                ]
+            }]);
+
         } else if (getItem("plugin_update", "0") == "1" && getMyVar("pluginInitialization", "0") == "1") {
             putMyVar("pluginInitialization", "2");
             let newPath = _getPath(["plugin", "newPlatform.js"], "_cache", 1);

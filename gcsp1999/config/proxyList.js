@@ -167,10 +167,23 @@ if (jx_list.length == 0) {
         let _id = _.path;
         let isS = selects.indexOf(_id) != -1;
         let qualitys = _.supportedQualityType;
-        let desc1 = ["low", "standard", "high", "super"].map(quality => qualitys.includes(quality) ? '★' : '☆').join("");
+
+        let qualityLen = Math.min(qualitys.length, 24);
+        let qualityFen = qualityLen * 10 | 0;
+        let desc1 = "";
+        for (let i = 0; i < Math.min(qualityLen, 7); i++) {
+            desc1 += "★";
+        }
+        for (let i = desc1.length; i < 7; i++) {
+            desc1 += '☆';
+        }
+
+
+
+        // desc1 = ["low", "standard", "high", "super"].map(quality => qualitys.includes(quality) ? '★' : '☆').join("");
         d.push({
             title: (isS ? Color(_.title) : _.title).bold() + ("(" + _.version + ")").small().small(),
-            desc: Color(desc1, "#2E5D8E"),
+            desc: Color(qualityFen + "分|", "#2E5D8E").small().small().small() + Color(desc1, "#2E5D8E"),
             pic_url: _.icon,
             col_type: 'avatar',
             url: $("#noLoading#").lazyRule((_, i, _id, isS) => {
@@ -226,31 +239,33 @@ if (jx_list.length == 0) {
                                 break;
                             case '测试解析':
                                 let _Jiexi = $.require(_.path);
-                                let QualityNames = _Jiexi.supportedQualityType.map(quality => {
-                                    let name = {
-                                        low: "标准音质",
-                                        standard: "高品音质",
-                                        high: "无损音质",
-                                        super: "高品无损"
-                                    } [quality];
-                                    return name + " > " + quality;
-                                });
-                                hikerPop.selectCenterIcon({
-                                    iconList: QualityNames.map(title => ({
-                                        icon: "hiker://images/rule_type_audio",
-                                        title: title
-                                    })),
+                                let QualityNames = _Jiexi.supportedQualityType || ["128k"];
+                                hikerPop.selectBottomResIcon({
+                                    iconList: QualityNames.map(proxyQa => qualityMap[proxyQa]).sort((a, b) => -(a.sort - b.sort)),
                                     title: "选择测试音质",
                                     columns: 1,
                                     click(a, i) {
-                                        let quality = a.split(" > ")[1];
+                                        // 128k
+                                        let quality = qualityMap[a.url]._url || qualityMap[a.url].url;
                                         try {
                                             let _Platform = _getPlatform(_.platform);
                                             let musicItem = _Platform.debug_musicItem;
                                             if (musicItem) {
-                                                if (musicItem.qualities && musicItem.qualities[quality]) {
+                                                let a, qualities = musicItem.qualities || {};
+                                                for (let _key in qualities) {
+                                                    let f = qualityMap[_key];
+                                                    if (f && f.sort != 404) {
+                                                        if (f._url == quality || f.url == quality) {
+                                                            a = true;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                                if (a) {
                                                     hikerPop.runOnNewThread(() => {
-                                                        let _Jiexi_url = _Jiexi.getMediaSource(musicItem, quality);
+                                                        showLoading('获取链接中...');
+                                                        let _Jiexi_url = _Jiexi.getMediaSource(musicItem, quality, {});
+                                                        hideLoading();
                                                         _Jiexi_url = formatMediaItem(_Jiexi_url);
                                                         _Jiexi_url = _Jiexi_url && JSON.stringify(_Jiexi_url);
                                                         hikerPop.confirm({
@@ -268,7 +283,7 @@ if (jx_list.length == 0) {
                                                         });
                                                     });
                                                 } else {
-                                                    return "toast://插件的debug_musicItem.qualities不存在" + quality + "参数";
+                                                    return "toast://插件的debug_musicItem.qualities不存在" + quality + "对应的映射参数";
                                                 }
                                             } else {
                                                 return "toast://插件的debug_musicItem参数不存在";
@@ -278,6 +293,9 @@ if (jx_list.length == 0) {
                                         }
                                     }
                                 });
+
+
+
                                 break;
                             case '分享解析':
                                 return getShareText([_.path], "proxy");
@@ -305,28 +323,29 @@ if (jx_list.length == 0) {
                                 return "hiker://empty";
                                 break;
                             case '位置排序':
+                                if (getMyVar("proxy_filter", "全部") != "全部") {
+                                    return "toast://防止位置错乱，请在全部分组排序";
+                                }
                                 let detailp = _getPath(["proxy", _.platform, "details.json"], "_cache", 1);
                                 let details = JSON.parse(readFile(detailp) || "[]") || [];
+
+                                let i3 = details[i];
                                 details.splice(i, 1);
-                                return $(details.concat({
-                                    title: '最后面'
-                                }), 2, '解析移动到').select((set, list, i1, set2) => {
-                                    let i2
-                                    if (input == '最后面') {
-                                        i2 = list.length;
-                                    } else {
-                                        i2 = list.map(_ => _.title).indexOf(input);
+                                hikerPop.selectCenterIcon({
+                                    iconList: [].concat(details, {
+                                        title: '最后面'
+                                    }),
+                                    title: "解析移动到",
+                                    columns: 2,
+                                    click(a, i2) {
+                                        details.splice(i2, 0, i3);
+                                        saveFile(detailp, JSON.stringify(details, 0, 1));
+                                        let data2 = details.map(_ => md5(_.srcUrl) + ".js");
+                                        saveFile(_getPath(["proxy", _.platform, "sort.json"], 0, 1), JSON.stringify(data2));
+                                        refreshPage();
+                                        return "toast://更改成功";
                                     }
-                                    let data = JSON.parse(readFile(set) || "[]") || [];
-                                    let i3 = data[i1];
-                                    data.splice(i1, 1);
-                                    data.splice(i2, 0, i3);
-                                    saveFile(set, JSON.stringify(data, 0, 1));
-                                    let data2 = data.map(_ => md5(_.srcUrl) + ".js");
-                                    saveFile(set2, JSON.stringify(data2));
-                                    refreshPage();
-                                    return "toast://更改成功";
-                                }, detailp, details, i, _getPath(["proxy", _.platform, "sort.json"], 0, 1));
+                                });
                                 return "hiker://empty";
                                 break;
                         }

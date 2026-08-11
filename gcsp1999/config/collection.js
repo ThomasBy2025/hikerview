@@ -13,38 +13,10 @@ getColType({
 });
 d.push({
     title: "样式切换".bold(),
-    url: $("#noLoading#").lazyRule((id) => {
-        const hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
-
-        function up(a) {
-            let list = findItemsByCls(id + ':itemlist') || [];
-            for (let it of list) {
-                updateItem(it.extra.id, {
-                    col_type: a
-                });
-            }
-            setItem("col_type", a);
-            return "hiker://empty";
-        }
-        let optionf = ["text_4", "text_5", "text_center_1", "movie_2", "movie_3", "movie_3_marquee", "pic_1", "pic_2", "pic_3", "pic_1_center", "pic_1_card", "pic_2_card", "icon_1_search", "icon_small_3", "long_text", "rich_text", "avatar", "text_icon", "x5_webview_single", "video", "pic_1", "line", "line_blank", "blank_block", "big_blank_block", "big_big_blank_block", "scroll_button", "card_pic_2_2", "card_pic_2_2_left", "input"];
-        let options = getColTypes().filter(_type=>!optionf.includes(_type))
-        let position = options.indexOf(getItem("col_type", "icon_1_left_pic"));
-        options[position] = "““" + options[position] + "””";
-        let pop = hikerPop.selectBottom({
-            title: "请选择显示样式",
-            options,
-            columns: 2,
-            height: 0.6, //0-1
-            position,
-            click(a) {
-                return up(a);
-            },
-            longClick(a) {
-                return up(a);
-            }
-        });
-        return "hiker://empty";
-    }, rule_id),
+    url: $("#noLoading#").lazyRule(() => {
+        require(config.preRule);
+        return setColType();
+    }),
     col_type: "icon_small_3",
     img: "http://123.56.105.145/tubiao/red/35.png"
 });

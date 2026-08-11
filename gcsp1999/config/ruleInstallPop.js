@@ -1,12 +1,14 @@
 const hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
 let SettingItem = hikerPop.selectBottomSettingMenu.SettingItem;
-let QualityNames = ["标准音质", "高品音质", "无损音质", "高品无损"];
 let MediaPreNames = ["软件默认", "强制模式", "无需加载"];
 let MediaPreIndex = {
     "": 0,
     "#pre#": 1,
     "#noPre#": 2
 } [getItem('MediaPre', '')] || 0;
+
+let GetMediaTypes = ["默认传参", "收藏动态", "下载动态", "全部动态"];
+
 let pageHomeTypes = ["软件原生", "全屏扩展", "沉浸体验", "游戏模式"];
 let pageHomeIndex = {
     "": 0,
@@ -21,8 +23,9 @@ let s_types = [
 let s_type = getItem('s_type', '单曲');
 let pop = hikerPop.selectBottomSettingMenu({
     options: [
-        SettingItem("默认播放音质", QualityNames[getItem('QualityIndex', '0')]),
+        SettingItem("默认播放音质", qualityArr[getItem('QualityIndex', '0')]),
         SettingItem("音质获取失败", getItem('QualityFailure', "向下兼容")),
+        SettingItem("资源获取设置", GetMediaTypes[getItem('getMediaType', "0")]),
         SettingItem("预加载预解析", MediaPreNames[MediaPreIndex]),
         SettingItem(),
         SettingItem("音频直链缓存", getItem('MediaCache', '1') == "1"),
@@ -87,18 +90,40 @@ let pop = hikerPop.selectBottomSettingMenu({
                 });
                 break;
             case '默认播放音质':
-                hikerPop.selectCenterIcon({
-                    iconList: QualityNames.map(title => ({
-                        icon: "hiker://images/rule_type_audio",
-                        title: title
-                    })),
-                    title: s,
+                let ra = qualityArr.slice().reverse().map(key => qualityMap[key]);
+                let pos = getItem('QualityIndex', '4');
+                let pra = hikerPop.selectBottomResIcon({
+                    iconList: ra,
+                    title: "长按设置播放音质",
                     columns: 1,
-                    position: getItem('QualityIndex', '0'),
+                    noAutoDismiss: true,
+                    position: ra.findIndex((qa) => qa.sort == pos),
                     click(a, i) {
-                        setItem('QualityIndex', i + "");
-                        officeItem.setDesc(a);
+                        hikerPop.inputAutoRow({
+                            title: "设置音质颜色：" + a.url,
+                            hint: ra[i].color,
+                            defaultValue: ra[i].color,
+                            noAutoSoft: true, //不自动打开输入法
+                            confirm(text) {
+                                let f = qualityMap[a.url];
+                                text = text || (f.sort > 17 ? "#AA0000" : f.sort > 13 ? "#E47000" : f.sort > 7 ? "#0080E4" : f.sort > 3 ? "" : "Gray");
+                                f.icon = getLenSvg(f.abbr, text);
+                                f.color = text;
+                                setItem("qualityColor" + ra[i].sort, text);
+                                pra.dismiss();
+                                return "toast://设置了 " + text;
+                            },
+                            cancel() {
+                                return "toast://取消";
+                            }
+                        });
+                    },
+                    longClick(a, i) {
+                        setItem('QualityIndex', ra[i].sort + "");
+                        officeItem.setDesc(a.url);
                         change();
+                        pra.dismiss();
+                        toast("设置成功：" + a.url);
                     }
                 });
                 break;
@@ -107,6 +132,22 @@ let pop = hikerPop.selectBottomSettingMenu({
                 setItem('QualityFailure', newDesc);
                 officeItem.setDesc(newDesc);
                 change();
+                break;
+            case '资源获取设置':
+                hikerPop.selectCenterIcon({
+                    iconList: GetMediaTypes.map(title => ({
+                        icon: "hiker://images/rule_type_news",
+                        title: title
+                    })),
+                    title: s,
+                    columns: 1,
+                    position: getItem('getMediaType', "0"),
+                    click(a, i) {
+                        setItem('getMediaType', i + "");
+                        officeItem.setDesc(a);
+                        change();
+                    }
+                });
                 break;
             case '预加载预解析':
                 hikerPop.selectCenterIcon({
@@ -174,7 +215,7 @@ let pop = hikerPop.selectBottomSettingMenu({
                         SettingItem("弹幕颜色", "随机获取"),
                         SettingItem("字号大小", getItem("danmuSize", "10")),
                         SettingItem("高级设置", "完善中~"),
-                        SettingItem()
+                        // SettingItem()
                     ],
                     click(s2, officeItem2, change2) {
                         let isTrue2;
@@ -277,43 +318,207 @@ let pop = hikerPop.selectBottomSettingMenu({
                         SettingItem("依赖代理接口", getItem("ghproxy", "").slice(0, 16) || "hiker://empty"),
                         SettingItem("插件更新设置", getItem("plugin_update", "0") == "1" ? "自动更新" : "手动更新"),
                         SettingItem("清除依赖缓存", "更新依赖"),
-                        SettingItem()
+                        // SettingItem()
                     ],
                     click(s2, officeItem2, change2) {
                         let isTrue2;
                         switch (s2) {
                             case "依赖代理接口":
-                                hikerPop.inputAutoRow({
-                                    hint: "github代理链接",
-                                    title: s2,
-                                    defaultValue: getItem("ghproxy", ""),
-                                    //hideCancel: true,
-                                    noAutoSoft: true, //不自动打开输入法
-                                    confirm(text) {
-                                        text = String(text).trim();
-                                        if (!/http/.test(text)) {
-                                            return "toast://不是http地址";
-                                        }
-                                        hikerPop.runOnNewThread(() => {
+                                function verify_url(i, len, manage) {
+                                    hikerPop.runOnNewThread(() => {
+                                        let timerun = 0;
+                                        for (; i < len; i++) {
+                                            showLoading('检测代理中，还有 ' + (len - i) + " 个");
+                                            let u = ghproxys[i];
                                             try {
-                                                let verify_url = 'https://raw.githubusercontent.com/src48597962/hk/master/verify';
-                                                let content = fetch(text + verify_url, {
-                                                    timeout: 5000
-                                                });
+                                                let timeout = Date.now();
+                                                let content = fetch(u.title + 'https://raw.githubusercontent.com/src48597962/hk/master/verify');
+                                                timeout = Date.now() - timeout;
+                                                timerun += timeout;
                                                 if (content && content.trim() == "ok") {
-                                                    setItem('ghproxy', text);
-                                                    config.ghproxy = 0;
-                                                    eval(MY_RULE.preRule);
-                                                    officeItem2.setDesc(text || "hiker://empty");
-                                                    change2();
-                                                    return "toast://设置成功\n" + text;
+                                                    let color = timeout < 200 ? "#62A6FB" :
+                                                        timeout < 600 ? "#3BA600" :
+                                                        timeout < 1800 ? "#FA7D00" :
+                                                        timeout < 5400 ? "red" : "gray";
+                                                    ghproxys[i] = {
+                                                        title: u.title,
+                                                        icon: getLenSvg((timeout / 1e3).toFixed(1), color),
+                                                        timeout
+                                                    };
+                                                    continue;
                                                 }
                                             } catch (e) {}
-                                            return 'toast://设置失败';
+                                            ghproxys[i] = {
+                                                title: u.title,
+                                                icon: getLenSvg("❌", "#fff")
+                                            };
+                                        }
+                                        hideLoading();
+                                        storage0.setItem("ghproxys", ghproxys);
+                                        hikerPop.runOnUIThread(() => {
+                                            manage.change(ghproxys);
+                                        });
+                                        return "toast://检测完毕，共耗时：" + (timerun / 1e3).toFixed(1) + "秒"
+                                    });
+                                }
+
+                                function add_ghproxy() {
+                                    let icon = getLenSvg("❓", "#fff");
+                                    let arr1 = [];
+                                    try {
+                                        arr1 = JSON.parse(fetch(getGitHub(["config", "ghproxys.json"])));
+                                    } catch (no_gits) {}
+                                    try {
+                                        arr1 = arr1.concat(JSON.parse(fetch("https://www.github-mirrors.zone.id/api/urls")).data.map(url => {
+                                            url = url.trim();
+                                            if (!url.endsWith("/")) {
+                                                url = url + "/";
+                                            }
+                                            return url;
+                                        }));
+                                    } catch (no_zone) {}
+                                    ghproxys = ghproxys.concat(arr1.map(title => ({
+                                        title,
+                                        icon
+                                    })));
+
+                                    let seenTitles = {}; // 去重
+                                    ghproxys = ghproxys.filter(item => {
+                                        if (seenTitles.hasOwnProperty(item.title)) {
+                                            return false;
+                                        } else {
+                                            seenTitles[item.title] = true;
+                                            return true;
+                                        }
+                                    });
+                                }
+                                let ghproxy = getItem("ghproxy", "");
+                                let ghproxys = storage0.getItem("ghproxys", "");
+                                if (ghproxys.length === 0) {
+                                    ghproxys = [];
+                                    // add_ghproxy();
+                                }
+                                let position = ghproxys.findIndex((item) => item.title == ghproxy);
+
+
+
+                                let pop = hikerPop.selectBottomResIcon({
+                                    title: "GitHub加速管理",
+                                    iconList: ghproxys,
+                                    position: position,
+                                    toPosition: position,
+                                    columns: 1,
+                                    noAutoDismiss: true,
+                                    extraInputBox: new hikerPop.ResExtraInputBox({
+                                        hint: "输入GitHub加速代理地址",
+                                        title: "添加",
+                                        click(u, manage) {
+                                            if (u.startsWith("http")) {
+                                                if (ghproxys.findIndex((item) => item.title == u) == -1) {
+                                                    ghproxys.push({
+                                                        title: u,
+                                                        icon: getLenSvg("❓", "#fff")
+                                                    });
+                                                    storage0.setItem("ghproxys", ghproxys);
+                                                    manage.change(ghproxys);
+                                                    return "toast://添加成功";
+                                                } else {
+                                                    return "toast://此代理已存在";
+                                                }
+                                            } else {
+                                                return "toast://不是网络地址";
+                                            }
+                                        },
+                                    }),
+
+                                    click(u, i, manage) {
+                                        hikerPop.selectCenter({
+                                            options: ["删除代理", "检测代理", "分享代理", "使用代理"],
+                                            columns: 2,
+                                            position: 3,
+                                            title: u.title,
+                                            click(s, ii) {
+                                                switch (ii) {
+                                                    case 0:
+                                                        if (u.title == getItem("ghproxy", "")) {
+                                                            setItem("ghproxy", "");
+                                                        }
+                                                        ghproxys.splice(i, 1);
+                                                        manage.change(ghproxys);
+                                                        storage0.setItem("ghproxys", ghproxys);
+                                                        return "toast://已移除代理：" + u.title;
+                                                        break;
+                                                    case 1:
+                                                        verify_url(i, i + 1, manage);
+                                                        break;
+                                                    case 2:
+                                                        return "copy://" + u;
+                                                        break;
+                                                    case 3:
+                                                        setItem("ghproxy", u.title);
+                                                        config.ghproxy = 0;
+                                                        eval(MY_RULE.preRule);
+                                                        manage.setSelectedIndex(i);
+                                                        break;
+                                                }
+                                                return "hiker://empty";
+                                            }
                                         });
                                     },
-                                    cancel() {
-                                        return "toast://取消";
+
+
+
+                                    menuClick(manage) {
+                                        hikerPop.selectCenter({
+                                            options: ["批量检测", "移除失效", "更新列表"],
+                                            columns: 1,
+                                            title: "请选择",
+                                            click(s, i) {
+                                                switch (i) {
+                                                    case 0:
+                                                        verify_url(0, ghproxys.length, manage);
+                                                        break;
+                                                    case 1:
+                                                        let arr0 = ["#62A6FB", "#3BA600", "#FA7D00", "red", "gray", "#fff"];
+                                                        let arr1 = {}
+                                                        for (let _k of arr0) {
+                                                            arr1[_k] = [];
+                                                        }
+                                                        ghproxys.forEach(_ => {
+                                                            let svg = base64Decode(_.icon.split("base64,")[1]);
+                                                            let stroke = svg.match(/stroke="(\S+)"/)[1];
+                                                            if (!svg.includes(">❌</text")) {
+                                                                arr1[stroke].push(_);
+                                                            }
+                                                        });
+                                                        ghproxys = [];
+                                                        for (let _k of arr0) {
+                                                            ghproxys = ghproxys.concat(arr1[_k]);
+                                                        }
+
+                                                        let a = String(getItem("ghproxy", ""));
+                                                        let x = ghproxys.findIndex(item => item.title === a);
+                                                        if (x == -1 && a != "") {
+                                                            setItem("ghproxy", "");
+                                                        }
+                                                        manage.setSelectedIndex(x);
+
+                                                        manage.change(ghproxys);
+                                                        storage0.setItem("ghproxys", ghproxys);
+                                                        break;
+                                                    case 2:
+                                                        hikerPop.runOnNewThread(() => {
+                                                            showLoading('获取代理中');
+                                                            add_ghproxy();
+                                                            hideLoading();
+                                                            hikerPop.runOnUIThread(() => {
+                                                                manage.change(ghproxys);
+                                                            });
+                                                        });
+                                                        break;
+                                                }
+                                            }
+                                        });
                                     }
                                 });
                                 break;
@@ -350,23 +555,6 @@ let pop = hikerPop.selectBottomSettingMenu({
                         SettingItem("简介样式设置", "JS"),
                         SettingItem("默认列表样式", getItem("col_type", "icon_1_left_pic")),
                         SettingItem(),
-                        SettingItem("标准音质映射", [
-                            getItem("mediaDesc_quality_low_color", "") || "#3BA600",
-                            getItem("mediaDesc_quality_low_name", "") || "128K"
-                        ].join(" - ")),
-                        SettingItem("高品音质映射", [
-                            getItem("mediaDesc_quality_standard_color", "") || "#62A6FB",
-                            getItem("mediaDesc_quality_standard_name", "") || "320K"
-                        ].join(" - ")),
-                        SettingItem("无损音质映射", [
-                            getItem("mediaDesc_quality_high_color", "") || "#FA7D00",
-                            getItem("mediaDesc_quality_high_name", "") || "FLAC"
-                        ].join(" - ")),
-                        SettingItem("高品无损映射", [
-                            getItem("mediaDesc_quality_super_color", "") || "red",
-                            getItem("mediaDesc_quality_super_name", "") || "Hi-Res"
-                        ].join(" - ")),
-                        SettingItem(),
                         SettingItem("免费音频映射", [
                             getItem("mediaDesc_type_0_color", "") || "#008080",
                             getItem("mediaDesc_type_0_name", "") || "畅听"
@@ -375,6 +563,18 @@ let pop = hikerPop.selectBottomSettingMenu({
                             getItem("mediaDesc_type_1_color", "") || "#4B0082",
                             getItem("mediaDesc_type_1_name", "") || "会员"
                         ].join(" - ")),
+                        SettingItem("播客资源映射", [
+                            getItem("mediaDesc_type_8_color", "") || "#4B0082",
+                            getItem("mediaDesc_type_8_name", "") || "播客"
+                        ].join(" - ")),
+                        SettingItem("视频资源映射", [
+                            getItem("mediaDesc_type_9_color", "") || "#4B0082",
+                            getItem("mediaDesc_type_9_name", "") || "视频"
+                        ].join(" - ")),
+                        SettingItem("歌词资源映射", [
+                            getItem("mediaDesc_type_10_color", "") || "#4B0082",
+                            getItem("mediaDesc_type_10_name", "") || "歌词"
+                        ].join(" - ")),
                         SettingItem(),
                         SettingItem("插件名称映射", "{}"),
                     ],
@@ -382,23 +582,7 @@ let pop = hikerPop.selectBottomSettingMenu({
                         let isTrue2;
                         switch (s2) {
                             case "默认列表样式":
-                                let optionf = ["text_4", "text_5", "text_center_1", "movie_2", "movie_3", "movie_3_marquee", "pic_1", "pic_2", "pic_3", "pic_1_center", "pic_1_card", "pic_2_card", "icon_1_search", "icon_small_3", "long_text", "rich_text", "avatar", "text_icon", "x5_webview_single", "video", "pic_1", "line", "line_blank", "blank_block", "big_blank_block", "big_big_blank_block", "scroll_button", "card_pic_2_2", "card_pic_2_2_left", "input"];
-                                let options = getColTypes().filter(_type => !optionf.includes(_type))
-                                let position = options.indexOf(String(officeItem2.getDesc()));
-                                options[position] = "““" + options[position] + "””";
-                                let pop = hikerPop.selectBottom({
-                                    title: "请选择显示样式",
-                                    options,
-                                    columns: 2,
-                                    height: 0.6, //0-1
-                                    position,
-                                    click(a) {
-                                        setItem("col_type", a);
-                                        officeItem2.setDesc(a);
-                                        change2();
-                                        return "toast://设置成功\n" + a;
-                                    }
-                                });
+                                setColType(officeItem2, change2);
                                 break;
                             case "简介样式设置":
                                 hikerPop.inputConfirm({
@@ -448,16 +632,14 @@ let pop = hikerPop.selectBottomSettingMenu({
                                 });
                                 break;
                             default:
-                                let xtype1 = /音频/.test(s2) ? "type" : "quality";
-                                let xtype2 = {
-                                    "标准音质映射": "low",
-                                    "高品音质映射": "standard",
-                                    "无损音质映射": "high",
-                                    "高品无损映射": "super",
+                                let xtype = {
                                     "免费音频映射": "0",
                                     "付费音频映射": "1",
+                                    "播客资源映射": "8",
+                                    "视频资源映射": "9",
+                                    "歌词资源映射": "10",
                                 } [s2];
-                                let xtype3 = "mediaDesc" + "_" + xtype1 + "_" + xtype2 + "_";
+                                let xtype3 = "mediaDesc_type_" + xtype + "_";
                                 let xtype4 = String(officeItem2.getDesc()).split(" - ");
                                 hikerPop.inputTwoRow({
                                     titleHint: "映射名称",
