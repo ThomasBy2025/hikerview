@@ -381,31 +381,31 @@ var qualityMap = {
 
 
     "20900k": {
-        "title": "至臻母带2.0",
+        "title": "至臻母带5.0",
         "desc": "还原录音细节 音质提升近一半",
         "abbr": "MS",
-        "alias": ["20900kmflac", "jymaster", "viper_tape", "master"],
+        "alias": ["20900kmflac", "jymaster", "viper_clear", "master"],
         "sort": 21
     },
-    "24000k": {
+    "20501k": {
         "title": "臻音全景声",
         "desc": "自研空间音频 如同在三维空间",
         "abbr": "AT",
-        "alias": ["24000kmflac", "vivid", "viper_clear", "atmos_plus", "clear"],
-        "sort": 19
+        "alias": ["20501kmflac", "jyeffect",  "viper_hifi",  "atmos_plus", "clear"],
+        "sort": 20
     },
-    "20501k": {
+    "24000k": {
         "title": "沉浸环绕声",
         "desc": "影院级空间感 声临其境的环绕",
         "abbr": "3D",
-        "alias": ["20501kmflac", "sky", "viper_atmos", "spatial", "D3", "atmos", "effect"],
-        "sort": 20
+        "alias": ["24000kmflac", "sky", "viper_atmos", "spatial", "D3", "atmos", "effect"],
+        "sort": 19
     },
     "20201k": {
         "title": "超高清HiFi",
         "desc": "智能音质增强 补全声场小细节",
         "abbr": "ZQ",
-        "alias": ["20201kmflac", "jyeffect"],
+        "alias": ["20201kmflac", "vivid"],
         "sort": 18
     },
 
@@ -451,7 +451,7 @@ var qualityMap = {
         "title": "空间音频",
         "desc": "模拟环绕声场 让声音围你而动",
         "abbr": "AR",
-        "alias": ["10501kflac"],
+        "alias": ["10501kflac", "multitrack"],
         "sort": 12
     },
     "23000k": {
@@ -479,7 +479,7 @@ var qualityMap = {
         "title": "低清无损",
         "desc": "满足日常听感的无损音质",
         "abbr": "AQ",
-        "alias": ["1000kape"],
+        "alias": ["1000kape", "viper_tape"],
         "sort": 8
     },
 

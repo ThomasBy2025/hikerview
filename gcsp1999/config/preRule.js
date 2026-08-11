@@ -1339,7 +1339,7 @@ function Extra(_, _extra, run) {
         "128k": {
             "size": _.size
         }
-    }).sort((a, b) => -(qualityMap[a].sort - qualityMap[b].sort));
+    }).sort((a, b) =>  (qualityMap[b]&&qualityMap[b].sort)-(qualityMap[a]&&qualityMap[a].sort));
     let platformDesc = extraDesc.platformDesc[_.platform] || {};
     json.title = String(json.title || "")
         .replace(/\$title|\$nickName/g, _.title || _.nickName || "")
@@ -1512,11 +1512,13 @@ function getQuality(musicItem, down) {
 
     // 动态获取信息
     if (down && (getItem('getMediaType', '0') > 1)) {
+        showLoading('动态获取音质中...');
         try {
             if (musicItem.type != 9 && musicItem.type != 8) {
                 musicItem = _getPlatform(musicItem.platform).getMusicInfo(musicItem, "down");
             }
         } catch (e) {}
+        hideLoading();
     }
 
 
@@ -1659,7 +1661,7 @@ function getMedia(musicItem, quality, qualityType, mediaType) {
         return switchPluginSource(musicItem);
     }
     if (mediaType != "0" && mediaType != "4" && mediaType != "5" && getItem("startProxyServer", "0") == "1") { // 播放链接加密
-        return $.require(getGitHub(["config", "startProxyServer.js"]))(musicItem, quality, mediaType);
+        return $.require(getGitHub(["config", "startProxyServer.js"]))(musicItem, quality, qualityType, mediaType);
     }
 
     let mediaItem = formatMediaItem(musicItem);
@@ -1787,7 +1789,7 @@ function getMedia(musicItem, quality, qualityType, mediaType) {
                 let u = String(mediaItem.urls[i]);
                 // 是否记忆播放进度 &memoryPosition=null
                 if (u) u = u.replace(/$/, (u.includes("?") ? "&" : "?") + getItem('memoryPosition', '')) + _url;
-                mediaItem.urls[i] = u;
+                mediaItem.urls[i] = u.replace(/[\?\&]$/, "");
             }
         }
 
@@ -2231,11 +2233,13 @@ function setCollectionData(musicItem, run, noGetMediaType) {
         }
     } else if (!noGetMediaType) { // 动态获取musicItem
         if ((getItem('getMediaType', "0") % 2) != 0) {
+            showLoading('动态获取信息...');
             try {
                 if (musicItem.type != 9 && musicItem.type != 8) {
                     musicItem = _getPlatform(musicItem.platform).getMusicInfo(musicItem, "down");
                 }
             } catch (e) {}
+            hideLoading();
         }
     }
     let pop = hikerPop.selectCenterIcon({
