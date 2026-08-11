@@ -14,6 +14,7 @@ function formatMusicItem(_) {
     return -(a-b);
     })
     .forEach(N_MINFO => {
+try{
         let list = N_MINFO.split(",");
         let b = list[1].split(":")[1];
         let format = list[2].split(":")[1];
@@ -48,6 +49,7 @@ function formatMusicItem(_) {
             qt.isDecode = true; // 播放需要解码
         }
         qualities[t].push(qt);
+}catch(e){}
     });
 
 
@@ -328,11 +330,11 @@ let platformObj = {
     title: "酷我音乐", // 插件名称☆
     type: "音频", // 插件分类☆ 随便写：视频 / 音频 / 其他
     author: "Thomas喲", // 插件作者
-    version: "2026.10.10", // 插件版本
+    version: "2026.10.11", // 插件版本
     icon: "https://android-artworks.25pp.com/fs08/2025/08/19/6/110_7a4a098a92bb3f1b506acfda21a038e4_con_130x130.png", //插件封面☆
     srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/kw.js", // 在线链接
     description: [{ // 更新内容/简介☆
-        "title": "2026.10.10",
+        "title": "2026.10.11",
         "records": [
             "““反馈Q群@365976134””",
             "““更新””: 完善formatMusicItem函数",
