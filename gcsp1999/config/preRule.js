@@ -1015,7 +1015,9 @@ function getThemeData(themeType) {
                         eval(themeType + "()");
                         break;
                     default: // 详情
-                        let _item = Extra(MY_PARAMS.item, {
+                        let _item = Extra(MY_PARAMS.item || {
+                            title: getPageTitle()
+                        }, {
                             col_type: "movie_1_vertical_pic_blur"
                         }, true);
                         _item.url = buildUrl("hiker://page/home", {
@@ -1240,7 +1242,7 @@ function requireThemeIndex(t_type, t_id, t_index, run) {
     let t_data = (t_item.data || [])[t_index] || {};
     t_data = String(t_data.data || "").replace(/\$length/g, t_data.length || "1").replace(/\$name/g, t_data.name || "").replace(/\$type/g, t_data.type || "");
     if (run) return t_data;
-    let t_path = _getPath(["theme", t_type, t_id.replace(".json", ""), t_index+".js"], "_cache", 1);
+    let t_path = _getPath(["theme", t_type, t_id.replace(".json", ""), t_index + ".js"], "_cache", 1);
     saveFile(t_path, t_data);
     return $.require(t_path);
 }
@@ -1348,8 +1350,8 @@ function Extra(_, _extra, run) {
         .replace(/\$album/g, _.album || _.title || "")
         .replace(/\$platformName/g, platformDesc.name || _.platform)
         .replace(/\$platformColor/g, platformDesc.color || "Gray")
-        .replace(/\$qualityName/g, qualityMap[qualityName[0]]?qualityMap[qualityName[0]].abbr:"XX")
-        .replace(/\$qualityColor/g, qualityMap[qualityName[0]]?qualityMap[qualityName[0]].color:"Gray")
+        .replace(/\$qualityName/g, qualityMap[qualityName[0]] ? qualityMap[qualityName[0]].abbr : "XX")
+        .replace(/\$qualityColor/g, qualityMap[qualityName[0]] ? qualityMap[qualityName[0]].color : "Gray")
         .replace(/\$typeName/g, extraDesc["type" + _.type] && extraDesc["type" + _.type].name)
         .replace(/\$typeColor/g, extraDesc["type" + _.type] && extraDesc["type" + _.type].color)
     json.pic_url = String(json.pic_url || json.img || "")
