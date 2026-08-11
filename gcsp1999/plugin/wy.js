@@ -37,7 +37,7 @@ function formatMusicItem(_) {
     let picUrl = (_.al && _.al.picUrl) || _.cover
     let qualities = {};
     for (let k in _qualityArr) {
-        let db = k === "db" || undefined;
+        let db = k === "db" || k === "vi" || undefined;
         let t = _qualityArr[k];
         if (_[k]) {
             qualities[t] = {};
@@ -421,7 +421,7 @@ let platformObj = {
             index: 1
         }
     },
-    debug_musicItem:{"album":"T.I.M.E.","albumId":174925713,"artist":"G.E.M.邓紫棋","artistId":"7763","artwork":"https://p3.music.126.net/aJWtwvdYRXvKUpAE2C6NoA==/109951168919708423.jpg","duration":"00:04:13","id":"2083785152","platform":"wy","qualities":{"128k":{"size":4060845},"192k":{"size":6091245},"2000k":{"size":27080453},"20201k":{"size":26389528},"20501k":{"size":88077133},"20900k":{"size":141208067},"24000k":[{"size":60397852,"title":"c512"},{"size":60066095,"title":"c51"},{"size":26423343,"title":"ste2"},{"size":25999710,"title":"ste"},{"size":20994178,"title":"aac"},{"size":20994178,"title":"aac2"}],"320k":{"size":10152045},"4000k":{"size":51401370}},"title":"唯一","type":"1"}, // 测试登录/解析时需要调用
+    debug_musicItem:{"album":"T.I.M.E.","albumId":174925713,"artist":"G.E.M.邓紫棋","artistId":"7763","artwork":"https://p3.music.126.net/aJWtwvdYRXvKUpAE2C6NoA==/109951168919708423.jpg","duration":"00:04:13","id":"2083785152","platform":"wy","qualities":{"128k":{"size":4060845},"192k":{"size":6091245},"2000k":{"size":27080453},"20201k":{"isDecode":true,"size":26389528},"20501k":{"size":88077133},"20900k":{"size":141208067},"24000k":[{"size":60397852,"title":"c512"},{"size":60066095,"title":"c51"},{"size":26423343,"title":"ste2"},{"size":25999710,"title":"ste"},{"size":20994178,"title":"aac"},{"size":20994178,"title":"aac2"}],"320k":{"size":10152045},"4000k":{"size":51401370}},"title":"唯一","type":"1"}, // 测试登录/解析时需要调用
 
 
 
@@ -819,9 +819,10 @@ let platformObj = {
     // 获取链接(url)
     getMediaSource: function(musicItem, quality, qualityItem, mediaType, header) {
         let level = _qualityMap[quality];
+        let dolby = level == "dolby" || level == "vivid";
         let body = {
             ids: `["${musicItem.id}"]`,
-            encodeType: level == "dolby" ? "mp4" : "flac",
+            encodeType:  dolby ? "mp4" : "flac",
             trialMode: "23", // 试听
             level: level
         }
