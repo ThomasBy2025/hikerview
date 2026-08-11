@@ -5,11 +5,11 @@ let _qualityMap = {
     "320k": "exhigh",
     "2000k": "lossless",
     "4000k": "hires",
-    "20201k": "jyeffect", // 超清
-    "20501k": "sky", // 沉浸
-    "20900k": "jymaster", // 母带
-    "24000k": "vivid", // 全景
     "11700k": "dolby", // 杜比
+    "20201k": "vivid",
+    "24000k": "sky",
+    "20501k": "jyeffect",
+    "20900k": "jymaster", // 母带
 };
 let _qualityArr = {
     "l": "128k",
@@ -17,12 +17,12 @@ let _qualityArr = {
     "h": "320k",
     "sq": "2000k",
     "hr": "4000k",
-    "je": "20201k", // 超清
-    "sk": "20501k", // 沉浸
-    "jm": "20900k", // 母带
+    "db": "11700k",
+    "vi": "20201k",
+    "sk": "24000k",
+    "je": "20501k",
+    "jm": "20900k",
     // "sks": [],
-    "vi": "24000k", // 全景
-    "db": "11700k", // 杜比
 }
 
 
@@ -37,19 +37,19 @@ function formatMusicItem(_) {
     let picUrl = (_.al && _.al.picUrl) || _.cover
     let qualities = {};
     for (let k in _qualityArr) {
-        let db = k === "db" ? true : undefined;
+        let db = k === "db" || undefined;
         let t = _qualityArr[k];
         if (_[k]) {
             qualities[t] = {};
             qualities[t].size = _[k].size;
-            qualities[t].it = _[k].it || undefined;
+            qualities[t].title = _[k].it || undefined;
             qualities[t].isDecode = db;
             // qualities[t].url = "";
         }
         if (_[k + "s"]) {
             qualities[t] = _[k + "s"].map(it => ({
                 size: it.size,
-                it: it.it || undefined,
+                title: it.it || undefined,
                 isDecode: db,
             })).sort((a, b) => b.size - a.size);
         }
@@ -364,11 +364,11 @@ let platformObj = {
     title: "网易音乐", // 插件名称☆
     type: "音频", // 插件分类☆ 随便写：视频 / 音频 / 其他
     author: "Thomas喲", // 插件作者
-    version: "2026.10.10", // 插件版本
+    version: "2026.10.11", // 插件版本
     icon: "https://android-artworks.25pp.com/fs08/2025/08/29/0/110_e8f7db85c17637c2d54309fcf535cadc_con_130x130.png", //插件封面☆
     srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/wy.js", // 在线链接
     description: [{ // 更新内容/简介☆
-        "title": "2026.10.10",
+        "title": "2026.10.11",
         "records": [
             "““反馈Q群@365976134””",
             "““更新””: 完善音质函数",
@@ -421,19 +421,7 @@ let platformObj = {
             index: 1
         }
     },
-    debug_musicItem: {
-        "platform": "wy",
-        "type": "1",
-        "id": "2083785152",
-        "title": "唯一",
-        "artist": "G.E.M.邓紫棋",
-        "duration": 253735,
-        "album": "T.I.M.E.",
-        "artwork": "http://p4.music.126.net/aJWtwvdYRXvKUpAE2C6NoA==/109951168919708423.jpg",
-        "qualities": {"128k":{"size":4060845},"192k":{"size":6091245},"2000k":{"size":27080453},"20201k":{"size":88077133},"20501k":[{"it":"c512","size":60397852},{"it":"c51","size":60066095},{"it":"ste2","size":26423343},{"it":"ste","size":25999710},{"it":"aac","size":20994178},{"it":"aac2","size":20994178}],"20900k":{"size":141208067},"24000k":{"size":26389528},"320k":{"size":10152045},"4000k":{"size":51401370}},
-        "albumId": 174925713,
-        "artistId": "7763"
-    }, // 测试登录/解析时需要调用
+    debug_musicItem:{"album":"T.I.M.E.","albumId":174925713,"artist":"G.E.M.邓紫棋","artistId":"7763","artwork":"https://p3.music.126.net/aJWtwvdYRXvKUpAE2C6NoA==/109951168919708423.jpg","duration":"00:04:13","id":"2083785152","platform":"wy","qualities":{"128k":{"size":4060845},"192k":{"size":6091245},"2000k":{"size":27080453},"20201k":{"size":26389528},"20501k":{"size":88077133},"20900k":{"size":141208067},"24000k":[{"size":60397852,"title":"c512"},{"size":60066095,"title":"c51"},{"size":26423343,"title":"ste2"},{"size":25999710,"title":"ste"},{"size":20994178,"title":"aac"},{"size":20994178,"title":"aac2"}],"320k":{"size":10152045},"4000k":{"size":51401370}},"title":"唯一","type":"1"}, // 测试登录/解析时需要调用
 
 
 
@@ -837,7 +825,7 @@ let platformObj = {
             trialMode: "23", // 试听
             level: level
         }
-        if (qualityItem.it || (level == "sky")) body.immerseType = qualityItem.it || "c51";
+        if (qualityItem.title || (level == "sky")) body.immerseType = qualityItem.title || "c51";
 
         let url = false; // musicItem.type == 0 && `http://music.163.com/song/media/outer/url?id=${musicItem.id}.mp3`;
         let _ = ajax3("/api/song/enhance/player/url/v1", body, header).data;
