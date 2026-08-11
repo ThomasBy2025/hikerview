@@ -1,6 +1,5 @@
 // 格式化歌曲信息
 function formatMusicItem(_) {
-    let Reg = (k, _) => reg = (_.N_MINFO || "").match(new RegExp('bitrate:' + k + ',format:[^,]+,size:([^;]+)'));
     let name = _.songName || _.name || _.SONGNAME || _.songname;
     let singer = _.artist || _.ARTIST;
     let songId = _.MUSICRID ? _.MUSICRID.split('_')[1].split('&')[0] : (_.rid || _.id);
@@ -8,18 +7,53 @@ function formatMusicItem(_) {
     let albumId = _.albumid || _.ALBUMID;
 
     let qualities = {};
-    for (let k of [128, 320, 2000, 4000]) {
-        if (Reg(k, _)) {
-            let t = {
-                128: "low",
-                320: "standard",
-                2000: "high",
-                4000: "super"
-            }[k];
-            qualities[t] = {};
-            qualities[t].size = reg[1].replace(/\s*mb/i, " MB");
+    let infos = String(_.N_MINFO || _.n_minfo || "").split(";")
+    .sort((a,b)=>{
+    a = a.split(":")[2].split(",")[0];
+    b = b.split(":")[2].split(",")[0];
+    return -(a-b);
+    })
+    .forEach(N_MINFO => {
+        let list = N_MINFO.split(",");
+        let b = list[1].split(":")[1];
+        let format = list[2].split(":")[1];
+        let size = list[3].split(":")[1];
+
+        let t = b + "k";
+        if (b <= 96) {
+            t = "48k";
+        } else if (b <= 128) {
+            t = "128k";
+        } else if (b <= 999) {
+            t = "320k";
+        } else if (b <= 2000) {
+            t = "2000k";
+        } else if (b <= 4000) {
+            t = "4000k";
+        } else if (b <= 11700) {
+            t = "11700k";
         }
-    }
+
+        if (!qualities[t]) qualities[t] = [];
+        let qt = {
+            abbr: b + "k",
+            title: format,
+
+            br: b + "k" + format,
+            size: size.replace(/\s*mb/i, " MB")
+        }
+        if (["mgg", "mflac", "mmp4"].includes(format)) {
+            qt.isEncrypt = true; // 是加密音质
+        } else if (format == "mp4") {
+            qt.isDecode = true; // 播放需要解码
+        }
+        qualities[t].push(qt);
+    });
+
+
+
+
+
     let picUrl = _.pic || _.img || _.hts_PICPATH;
     if (!picUrl) {
         if (_.web_albumpic_short) {
@@ -35,7 +69,7 @@ function formatMusicItem(_) {
             picUrl = "http://img1.kuwo.cn/star/starheads/" + _.web_artistpic_short.replace(/^120/, '500');
         }
     }
-
+    let vid = _.mvpayinfo && _.mvpayinfo.vid;
     return {
         /* 平台 */
         platform: platformObj.platform,
@@ -64,7 +98,7 @@ function formatMusicItem(_) {
         /* 其他 */ // 支持自定义
         albumId, //专辑id
         // artistId, //歌手id
-        vid: (_.mvpayinfo && _.mvpayinfo.vid) || _.mkvrid, //视频id video
+        vid: (vid && vid != "0" && vid) || undefined, //视频id video
         // rid, //播客id radio
     }
 }
@@ -258,6 +292,7 @@ function ajax(url) {
                     'Cookie': Cookie,
                     'Secret': Secret,
                     'Token': Token,
+                    'User-Agent': 'Mozilla/5.0 Chrome/143.0.7499.192 Mobile Safari/537.36 QQ/'
                 }
             })).data || {};
         } catch (err) {
@@ -293,13 +328,19 @@ let platformObj = {
     title: "酷我音乐", // 插件名称☆
     type: "音频", // 插件分类☆ 随便写：视频 / 音频 / 其他
     author: "Thomas喲", // 插件作者
-    version: "2025.09.27", // 插件版本
+    version: "2026.10.10", // 插件版本
     icon: "https://android-artworks.25pp.com/fs08/2025/08/19/6/110_7a4a098a92bb3f1b506acfda21a038e4_con_130x130.png", //插件封面☆
     srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/kw.js", // 在线链接
     description: [{ // 更新内容/简介☆
-        "title": "2025.09.27",
+        "title": "2026.10.10",
         "records": [
             "““反馈Q群@365976134””",
+            "““更新””: 完善formatMusicItem函数",
+            "‘‘优化’’: 跟进依赖版本，支持导入资源"
+        ]
+    }, {
+        "title": "2025.09.27",
+        "records": [
             "““更新””: 完善formatMusicItem函数",
             "‘‘优化’’: 适配主题 - 酷我音乐"
         ]
@@ -311,12 +352,13 @@ let platformObj = {
             "‘‘增加’’: 支持搜索电台(听书)"
         ]
     }, {
-        "title": "2025.09.20",
+        "title": "2025.09.08",
         "records": [
             "““更新””: 插件示例",
             "‘‘增加’’: 用户变量"
         ]
     }],
+    ajax,
 
 
 
@@ -326,40 +368,14 @@ let platformObj = {
         name: "渠道标识",
         hint: "source"
     }],
-    debug_musicItem: {
-        "platform": "kw",
-        "type": "1",
-        "id": "7149583",
-        "title": "告白气球",
-        "artist": "周杰伦",
-        "duration": 215000,
-        "album": "周杰伦的床边故事",
-        "artwork": "https://img2.kuwo.cn/star/albumcover/500/64/39/3540704654.jpg",
-        "qualities": {
-            "low": {
-                "size": "3.29 MB"
-            },
-            "standard": {
-                "size": "8.22 MB"
-            },
-            "high": {
-                "size": "44.90 MB"
-            },
-            "super": {
-                "size": "74.40 MB"
-            }
-        },
-        "albumId": "555949",
-        "vid": "7976426"
-    }, // 测试登录/解析时需要调用
-
+    debug_musicItem:{"album":"周杰伦的床边故事","albumId":"555949","artist":"周杰伦","artwork":"https://img2.kuwo.cn/star/albumcover/500/64/39/3540704654.jpg","duration":"00:03:35","id":"7149583","platform":"kw","qualities":{"128k":[{"abbr":"128k","br":"128kmp3","size":"3.29 MB","title":"mp3"},{"abbr":"100k","br":"100kogg","size":"2.39 MB","title":"ogg"}],"20000k":[{"abbr":"20000k","br":"20000kzp","size":"zp MB","title":"zp"}],"2000k":[{"abbr":"2000k","br":"2000kflac","size":"44.91 MB","title":"flac"}],"20201k":[{"abbr":"20201k","br":"20201kmflac","isEncrypt":true,"size":"23.4 MB","title":"mflac"}],"20501k":[{"abbr":"20501k","br":"20501kmflac","isEncrypt":true,"size":"59.34 MB","title":"mflac"}],"20900k":[{"abbr":"20900k","br":"20900kmflac","isEncrypt":true,"size":"139.03 MB","title":"mflac"}],"22000k":[{"abbr":"22000k","br":"22000kmgg","isEncrypt":true,"size":"17.93 MB","title":"mgg"}],"24000k":[{"abbr":"24000k","br":"24000kmgg","isEncrypt":true,"size":"26.89 MB","title":"mgg"}],"25000k":[{"abbr":"25000k","br":"25000kmmp4","isEncrypt":true,"size":"5.79 MB","title":"mmp4"}],"320k":[{"abbr":"320k","br":"320kmp3","size":"8.23 MB","title":"mp3"},{"abbr":"300k","br":"300kogg","size":"8.58 MB","title":"ogg"},{"abbr":"192k","br":"192kogg","size":"4.8 MB","title":"ogg"}],"4000k":[{"abbr":"4000k","br":"4000kflac","size":"74.41 MB","title":"flac"}],"48k":[{"abbr":"48k","br":"48kaac","size":"1.26 MB","title":"aac"}]},"title":"告白气球","type":"1","vid":"7747626"},
 
 
     // 插件已适配musicfree☆
     // musicfree版本的platform需要和插件名称一致
     musicfree: {
         srcUrl: "", // 插件musicfree版本在线链接
-        regNames: ["酷我音乐", "小蜗音乐", "元力KW", "kuwo"] // 插件在musicfree的同源名称
+        regNames: ["酷我音乐", "小蜗音乐", "元力KW", "kuwo", "酷我", "K我", "酷我音乐·手机版", "酷我音乐·车机版", "闻音酷我", "惜缘酷我", "酷我(念心音源)", "酷我(Fish音源)", "酷我JHMS", "yibai酷我流式" /*, "爱听", "云音乐"*/ ] // 插件在musicfree的同源名称
     },
 
 
@@ -450,6 +466,7 @@ let platformObj = {
         }
         let _ = JSON.parse(fetch(buildUrl("http://search.kuwo.cn/r.s", p)));
         let list = _.abslist || _.albumlist || [];
+
         let total = page * pageSize;
         return {
             isEnd: (_.TOTAL || _.total || total) <= (total - pageSize + list.length),
@@ -634,15 +651,12 @@ let platformObj = {
     },
 
     // 获取链接(url)
-    getMediaSource: function(musicItem, quality, header, mediaType) {
-        // musicItem = 符合单曲格式的对象
-        // quality = "low" || "standard" || "high" || "super" #需要获取的音质
-        // header = 会员cookie(前提插件有实现登录函数)
-        // mediaType = "play" || "down" || "debug"
-        if (mediaType == "debug") { // 登录测试
-            musicItem = platformObj.debug_musicItem;
-            quality = "low";
-            mediaType = "down";
+    getMediaSource: function(musicItem, quality, qualityItem, mediaType, header) {
+        let {
+            br
+        } = qualityItem || {};
+        if (!br) {
+            br = hijackQuality(quality, ["128kmp3", "320kmp3", "2000kflac", "4000kflac"]);
         }
         let url;
         // url = fetch("https://antiserver.kuwo.cn/anti.s?type=convert_url&format=mp3&rid=" + t1);
@@ -650,20 +664,17 @@ let platformObj = {
             source
         } = getUserVariables(platformObj);
         if (source && source != "") {
-            let mobi = buildUrl("http://nmobi.kuwo.cn/mobi.s", {
+            let mobi = buildUrl("https://changenotice.kuwo.cn/mobi.s", {
                 f: "web",
                 user: 0,
                 source,
                 type: "convert_url_with_sign",
                 rid: musicItem.id,
-                br: {
-                    low: '128kmp3',
-                    standard: '320kmp3',
-                    high: '2000kflac',
-                    super: '4000kflac'
-                }[quality]
+                br: br
             });
-            url = JSON.parse(fetch(mobi)).data.url.split("?")[0];
+            mobi = JSON.parse(fetch(mobi)).data;
+            // ekey = mobi.ekey;
+            url = mobi.url.split("?")[0];
         } else {
             url = ajax([
                 pcapi.replace(/(api\/)/, '$1v1/') + "music/playUrl",
@@ -671,13 +682,7 @@ let platformObj = {
             ][0] + "?mid=" + musicItem.id + "&type=music&").url;
         }
         if (url && url != "" && url != "None") {
-            return {
-                urls: [url + "#isMusic=true#"],
-                // names: [],
-                // headers: [],
-                lyric: platformObj.getLyric(musicItem),
-                // audioUrls: [], // 一般用不到
-            };
+            return url + "#isMusic=true#";
         }
         return false; // 无法获取播放链接
     },
@@ -758,16 +763,16 @@ let platformObj = {
         let names = [];
         let urls = [];
         if (mvhash) {
-            let _mvurl = "http://anymatch.kuwo.cn/mobi.s?f=web&type=get_url_by_vid&vid=" + mvhash + "&quality=MP4";
-            let _mvmat = (path) => mvinfo.formats.match('\\|MP4' + path);
+            let _mvurl = "http://anymatch.kuwo.cn/mobi.s?f=web&type=get_url_by_vid&vid=" + mvhash + "&quality=";
+            let _mvmat = (path) => mvinfo.formats.match('\\|' + path);
             [
-                ['BD', '【蓝光】 1080P'],
-                ['UL', '【超清】 720P'],
-                ['HV', '【高清】 480P'],
-                ['', '【标清】 360P'],
-                ['L', '【流畅】 240P'],
+                ['MP4BD', '【蓝光】 1080P'],
+                ['MP4UL', '【超清】 720P'],
+                ['MP4HV', '【高清】 480P'],
+                ['MP4', '【标清】 360P'],
+                ['MP4L', '【流畅】 240P'],
             ].map([path, name] => {
-                if (_mvmat(path)) {
+                if (true || _mvmat(path)) {
                     let _mp4url = fetch(_mvurl + path).match(/url=(\S+)/);
                     if (_mp4url && _mp4url[1]) {
                         urls.push(_mp4url[1].split("?")[0]);

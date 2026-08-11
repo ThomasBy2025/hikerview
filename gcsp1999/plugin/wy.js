@@ -1,3 +1,32 @@
+// 音质参数
+let _qualityMap = {
+    "128k": "standard",
+    "192k": "higher",
+    "320k": "exhigh",
+    "2000k": "lossless",
+    "4000k": "hires",
+    "20201k": "jyeffect", // 超清
+    "20501k": "sky", // 沉浸
+    "20900k": "jymaster", // 母带
+    "24000k": "vivid", // 全景
+    "11700k": "dolby", // 杜比
+};
+let _qualityArr = {
+    "l": "128k",
+    "m": "192k",
+    "h": "320k",
+    "sq": "2000k",
+    "hr": "4000k",
+    "je": "20201k", // 超清
+    "sk": "20501k", // 沉浸
+    "jm": "20900k", // 母带
+    // "sks": [],
+    "vi": "24000k", // 全景
+    "db": "11700k", // 杜比
+}
+
+
+
 // 格式化歌曲信息
 function formatMusicItem(_) {
     _ = _.baseInfo || _.song || _;
@@ -7,18 +36,22 @@ function formatMusicItem(_) {
     let albumId = _.al && _.al.id;
     let picUrl = (_.al && _.al.picUrl) || _.cover
     let qualities = {};
-    for (let k of ['l', 'h', 'sq', 'hr']) {
-        if (_[k] || (k == 'l' && _[k = 'm'])) {
-            let t = {
-                'm': "low",
-                'l': "low", //192k
-                'h': "standard",
-                'sq': "high",
-                'hr': "super"
-            }[k];
+    for (let k in _qualityArr) {
+        let db = k === "db" ? true : undefined;
+        let t = _qualityArr[k];
+        if (_[k]) {
             qualities[t] = {};
             qualities[t].size = _[k].size;
+            qualities[t].it = _[k].it || undefined;
+            qualities[t].isDecode = db;
             // qualities[t].url = "";
+        }
+        if (_[k + "s"]) {
+            qualities[t] = _[k + "s"].map(it => ({
+                size: it.size,
+                it: it.it || undefined,
+                isDecode: db,
+            })).sort((a, b) => b.size - a.size);
         }
     }
     return {
@@ -92,11 +125,6 @@ function formatRadioItem(_) {
     return _;
 }
 // 格式化视频信息
-
-
-
-
-
 function formatVideoItem(_) {
     if (_.baseInfo) {
         _ = _.baseInfo.resource;
@@ -110,7 +138,7 @@ function formatVideoItem(_) {
             /* 曲名 */
             title: _.mlogBaseData.text,
             /* 作者 */
-            artist: _.userProfile.nickname,
+            artist: _.userProfile ? _.userProfile.nickname : _.mlogExtVO.artistName,
             /* 时长(s) */
             duration: _.mlogBaseData.duration, // #interval
             /* 封面 */
@@ -249,23 +277,8 @@ function formatComment(_) {
 // 基础常量
 let pageSize = 30;
 let this_host = "https://interface.music.163.com/";
-// 音质参数
-let qualityMap = {
-    "low": "standard",
-    "standard": "exhigh",
-    "high": "lossless",
-    "super": "hires",
-    /*
-        "standard": "128k标准音质",
-        "higher": "192k高品音质",
-        "exhigh": "320k极高音质",
-        "lossless": "flac无损音质",
-        "hires": "Hi-Res音质",
-        "jyeffect": "高清环绕",
-        "sky": "沉浸环绕", // SVIP
-        "jymaster": "超清母带", // SVIP
-    */
-};
+
+
 // 用户数据
 function getHeaderx(headerx) {
     let {
@@ -351,19 +364,31 @@ let platformObj = {
     title: "网易音乐", // 插件名称☆
     type: "音频", // 插件分类☆ 随便写：视频 / 音频 / 其他
     author: "Thomas喲", // 插件作者
-    version: "2025.09.29", // 插件版本
+    version: "2026.10.10", // 插件版本
     icon: "https://android-artworks.25pp.com/fs08/2025/08/29/0/110_e8f7db85c17637c2d54309fcf535cadc_con_130x130.png", //插件封面☆
     srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/wy.js", // 在线链接
     description: [{ // 更新内容/简介☆
-        "title": "2025.09.29",
+        "title": "2026.10.10",
         "records": [
             "““反馈Q群@365976134””",
-            "““更新””: 适配主题：网易音乐"
+            "““更新””: 完善音质函数",
+            "‘‘修复’’: 跟进依赖更新，支持导入资源"
+        ]
+    }, {
+        "title": "2025.10.10",
+        "records": [
+            "““更新””: 分享链接函数",
+            "‘‘修复’’: 歌单只能导入1000首"
+        ]
+    }, {
+        "title": "2025.09.29",
+        "records": [
+            "““更新””: 适配主题：网易音乐",
+            "‘‘修复’’: 付费专辑跳过解析"
         ]
     }, {
         "title": "2025.09.24",
         "records": [
-            "““反馈Q群@365976134””",
             "““更新””: 登录逻辑函数",
             "‘‘修复’’: 试听链接判断"
         ]
@@ -405,20 +430,7 @@ let platformObj = {
         "duration": 253735,
         "album": "T.I.M.E.",
         "artwork": "http://p4.music.126.net/aJWtwvdYRXvKUpAE2C6NoA==/109951168919708423.jpg",
-        "qualities": {
-            "low": {
-                "size": 4060845
-            },
-            "standard": {
-                "size": 10152045
-            },
-            "high": {
-                "size": 27080453
-            },
-            "super": {
-                "size": 51401370
-            }
-        },
+        "qualities": {"128k":{"size":4060845},"192k":{"size":6091245},"2000k":{"size":27080453},"20201k":{"size":88077133},"20501k":[{"it":"c512","size":60397852},{"it":"c51","size":60066095},{"it":"ste2","size":26423343},{"it":"ste","size":25999710},{"it":"aac","size":20994178},{"it":"aac2","size":20994178}],"20900k":{"size":141208067},"24000k":{"size":26389528},"320k":{"size":10152045},"4000k":{"size":51401370}},
         "albumId": 174925713,
         "artistId": "7763"
     }, // 测试登录/解析时需要调用
@@ -433,7 +445,7 @@ let platformObj = {
     // musicfree版本的platform需要和插件名称一致
     musicfree: {
         srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/musicfree/refs/heads/main/plugins/wy.js", // 插件musicfree版本在线链接
-        regNames: ["网易音乐", "网易云音乐", "网易云", "小芸音乐", "简繁音乐", "云音乐", "元力WY", "网抑云", "网易", "NeteaseMusic"] // 插件在musicfree的同源名称
+        regNames: ["网易音乐", "网易云音乐", "网易云", "小芸音乐", "简繁音乐", "云音乐", "元力WY", "网抑云", "网易", "NeteaseMusic", "wangyiyun"] // 插件在musicfree的同源名称
     },
 
 
@@ -631,13 +643,18 @@ let platformObj = {
         // item 符合歌单格式的对象
         // data 符合单曲格式的数组
         if (/#djradio/.test(sheetId)) return platformObj.getProgramInfo(sheetId, page);
+        let n = 1000;
         let _ = ajax3("/api/v6/playlist/detail", {
-            n: 99999,
-            id: +sheetId
+            id: +sheetId,
+            n
         }).playlist;
         let list = _.tracks || [];
+        if (page > 1) {
+            list = _.trackIds.slice((page - 1) * n, page * n);
+            list = platformObj.getMusicInfo(list);
+        }
         return {
-            isEnd: 99999 >= _.trackCount,
+            isEnd: (page * n) >= _.trackCount,
             item: formatSheetItem(_),
             data: list.map(formatMusicItem)
         };
@@ -802,41 +819,34 @@ let platformObj = {
             song.privilege = list.privileges[i];
             return song;
         });
-        return isObj ? formatMusicItem(list[0]) : list;
+        if (isObj) {
+            let Q = ajax3("/api/song/music/detail/get", {
+                songId: musicItem[0].id
+            }).data;
+            return formatMusicItem(Object.assign(list[0], Q));
+        }
+        return list;
     },
 
     // 获取链接(url)
-    getMediaSource: function(musicItem, quality, header, mediaType) {
-        // musicItem = 符合单曲格式的对象
-        // quality = "low" || "standard" || "high" || "super" #需要获取的音质
-        // header = 会员cookie(前提插件有实现登录函数)
-        // mediaType = "play" || "down" || "debug"
-        if (mediaType == "debug") { // 登录测试
-            musicItem = platformObj.debug_musicItem;
-            quality = "low";
-            mediaType = "down";
-        }
-        let _, url = musicItem.type == 0 && `http://music.163.com/song/media/outer/url?id=${musicItem.id}.mp3`;
-        if (!url) _ = ajax3("/api/song/enhance/player/url/v1", {
+    getMediaSource: function(musicItem, quality, qualityItem, mediaType, header) {
+        let level = _qualityMap[quality];
+        let body = {
             ids: `["${musicItem.id}"]`,
-            encodeType: "flac",
-            immerseType: "c51",
+            encodeType: level == "dolby" ? "mp4" : "flac",
             trialMode: "23", // 试听
-            level: qualityMap[quality]
-        }, header).data;
-        if (_ && _[0] && _[0].code == 404) return false;
-        // log(_)
+            level: level
+        }
+        if (qualityItem.it || (level == "sky")) body.immerseType = qualityItem.it || "c51";
+
+        let url = false; // musicItem.type == 0 && `http://music.163.com/song/media/outer/url?id=${musicItem.id}.mp3`;
+        let _ = ajax3("/api/song/enhance/player/url/v1", body, header).data;
+        if (_ && _[0] && (_[0].code == 404 || _[0].fee == 4)) return "toast://跳过解析";
         if (_ && _[0] && _[0].url && !_[0].freeTrialInfo) {
             url = String(_[0].url).split("?")[0];
         }
         if (url && url != "") {
-            return {
-                urls: [url],
-                // names: [],
-                // headers: [],
-                lyric: platformObj.getLyric(musicItem),
-                // audioUrls: [], // 一般用不到
-            };
+            return url;
         }
         return false; // 无法获取播放链接
     },
@@ -845,7 +855,7 @@ let platformObj = {
     getLyric: function(musicItem) {
         // musicItem = 符合单曲格式的对象 或者 字符串(id);
         // 返回符合lrc格式的字符串 / 在线链接
-        let lrc;
+        let lrc; // kv=1，返回逐字歌词
         try { // /api/song/media?id=
             lrc = ajax2("/api/song/lyric", {
                 id: musicItem.id,
@@ -968,6 +978,14 @@ let platformObj = {
     import_url: function(urlLike) {
         // 匹配链接 返回对象
         // 不成功就返回false
+        if (/163cn\.tv/i.test(urlLike)) {
+            try {
+                let _res = fetch(urlLike.match(/http\S+163cn.tv\S+/i)[0], {
+                    onlyHeaders: true
+                });
+                urlLike = JSON.parse(_res).url;
+            } catch (e) {}
+        }
         if (!/music\.163\.com|163cn\.tv/i.test(urlLike)) {
             return undefined;
         }
@@ -1023,8 +1041,43 @@ let platformObj = {
     // 获取分享链接☆
     share_url: function(mediaItem) {
         // 返回平台链接的字符串 或者false
+        switch (String(mediaItem.type)) {
+            case '0':
+            case '1':
+            case '10':
+                return 'https://y.music.163.com/m/song?id=' + mediaItem.id;
+                break;
+            case '2':
+            case '3':
+                if (/#djradio/.test(mediaItem.id))
+                    return 'https://y.music.163.com/m/radio?id=' + mediaItem.id;
+                else
+                    return 'https://y.music.163.com/m/playlist?id=' + mediaItem.id;
+                break;
+            case '4':
+                return 'https://y.music.163.com/m/album?id=' + mediaItem.id;
+                break;
+            case '5':
+                return 'https://y.music.163.com/m/artist?id=' + mediaItem.id;
+                break;
+            case '6':
+                return 'https://y.music.163.com/m/user?id=' + mediaItem.id;
+                break;
+            case '7':
+                return 'https://y.music.163.com/m/radio?id=' + mediaItem.id;
+                break;
+            case '8':
+                return 'https://y.music.163.com/m/program?id=' + mediaItem.id;
+                break;
+            case '9':
+                return 'https://y.music.163.com/m/mv?id=' + mediaItem.id;
+                break;
+            default:
+                return false;
+                break;
+        }
     },
-    
+    ajax2,
     ajax3
 }
 $.exports = platformObj;

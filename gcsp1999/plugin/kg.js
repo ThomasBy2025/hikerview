@@ -1,3 +1,5 @@
+// https://www.kugou.com/songlist/gcid_3zqxux9az3z029/
+
 // 格式化歌曲信息
 function formatMusicItem(_) {
     let qualitys = _.relate_goods || [];
@@ -8,8 +10,8 @@ function formatMusicItem(_) {
                     type: {
                         '': "128k",
                         '320': "320k",
-                        'sq': "flac",
-                        'high': "flac24bit"
+                        'sq': "2000k",
+                        'high': "4000k"
                     } [k],
                     size: _[k + 'filesize'],
                     hash: _[k + 'hash'].toUpperCase()
@@ -23,8 +25,8 @@ function formatMusicItem(_) {
                 type: {
                     '128': '128k',
                     '320': '320k',
-                    'flac': 'flac',
-                    'high': 'flac24bit'
+                    'flac': '2000k',
+                    'high': '4000k'
                 } [_.quality],
                 size: _.info.filesize,
                 hash: _.hash.toUpperCase()
@@ -33,12 +35,7 @@ function formatMusicItem(_) {
     };
     let qualities = {};
     qualitys.map(_ => {
-        let quality = {
-            '128k': 'low',
-            '320k': 'standard',
-            'flac': 'high',
-            'flac24bit': 'super'
-        } [_.type]
+        let quality = _.type;
         qualities[quality] = {};
         qualities[quality].size = _.size;
         qualities[quality].hash = _.hash;
@@ -110,7 +107,7 @@ function formatSheetItem(_) {
         /* 类型 */ // 2歌单
         type: "2",
         /* 歌单id */
-        id: _.specialid || _.rankid || _.albumid || _.AuthorId,
+        id: _.specialid || _.global_specialid || _.rankid || _.albumid || _.AuthorId,
         /* 标识2 - 优先获取✩ */
         // mid,
         /* 标题 */
@@ -119,14 +116,14 @@ function formatSheetItem(_) {
         // artist,
         /* 封面图 */
         // coverImg: "",
-        artwork: _.img || _.flexible_cover || _.imgurl || _.Avatar || (_.pic || "").replaceAll("{size}", "500"),
+        artwork: _.img || _.flexible_cover || _.imgurl || _.Avatar || (_.pic || "").replaceAll("{size}", "500") || _.user_avatar,
         /* 描述 */
         description: _.intro,
         /* 作品总数 */
         worksNum: _.song_count || _.songcount || (_.extra && _.extra.resp && _.extra.resp.all_total),
         /* 其他参数 */
         date: _.rank_id_publish_date || _.publish_time, // 更新时间
-        tags: [], // 歌单标签
+        // tags: [], // 歌单标签
         // playCount, // 播放数
     };
 }
@@ -233,7 +230,7 @@ function getSignb(params, signKey, postBody) {
     let paramsString = Object.keys(params).sort()
         .map((key) => `${key}${typeof params[key] === 'object' ? JSON.stringify(params[key]) : params[key]}`)
         .join("");
-    log(`${paramsString}${postBody || ''}${signKey}`)
+    // log(`${paramsString}${postBody || ''}${signKey}`)
     return md5(`${paramsString}${postBody || ''}${signKey}`);
 }
 
@@ -359,8 +356,21 @@ function getSheetGcid(gcid) {
     });
     params.signature = getSigna(params, "OIlwieks28dk2k092lksi2UIkp", body);
     let _ = JSON.parse(post(buildUrl("https://t.kugou.com/v1/songlist/batch_decode", params), {
-        body
-    })).data.list[0].info;
+        body,
+        'headers': {
+            'dfid': params.dfid,
+            'mid': params.mid,
+            'clienttime': params.clienttime,
+            "User-Agent": "Android800-AndroidPhone-" + params.clientver + "-18-0-playlist-wifi",
+            "KG-THash": "3e5ec6b",
+            "KG-Tid": "1",
+            "KG-Rec": "1",
+            "KG-RC": "1",
+            "KG-RF": "00869891"
+        }
+    }));
+    // log(_)
+    _ = _.data.list[0].info;
     return _.specialid || _.list_create_gid || (`collection_3_${_.list_create_userid}_${_.list_create_listid}_0`);
 
     // 通过webView获取gcid歌单
@@ -389,6 +399,79 @@ function getSheetGcid(gcid) {
 
 
 
+// krc算法
+function krcCipher() {
+    let {
+        javaString,
+        Base64,
+        getMode,
+        unzip,
+        zip,
+        xor
+    } = $.require(getGitHub(["config", "JavaGzip.js"]));
+    let krcKey = [64, 71, 97, 119, 94, 50, 116, 71, 81, 54, 49, 45, 206, 210, 110, 105];
+    return {
+        encrypt: function(lrc) {
+            let eKrc = zip(lrc, "zlib", true);
+            eKrc = xor(eKrc, krcKey, true, 0, 128);
+            eKrc.unshift(107, 114, 99, 49);
+            return getMode(eKrc, "Base64");
+        },
+        decrypt: function(lrc) {
+            let krc = Base64.getDecoder().decode(lrc);
+            krc = java.util.Arrays.copyOfRange(krc, 4, krc.length);
+            return unzip(xor(krc, krcKey, "Hex", 0, 128));
+        }
+    }
+}
+// 获取krc
+function getKrcsretry(musicItem, isKrc) {
+    let u = buildUrl([
+        "http://lyrics.kugou.com/search",
+        "http://krcsretry.kugou.com/search",
+        "http://krcs.kugou.com/search",
+    ][1], {
+        ver: 1,
+        lrctxt: 1,
+        man: "no", // yes
+        client: "mobi", // pc
+        duration: "", // length=6
+        keyword: "", // artist - title
+        album_audio_id: "",
+        hash: musicItem.hash,
+        // mid
+        // uuid
+        // dfid
+        // appid
+        // signature
+        // clienttime
+    });
+    let lrc = JSON.parse(fetch(u)).candidates[0];
+
+    if (lrc && lrc.id && lrc.accesskey) {
+        u = buildUrl([
+            "http://lyrics.kugou.com/download",
+            "http://krcsretry.kugou.com/download"
+        ][1], {
+            ver: 1,
+            client: "mobi", // pc
+            charset: "utf8",
+            fmt: isKrc ? "krc" : "lrc",
+            accesskey: lrc.accesskey,
+            id: lrc.id
+        });
+        lrc = JSON.parse(fetch(u)).content;
+
+        if (isKrc) {
+            return krcCipher().decrypt(lrc);
+        } else {
+            return base64Decode(lrc);
+        }
+    } else {
+        return false;
+    }
+}
+
 
 
 
@@ -400,13 +483,19 @@ let platformObj = {
     title: "酷狗音乐", // 插件名称☆
     type: "音频", // 插件分类☆ 随便写：视频 / 音频 / 其他
     author: "Thomas喲", // 插件作者
-    version: "2025.09.26", // 插件版本
+    version: "2026.10.10", // 插件版本
     icon: "https://android-artworks.25pp.com/fs08/2025/08/27/4/110_76496800e8490c8b2b7e5d94765a0969_con_130x130.png", //插件封面☆
     srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/kg.js", // 在线链接
     description: [{ // 更新内容/简介☆
-        "title": "2025.09.26",
+        "title": "2026.10.10",
         "records": [
             "““反馈Q群@365976134””",
+            "““更新””: 完善JS函数",
+            "‘‘修复’’: 跟进依赖版本，支持导入资源"
+        ]
+    }, {
+        "title": "2025.09.26",
+        "records": [
             "““更新””: 网站登录逻辑，资源导入逻辑",
             "‘‘优化’’: 新的歌单接口，旧的接口只能获取2019年数据",
             "‘‘登录’’: 网站登录 - 注意: 没有token保活逻辑",
@@ -466,19 +555,19 @@ let platformObj = {
         "album": "周杰伦的床边故事",
         "artwork": "http://imge.kugou.com/stdmusic/{size}/20200620/20200620103601113025.jpg",
         "qualities": {
-            "low": {
+            "128k": {
                 "size": 3450877,
                 "hash": "688857974673645CE89EDA26A36DB19D"
             },
-            "standard": {
+            "320k": {
                 "size": 8626883,
                 "hash": "646035C6C56D18A4C7785F6008BD4820"
             },
-            "high": {
+            "2000k": {
                 "size": 26387413,
                 "hash": "3206E5C3880F5E0E47FCD8671449A9D2"
             },
-            "super": {
+            "4000k": {
                 "size": 78024024,
                 "hash": "589BB1B46E1C63BC95CFDC6B2F34B087"
             }
@@ -717,7 +806,7 @@ let platformObj = {
                 special_recommend: {
                     withtag: 1,
                     withsong: 0,
-                    sort: 3, // 最热1，最新2，推荐3，飙升6
+                    sort: 2, // 最热1，最新2，推荐3，飙升6
                     categoryid: +tagId,
                     ugc: 1,
                     is_selected: 0,
@@ -749,7 +838,7 @@ let platformObj = {
         // item 符合歌单格式的对象
         // data 符合单曲格式的数组
         if (/gcid_/i.test(sheetId)) {
-            return getSheetGcid(sheetId);
+            sheetId = getSheetGcid(sheetId);
         }
         let _ = webSign("https://mobiles.kugou.com/api/v5/special/song_v2", {
             'global_specialid': sheetId,
@@ -805,11 +894,11 @@ let platformObj = {
         // 返回对象 {url, class_name, class_url, area_name, area_url, year_name, year_url, sort_name, sort_url}
         // 写法和海阔小程序一致
         return {
-            url: "http://mobilecdnbj.kugou.com/api/v5/singer/list?version=9108&showtype=1&plat=0&sextype=fyyear&sort=fysort&pagesize=30&type=fyclass&page=fypage&musician=0",
-            class_name: "全部&华语&欧美&日本&韩国&粤语&闽南语&其他&音乐人",
-            class_url: "0&1&2&5&6&7&8&4&3",
-            year_name: "全部&男生&女生&组合",
-            year_url: "0&1&2&3",
+            url: "http://mobilecdnbj.kugou.com/api/v5/singer/list?version=9108&showtype=1&plat=0&sextype=fyclass&sort=fysort&pagesize=30&type=fyyear&page=fypage&musician=0",
+            class_name: "全部&男生&女生&组合",
+            class_url: "0&1&2&3",
+            year_name: "全部&华语&欧美&日本&韩国&粤语&闽南语&其他&音乐人",
+            year_url: "0&1&2&5&6&7&8&4&3",
             sort_name: "热门&飙升",
             sort_url: "1&2"
         }
@@ -962,26 +1051,20 @@ let platformObj = {
     },
 
     // 获取链接(url)
-    getMediaSource: function(musicItem, quality, header, mediaType) {
+    getMediaSource: function(musicItem, quality, qualityItem, mediaType, header) {
         // musicItem = 符合单曲格式的对象
-        // quality = "low" || "standard" || "high" || "super" #需要获取的音质
-        // header = 会员cookie(前提插件有实现登录函数)
-        // mediaType = "play" || "down" || "debug"
-        if (mediaType == "debug") { // 登录测试
-            musicItem = platformObj.debug_musicItem;
-            quality = "low";
-            mediaType = "down";
-        }
+
 
         // url = JSON.parse(fetch("https://m.kugou.com/app/i/getSongInfo.php?cmd=playInfo&hash=" + musicItem.hash)).url;
         let url, hash = musicItem.qualities[quality].hash || musicItem.hash;
         hash = String(hash).toLowerCase();
         quality = {
-            'low': '128',
-            'standard': '320',
-            'hign': 'flac',
-            'super': 'high'
+            '128k': '128',
+            '320k': '320',
+            '2000k': 'flac',
+            '4000k': 'high'
         } [quality] || "128";
+
         let album_id = musicItem.albumId || "0";
         let album_audio_id = musicItem.album_audio_id || "0";
 
@@ -1035,15 +1118,10 @@ let platformObj = {
                 "x-router": "tracker.kugou.com"
             }
         }));
+
         url = body_["url"] && body_["url"][0];
         if (url && url != "") {
-            return {
-                urls: [url],
-                // names: [],
-                // headers: [],
-                lyric: platformObj.getLyric(musicItem),
-                // audioUrls: [], // 一般用不到
-            };
+            return url;
         } else if (body_.status == 3) {
             log("酷狗无版权的歌曲，目前无解");
         } else if (body_.status == 2) {
@@ -1068,12 +1146,8 @@ let platformObj = {
             }
         } catch (getlrc_err_1) {
             try {
-                let u = "http://krcs.kugou.com/search?ver=1&man=yes&client=mobi&keyword=&duration=&hash=" + musicItem.hash + "&album_audio_id=";
-                let __ = JSON.parse(fetch(u)).candidates[0];
-                if (__ && __.id && __.accesskey) {
-                    u = "http://lyrics.kugou.com/download?ver=1&client=pc&id=" + __.id + "&accesskey=" + __.accesskey + "&fmt=lrc&charset=utf8";
-                    lrc = base64Decode(JSON.parse(fetch(u)).content);
-                } else {
+                lrc = getKrcsretry(musicItem, false);
+                if (!lrc) {
                     throw new Error('no get lrc_2');
                 }
             } catch (getlrc_err_2) {
@@ -1242,7 +1316,6 @@ let platformObj = {
             if (kucode.status == 1) {
                 kucode = kucode.data;
                 let kuinfo = kucode.info;
-
                 // type 1单曲，2歌单，3电台，4酷狗码，5别人的播放队列
                 if (kuinfo.type == 1) {
                     urlLike = "https://m.kugou.com/weibo/?hash=" + kucode.list.hash
@@ -1270,7 +1343,7 @@ let platformObj = {
                                     userid: kuinfo.userid,
                                     collect_type: kuinfo.collect_type,
                                     page: 1,
-                                    pagesize: kuinfo.count,
+                                    pagesize: kuinfo.count
                                 }
                             }
                         }));
@@ -1306,6 +1379,7 @@ let platformObj = {
                 hash: id
             });
         }
+
         if (id = (urlLike.match(/\/songlist\/(gcid_[a-z0-9]+)/i) || [])[1]) { // type: 2
             _ = executeWebRule(`https://m.kugou.com/songlist/${id}/`, $.toString(() => {
                 phpParam = (window.$output ? window.$output.info : nData).listinfo;
@@ -1444,7 +1518,7 @@ let platformObj = {
 
     // https://github.com/lxmusics/lx-music-api-server-python/blob/main/modules/kg/lite_signin.py
     Lite_Signin: function() {
-        let mixsongid = platformObj.search("", 1, "免费")[0]["MixSongID"];
+        let mixsongid = platformObj.search("", 1, "免费")?.[0]?.["MixSongID"] || 882627707;
         let body = JSON.stringify({
             "mixsongid": Number(mixsongid)
         });
