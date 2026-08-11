@@ -20,13 +20,21 @@ function formatMusicItem(_) {
         }
     } else {
         _ = qualitys[0];
-        qualitys = qualitys.slice(0, 4).filter(_ => /^(128|320|flac|high)$/i.test(_.quality)).map((_, i) => {
+       // log(qualitys);
+        qualitys = qualitys//.slice(0, 4).filter(_ => /^(128|320|flac|high)$/i.test(_.quality))
+        .map((_, i) => {
             return {
                 type: {
                     '128': '128k',
                     '320': '320k',
                     'flac': '2000k',
-                    'high': '4000k'
+                    'high': '4000k',
+                    'multitrack': '10501k',// mkv
+
+                    'viper_tape': '1000k',
+                    'viper_atmos': '24000k',
+                    'viper_hifi': '20501k',
+                    'viper_clear': '20900k',
                 } [_.quality],
                 size: _.info.filesize,
                 hash: _.hash.toUpperCase()
@@ -483,11 +491,11 @@ let platformObj = {
     title: "酷狗音乐", // 插件名称☆
     type: "音频", // 插件分类☆ 随便写：视频 / 音频 / 其他
     author: "Thomas喲", // 插件作者
-    version: "2026.10.10", // 插件版本
+    version: "2026.10.11", // 插件版本
     icon: "https://android-artworks.25pp.com/fs08/2025/08/27/4/110_76496800e8490c8b2b7e5d94765a0969_con_130x130.png", //插件封面☆
     srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/kg.js", // 在线链接
     description: [{ // 更新内容/简介☆
-        "title": "2026.10.10",
+        "title": "2026.10.11",
         "records": [
             "““反馈Q群@365976134””",
             "““更新””: 完善JS函数",
@@ -544,38 +552,7 @@ let platformObj = {
         appid: "1058",
         signkey: "NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt"
     },
-    debug_musicItem: {
-        "platform": "kg",
-        "type": "1",
-        "id": 301293698,
-        "mid": "688857974673645CE89EDA26A36DB19D",
-        "title": "告白气球",
-        "artist": "周杰伦",
-        "duration": 215640,
-        "album": "周杰伦的床边故事",
-        "artwork": "http://imge.kugou.com/stdmusic/{size}/20200620/20200620103601113025.jpg",
-        "qualities": {
-            "128k": {
-                "size": 3450877,
-                "hash": "688857974673645CE89EDA26A36DB19D"
-            },
-            "320k": {
-                "size": 8626883,
-                "hash": "646035C6C56D18A4C7785F6008BD4820"
-            },
-            "2000k": {
-                "size": 26387413,
-                "hash": "3206E5C3880F5E0E47FCD8671449A9D2"
-            },
-            "4000k": {
-                "size": 78024024,
-                "hash": "589BB1B46E1C63BC95CFDC6B2F34B087"
-            }
-        },
-        "albumId": "1645030",
-        "hash": "688857974673645CE89EDA26A36DB19D",
-        "album_audio_id": 39612569
-    }, // 测试登录/解析时需要调用
+    debug_musicItem:{"album":"周杰伦的床边故事","albumId":"1645030","album_audio_id":39612569,"artist":"周杰伦","artwork":"http://imge.kugou.com/stdmusic/{size}/20200620/20200620103601113025.jpg","duration":"00:03:35","hash":"688857974673645CE89EDA26A36DB19D","id":301293698,"mid":"688857974673645CE89EDA26A36DB19D","platform":"kg","qualities":{"1000k":{"hash":"646035C6C56D18A4C7785F6008BD4820","size":8626883},"10501k":{"hash":"D5CF50C73CE9A9C9F13EC75078369AD0","size":52103249},"128k":{"hash":"688857974673645CE89EDA26A36DB19D","size":3450877},"2000k":{"hash":"3206E5C3880F5E0E47FCD8671449A9D2","size":26387413},"20501k":{"hash":"E3BE17D385D1774C0062A3274366293F","size":78024024},"20900k":{"hash":"E2581B22B044E5B7588AEDA96C69B58D","size":97245035},"24000k":{"hash":"5BC41065E14B7FD70BFEEE6BB3B9F450","size":55510544},"320k":{"hash":"646035C6C56D18A4C7785F6008BD4820","size":8626883},"4000k":{"hash":"589BB1B46E1C63BC95CFDC6B2F34B087","size":78024024}},"title":"告白气球","type":"1"},// 测试登录/解析时需要调用
 
 
 
@@ -1006,6 +983,14 @@ let platformObj = {
                 "resource": list1,
                 // "dfid": "-",
                 // "mid": R(32),
+
+                'support_verify': 1,
+                'qualities': [
+                    '128', '320', 'flac', 'high', 
+                    'viper_tape', 'viper_atmos', 'viper_hifi', 'viper_clear',
+                    
+                     'multitrack', // 'super', "lossless", "standard",     "hires",        "hi-res",        
+                ],
             });
             list2 = JSON.parse(post([
                 "http://media.store.kugou.com/v1/get_res_privilege",
@@ -1062,7 +1047,12 @@ let platformObj = {
             '128k': '128',
             '320k': '320',
             '2000k': 'flac',
-            '4000k': 'high'
+            '4000k': 'high',
+            '1000k': 'viper_tape',
+    '10501k': 'multitrack',// mkv
+    '24000k': 'viper_atmos',
+    '20501k': 'viper_hifi',
+    '20900k': 'viper_clear',
         } [quality] || "128";
 
         let album_id = musicItem.albumId || "0";
