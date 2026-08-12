@@ -231,7 +231,7 @@ if (themeType_TwoSwitch) switch (themeType) {
                 ArtistObj = _getPlatform(platform).getExploreArtistList();
                 storage0.putMyVar(platform + "_iArt", ArtistObj);
             } catch (e) {
-                log("标识为：" + platform + " 的插件异常，无法获取歌手列表");
+                log("标识为：" + platform + " 的插件异常，无法获取歌手列表\n" + e.toString());
                 ArtistObj = {};
             }
         }
@@ -250,7 +250,7 @@ if (themeType_TwoSwitch) switch (themeType) {
                 TopLists = _getPlatform(platform).getTopLists() || [];
                 storage0.putMyVar(platform + "_iTop", TopLists);
             } catch (e) {
-                log("标识为：" + platform + " 的插件异常，无法获取榜单列表\n" + e);
+                log("标识为：" + platform + " 的插件异常，无法获取榜单列表\n" + e.toString());
                 TopLists = [];
             }
         }
@@ -323,7 +323,7 @@ if (themeType_TwoSwitch) switch (themeType) {
                 SheetTags = _getPlatform(platform).getRecommendSheetTags() || [];
                 storage0.putMyVar(platform + "_iTag", SheetTags);
             } catch (e) {
-                log("标识为：" + platform + " 的插件异常，无法获取歌单标签");
+                log("标识为：" + platform + " 的插件异常，无法获取歌单标签\n" + e.toString());
                 SheetTags = [];
             }
         }
@@ -1083,7 +1083,7 @@ function getThemeData(themeType) {
             try {
                 getDataExtra(getParam('platform') || platform, platform_id);
             } catch (e) {
-                log("标识为：" + (getParam('platform') || platform) + " 的插件异常，" + themeType + "(\"" + platform_id + "\", " + page + ") 获取失败")
+                log("标识为：" + (getParam('platform') || platform) + " 的插件异常，" + themeType + "(\"" + platform_id + "\", " + page + ") 获取失败\n" + e.toString())
             }
             break;
 
@@ -1138,7 +1138,7 @@ function getThemeData(themeType) {
                     try {
                         eval(String(_.data || "").replace(/\$name/g, _.name || "").replace(/\$type/g, _.type || "").replace(/\$length/g, _.length || "1"));
                     } catch (e) {
-                        log("主题索引异常：" + theme_Info.title + "=>" + t_index + "\n" + e);
+                        log("主题索引异常：" + theme_Info.title + "=>" + t_index + "\n" + e.toString());
                     }
                 });
             }
@@ -1339,7 +1339,7 @@ function Extra(_, _extra, run) {
         "128k": {
             "size": _.size
         }
-    }).sort((a, b) =>  (qualityMap[b]&&qualityMap[b].sort)-(qualityMap[a]&&qualityMap[a].sort));
+    }).sort((a, b) => (qualityMap[b] && qualityMap[b].sort) - (qualityMap[a] && qualityMap[a].sort));
     let platformDesc = extraDesc.platformDesc[_.platform] || {};
     json.title = String(json.title || "")
         .replace(/\$title|\$nickName/g, _.title || _.nickName || "")
@@ -1454,8 +1454,7 @@ function formatMediaItem(mediaItem, playurl_timeout) {
 
 
 // 获取音质
-function getQuality(musicItem, down) {
-    let hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
+function getQuality(musicItem, down, mediaType) {
     let SizetoStr = (size) => {
         if (!Number(size)) return size;
         let units = ['B', 'KB', 'MB', 'GB'];
@@ -1466,47 +1465,6 @@ function getQuality(musicItem, down) {
         }
         size = i ? size.toFixed(2) : size;
         return `${size} ${units[i]}`;
-    }
-    let downClick = (musicItem, i1, i2, i3) => {
-        return hikerPop.runOnNewThread(() => {
-            try {
-                showLoading('获取链接中...');
-                let mediaItem = getMedia(musicItem, i1, i2, i3 ? "5" : "0");
-                hideLoading();
-                if (true || i3) {
-                    hikerPop.confirm({
-                        content: mediaItem || "没有链接",
-                        title: i3 ? "解析成功" : "请在播放页面下载",
-                        okTitle: "播放看看",
-                        cancelTitle: "我知道了",
-                        hideCancel: false, //隐藏取消按钮
-                        confirm() {
-                            return mediaItem || "toast://获取资源失败，没有链接";
-                        },
-                        cancel() {
-                            return "hiker://empty";
-                        }
-                    });
-                } else {
-                    toast('请在播放页面下载');
-                    let playUrl = JSON.parse(mediaItem);
-                    playUrl = playUrl.audioUrls[0] || playUrl.urls[0] || playUrl.url;
-                    return playUrl;
-                    let p = _getPath(["music", musicItem.title + ' - ' + musicItem.artist], 0, 1);
-                    confirm({
-                        title: '请在播放页面下载',
-                        content: playUrl || '',
-                        confirm: $.toString((p1, p2) => {
-                            return p2 || "hiker://empty";
-                            downloadFile(p2, p1);
-                        }, p, playUrl)
-                    });
-                }
-                return "hiker://empty";
-            } catch (e) {
-                return "toast://解析失败";
-            }
-        });
     }
 
 
@@ -1553,7 +1511,51 @@ function getQuality(musicItem, down) {
     musicItem.qualitys = a;
 
 
-    if (down) {
+    if (down) { // 下载弹窗
+        let hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
+        let downClick = (musicItem, i1, i2, i3) => {
+            return hikerPop.runOnNewThread(() => {
+                try {
+                    showLoading('获取链接中...');
+                    let mediaItem = getMedia(musicItem, i1, i2, i3 ? "5" : "0");
+                    hideLoading();
+                    if (true || i3) {
+                        hikerPop.confirm({
+                            content: mediaItem || "没有链接",
+                            title: i3 ? "解析成功" : "请在播放页面下载",
+                            okTitle: "播放看看",
+                            cancelTitle: "我知道了",
+                            hideCancel: false, //隐藏取消按钮
+                            confirm() {
+                                return mediaItem || "toast://获取资源失败，没有链接";
+                            },
+                            cancel() {
+                                return "hiker://empty";
+                            }
+                        });
+                    } else {
+                        toast('请在播放页面下载');
+                        let playUrl = JSON.parse(mediaItem);
+                        playUrl = playUrl.audioUrls[0] || playUrl.urls[0] || playUrl.url;
+                        return playUrl;
+                        let p = _getPath(["music", musicItem.title + ' - ' + musicItem.artist], 0, 1);
+                        confirm({
+                            title: '请在播放页面下载',
+                            content: playUrl || '',
+                            confirm: $.toString((p1, p2) => {
+                                return p2 || "hiker://empty";
+                                downloadFile(p2, p1);
+                            }, p, playUrl)
+                        });
+                    }
+                    return "hiker://empty";
+                } catch (e) {
+                    return "toast://解析失败";
+                }
+            });
+        }
+
+
         let ra = a.slice().reverse();
         let isD = down == "debug";
         let pop = hikerPop.selectBottomResIcon({
@@ -1641,13 +1643,13 @@ function getQuality(musicItem, down) {
             return left;
         }(a.slice().map(b => b.sort), i);
         if (getItem('QualityFailure', "向下兼容") != "向下兼容") { // 向上取
-            return getMedia(musicItem, i, 0, "1");
+            return getMedia(musicItem, i, 0, mediaType || "1");
         } else { // 向下取
-            return getMedia(musicItem, i, 0, "2");
+            return getMedia(musicItem, i, 0, mediaType || "2");
         }
     }
     // 无音质，不用取
-    return getMedia(musicItem, 0, 0, "3");
+    return getMedia(musicItem, 0, 0, mediaType || "3");
 }
 
 
@@ -1741,8 +1743,7 @@ function getMedia(musicItem, quality, qualityType, mediaType) {
         mediaItem = formatMediaItem(mediaItem);
         if (!mediaItem && isMedia && mediaType != "4") { // 通过公用解析获取链接
             try {
-                let old_musicItem = JSON.parse(JSON.stringify(musicItem));
-                mediaItem = switchPluginSource(old_musicItem, _Key, _qualityItem);
+                mediaItem = switchPluginSource(musicItem, quality, _qualityItem);
                 mediaItem = JSON.parse(mediaItem.replace('"lyric":"[00:00.000]",', ""));
             } catch (e) {
                 mediaItem = false;
@@ -1839,7 +1840,8 @@ function getMedia(musicItem, quality, qualityType, mediaType) {
 function switchPluginSource(musicItem, quality, _qualityItem) {
     if (quality === undefined && getItem('switchPluginSource', '1') != "1") return false;
     let details = _getPath(_getPath(["plugin", "isProxyPlugin.json"], "_cache", 1)) || [];
-    if (quality === undefined) {
+    let isPlugin = quality === undefined;
+    if (isPlugin) {
         let detaila = _getPath(_getPath(["plugin", "details.json"], "_cache", 1)) || [];
         details = details.map(_ => _.platform);
         details = detaila.filter(_ => !details.includes(_.platform));
@@ -1847,15 +1849,20 @@ function switchPluginSource(musicItem, quality, _qualityItem) {
     let plugins = _getPath(["plugin", "enableds.json"]) || {};
     plugins = details.filter(_ => plugins[_.platform] && _.platform != musicItem.platform);
     let tasks = plugins.map(it => {
+        it.isPlugin = isPlugin;
         it.musicItem = musicItem;
         return {
             func: function(plugin) {
-                let musicItem = plugin.musicItem;
+                let musicItem = Object.assign({}, plugin.musicItem);
                 let keyword = musicItem.title + " - " + musicItem.artist;
                 let SEARCH = _getPlatform(plugin.platform).search(keyword, 1, "单曲", musicItem) || {};
                 let new_musicItem = (SEARCH.data || [])[0];
                 if (new_musicItem) {
-                    return getMedia(new_musicItem, quality || 0, 0, "4");
+                    if (plugin.isPlugin) {
+                        return getQuality(new_musicItem, false, "4");
+                    } else {
+                        return getMedia(new_musicItem, quality || 0, 0, "4");
+                    }
                 } else {
                     return null;
                 }
@@ -1866,10 +1873,10 @@ function switchPluginSource(musicItem, quality, _qualityItem) {
     });
     let switchPluginMedia = false;
     if (tasks.length) {
-        if (quality === undefined) {
+        if (isPlugin) {
             batchExecute(tasks, {
                 func: function(param, id, error, playUrl) {
-                    if (playUrl != "" && !/^toast/.test(playUrl)) {
+                    if (formatMediaItem(playUrl)) {
                         switchPluginMedia = playUrl;
                         return 'break';
                     }
@@ -1880,7 +1887,9 @@ function switchPluginSource(musicItem, quality, _qualityItem) {
             for (let proxy of tasks) {
                 try {
                     switchPluginMedia = proxy.func(proxy.param);
-                } catch (e) {}
+                } catch (e) {
+                    // log("标识为 " + proxy.param.platform + " 的插件解析失败：\n" + e.toString());
+                }
                 if (switchPluginMedia) break;
             }
         }
