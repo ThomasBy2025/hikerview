@@ -138,9 +138,11 @@
                 try {
                     let proxyObj = $.require(proxyPath);
                     let proxyQs = proxyObj.supportedQualityType || ["128k"];
-                    for (let proxyQa of proxyQs) {
+                    for (let i = 0; i < proxyQs.length; i++) {
+                        let proxyQa = proxyQs[i];
                         let f = qualityMap[proxyQa];
-                        proxyQa = f._url || f.url;
+                        proxyQa = f._url || f.url;// 128k
+                        proxyQs[i] = proxyQa;
                         if (!proxyQ[proxyQa]) {
                             proxyQ[proxyQa] = [];
                         }
@@ -342,7 +344,7 @@
 
     // 只在首页检测，子页面MY_RULE的version是0
     if (themeType == "home" && MY_RULE.version != 0) {
-        if (getItem("usage_statistics", "20261010") < new_time) {
+        if (Number(getItem("usage_statistics", "20261010")) < new_time) {
             try { // 使用人数统计
                 fetch("https://www.97abc.com/count.php?id=gcsp1999");
             } catch (e) {}

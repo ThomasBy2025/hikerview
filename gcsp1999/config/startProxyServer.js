@@ -1,20 +1,43 @@
-$.exports = function(musicItem, quality, mediaType) {
-    let Quality = ["low", "standard", "high", "super"][quality];
+// ============================================================
+//  执行逻辑
+//  和子页面链接相似，判断“播放链接”的 serverType 参数
+//  在 startProxyServer 环境下调用插件逻辑并解析
+//  该环境不能自动切换音质，需要解析函数处理=)
+//  优点：可以知道链接的实质解析接口
+//  特性：可以隐藏播放链接(127.0.0.1)
+// ============================================================
+$.exports = function(musicItem, quality, qualityType) {
+    let Quality = musicItem.qualitys[quality];
+    let _Key = Quality._url || Quality.url; // 128k
+    let _qualityItem = {};
+    try {
+        _qualityItem = musicItem.qualities[Quality.url];
+        if (Array.isArray(_qualityItem)) {
+            _qualityItem = _qualityItem[qualityType]
+        }
+    } catch (e) {}
     let isMedia = musicItem.type != 8 && musicItem.type != 9;
-    let purl = startProxyServer($.toString((Config, musicItem, isCache, danmuLrc) => {
+
+
+
+
+
+    let purl = startProxyServer($.toString((Config, musicItem, quality, _qualityItem, isCache, danmuLrc) => {
         try {
             config = Config;
             MY_URL = "";
             require(config.preRule);
             let serverType = MY_PARAMS.serverType[0];
             let serverPath = decodeURIComponent(MY_PARAMS.serverPath[0]);
+
             let Quality = MY_PARAMS.quality[0];
             let _cachePath = _getPath(["mediaCache", musicItem.platform, MY_PARAMS.songId[0], Quality + ".json"], "_cache", 1);
-            let timeout = new Date().getTime();
+            let timeout = Number(Date.now());
 
 
-            let mediaItem;
+            let mediaItem = formatMediaItem(musicItem);
             let mediaPlatform = {
+                search: () => false,
                 getMediaSource: () => false,
                 getLyric: () => false,
                 getVideo: () => false,
@@ -34,43 +57,36 @@ $.exports = function(musicItem, quality, mediaType) {
             }
 
 
+
             if (serverType != "getLyric" && serverType != "danmu") { // 获取链接
                 if (!mediaItem) {
                     try { // 获取插件函数
                         mediaPlatform = Object.assign(mediaPlatform, $.require(serverPath));
                     } catch (e) {}
                     try { // 通过插件获取链接
-                        mediaItem = mediaPlatform[serverType](musicItem, Quality);
-                    } catch (e) {}
-                }
-
-                if (mediaItem) { // 返回的字符串链接改成json
-                    if (typeof mediaItem === 'string') {
-                        if (mediaItem.includes("hiker://") || mediaItem.includes("toast://")) {
-                            mediaItem = false;
-                        } else {
-                            mediaItem = {
-                                urls: [mediaItem]
+                        if (serverType == "isProxyPlugin") {
+                            let keyword = musicItem.title + " - " + musicItem.artist;
+                            let SEARCH = mediaPlatform.search(keyword, 1, "单曲", musicItem) || {};
+                            let new_musicItem = (SEARCH.data || [])[0];
+                            if (new_musicItem) {
+                                if (MY_PARAMS.isPlugin) {
+                                    mediaItem = getQuality(new_musicItem, false, "4");
+                                } else {
+                                    mediaItem = getMedia(new_musicItem, quality || 0, 0, "4");
+                                }
+                                mediaItem = JSON.parse(mediaItem.replace('"lyric":"[00:00.000]",', ""));
                             }
+                        } else { // 解析/原生
+                            mediaItem = mediaPlatform[serverType](musicItem, Quality, _qualityItem);
                         }
+                    } catch (e) {
+                        // log(e.toString());
                     }
-                    mediaItem = Object.assign({
-                        urls: [],
-                        names: [],
-                        headers: [],
-                        // audioUrls: [],
-                        lyric: "",
-                        danmu: "",
-                        timeout: (mediaPlatform.playurl_timeout || 60 * 10) * 1000
-                    }, mediaItem || {});
-                    if (!mediaItem.urls.length && mediaItem.url) {
-                        mediaItem.urls.push(mediaItem.url);
-                        delete mediaItem.url;
-                    }
-                    mediaItem.urls = mediaItem.urls.filter(Boolean); // 去除假链接
                 }
+                mediaItem = formatMediaItem(mediaItem, mediaPlatform.playurl_timeout);
 
-                if (mediaItem && ((mediaItem.urls && mediaItem.urls.length) || (mediaItem.audioUrls && mediaItem.audioUrls.length))) {
+
+                if (mediaItem) {
                     // 缓存直链数据
                     if (isCache) {
                         mediaItem.timeout = Number(mediaItem.timeout) + Number(timeout);
@@ -126,43 +142,75 @@ $.exports = function(musicItem, quality, mediaType) {
             // log(String(err.toString()));
         }
         return "";
-    }, config, musicItem, getItem('MediaCache', '1') == "1", {
+    }, config, musicItem, quality, _qualityItem, getItem('MediaCache', '1') == "1", {
         mode: [5, 1, 6, 7, 4][getItem('danmuMode', '1')],
         open: getItem('danmuLrc', '0') == "1",
         size: getItem("danmuSize", "10")
     }));
 
+
+
+
+
     let _par = {
-        startProxyServer: 1,
-        serverType: "getMediaSource",
-        serverPath: "",
-        source: musicItem.platform,
-        songId: musicItem.mid || musicItem.id || musicItem.vid || musicItem.rid,
-        quality: Quality,
-        mediaType: (quality > 1 ? ".flac" : ".mp3")
+        startProxyServer: "1", // 是代理环境★
+        serverType: "getMediaSource", // 需要执行的函数★
+        serverPath: "", // 函数所在地址★
+        source: musicItem.platform, // 隶属插件☆
+        songId: musicItem.mid || musicItem.id || musicItem.vid || musicItem.rid, // 资源标识★
+        quality: _Key, // 音质信息★
+        mediaType: (Quality.sort > 7 ? ".flac" : ".mp3") // 资源类型☆
     }
     let playNames = [];
     let playUrls = [];
 
-    // 解析接口
+
+
+
+
+    // 私有解析
     let proxyPaths = _getPath(_getPath(["proxy", musicItem.platform, "details.json"], "_cache", 1)) || [];
     let enableds = _getPath(["proxy", musicItem.platform, "open.json"]) || {};
     for (let proxyItem of proxyPaths) {
-        if (enableds[proxyItem.path] && proxyItem.supportedQualityType.includes(Quality)) {
+        if (enableds[proxyItem.path] && proxyItem.supportedQualityType.includes(_Key)) {
             _par.serverPath = encodeURIComponent(proxyItem.path);
             playNames.push(proxyItem.title);
             playUrls.push(buildUrl(purl, _par));
         }
     }
 
-    // 原生接口
+
+    // 公用解析
+    _par.serverType = "isProxyPlugin";
+    let plugins = _getPath(["plugin", "enableds.json"]) || {};
+    let details = _getPath(_getPath(["plugin", "isProxyPlugin.json"], "_cache", 1)) || [];
+    let detaila = details.filter(_ => plugins[_.platform] && _.platform != musicItem.platform);
+    for (let plugin of detaila) {
+        _par.serverPath = encodeURIComponent(_getPath(["plugin", "plugins", plugin.platform + ".js"], 0, 1));
+        playNames.push(plugin.title);
+        playUrls.push(buildUrl(purl, _par));
+    }
+
+
+    // 插件换源
+    _par.isPlugin = "1";
+    details = details.map(_ => _.platform);
+    detaila = _getPath(_getPath(["plugin", "details.json"], "_cache", 1)) || [];
+    details = detaila.filter(_ => !details.includes(_.platform));
+    detaila = details.filter(_ => plugins[_.platform] && _.platform != musicItem.platform);
+    for (let plugin of detaila) {
+        _par.serverPath = encodeURIComponent(_getPath(["plugin", "plugins", plugin.platform + ".js"], 0, 1));
+        playNames.push(plugin.title);
+        playUrls.push(buildUrl(purl, _par));
+    }
+    delete _par.isPlugin;
+
+
+    // 原生请求
     _par.serverPath = encodeURIComponent(_getPath(["plugin", "plugins", musicItem.platform + ".js"], 0, 1));
-    _par.serverType = "danmu";
-    let danmu = buildUrl(purl, _par);
-    _par.serverType = "getLyric";
-    let lyric = buildUrl(purl, _par);
-    _par.serverType = isMedia ? "getMediaSource" : (musicItem.type == 9 ? "getVideo" : "getRadio");
-    playUrls.unshift(buildUrl(purl, _par));
+    _par.serverType = isMedia ? "getMediaSource" :
+        (musicItem.type == 9 ? "getVideo" : "getRadio");
+    playUrls.unshift(buildUrl(purl, _par)); // 原插件链接
     playNames.unshift("原生");
 
 
@@ -177,6 +225,17 @@ $.exports = function(musicItem, quality, mediaType) {
         playUrls.push(buildUrl(purl, _par));
         playNames.push("播客");
     }
+
+
+    // 歌词文本
+    _par.mediaType = ".txt";
+    _par.serverType = "danmu"; // 弹幕歌词
+    let danmu = buildUrl(purl, _par);
+    _par.serverType = "getLyric"; // 歌词文本
+    let lyric = buildUrl(purl, _par);
+
+
+
 
 
     // 是否读取链接信息 #checkMetadata=true#
@@ -194,7 +253,7 @@ $.exports = function(musicItem, quality, mediaType) {
                 return n ? ((u.includes("?") ? "&" : "?") + n) : ""
             }) + _url;
         }
-        playUrls[i] = u;
+        playUrls[i] = u.replace(/[\?\&]$/, "");
     }
     return JSON.stringify({
         names: playNames,
