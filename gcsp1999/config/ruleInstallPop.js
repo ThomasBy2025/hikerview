@@ -402,7 +402,7 @@ let pop = hikerPop.selectBottomSettingMenu({
 
 
 
-                                let pop = hikerPop.selectBottomResIcon({
+                                hikerPop.selectBottomResIcon({
                                     title: "GitHub加速管理",
                                     iconList: ghproxys,
                                     position: position,
