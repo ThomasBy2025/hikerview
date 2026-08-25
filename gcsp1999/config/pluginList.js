@@ -216,6 +216,7 @@ else details.map((_, i) => {
                                     confirm(urlLike) {
                                         hikerPop.runOnNewThread(() => {
                                             showLoading('获取资源详情');
+                                            urlLike = String(urlLike).replace(/^[\s\S]*?(https?\:\/\/[^\n\r]+)[\s\S]*/i, '$1').split(/\s+\@\S+音乐/i)[0];
                                             urlLike = function(s_t2) {
                                                 try { // 获取重定向链接
                                                     let s_t2_1 = !/antiserver.kuwo.cn/i.test(s_t2) && JSON.parse(fetch(s_t2, {

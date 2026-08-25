@@ -164,7 +164,8 @@ if (themeType_TwoSwitch) switch (themeType) {
                         onlyHeaders: true,
                         timeout: 5000
                     })).headers.location || "";
-                    s_t2 = s_t2_1[0].split("/").length > 5 ? s_t2_1[0] : s_t2;
+                    let s_t2_2 = s_t2_1[0].split("/").length;
+                    s_t2 = (s_t2_2 > 5 ? s_t2_1[0] : s_t2) || s_t2;
                 } catch (noFetch) {};
                 for (let s_platform of platforms) {
                     try {
@@ -1666,10 +1667,6 @@ function getMedia(musicItem, quality, qualityType, mediaType) {
         return $.require(getGitHub(["config", "startProxyServer.js"]))(musicItem, quality, qualityType, mediaType);
     }
 
-    let mediaItem = formatMediaItem(musicItem);
-    if (mediaType == "0" && mediaItem && L < 2) { // 返回下载
-        return JSON.stringify(mediaItem);
-    }
 
     let Quality = musicItem.qualitys[quality];
     let _Key = Quality._url || Quality.url; // 128k
@@ -1680,6 +1677,15 @@ function getMedia(musicItem, quality, qualityType, mediaType) {
             _qualityItem = _qualityItem[qualityType]
         }
     } catch (e) {}
+
+
+    let mediaItem = formatMediaItem(musicItem);
+    if (mediaItem && mediaType == "0") { // 返回下载
+        if (L < 2) return JSON.stringify(mediaItem);
+        mediaItem = false;
+    }
+    mediaItem = mediaItem || formatMediaItem(_qualityItem);
+
 
     let mediaPlatform = {
         getMediaSource: () => false,
@@ -2060,7 +2066,7 @@ function getShareText(input, type, len, path) {
             if (isObj) {
                 if (type == "collection") {
                     json = {
-                        type: "collectionItem", // theme | plugin | proxy | collection
+                        type: "collection", // theme | plugin | proxy | collection
                         code: code
                     }
                 } else {
@@ -2103,7 +2109,17 @@ function getShareText(input, type, len, path) {
                     if (code.platform == "userlist") {
                         return "toast://自建歌单无法分享"
                     } else {
-                        return "toast://完善中";
+                        try {
+                            require(config.preRule);
+                            code = _getPlatform(code.platform).share_url(code);
+                            if (code) {
+                                return "copy://" + code;
+                            } else {
+                                return "toast://分享失败\n无法获取链接";
+                            }
+                        } catch (e) {
+                            return "toast://分享失败\n" + e.toString();
+                        }
                     }
                 } else {
                     return "toast://无法获取链接"

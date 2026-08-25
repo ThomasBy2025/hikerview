@@ -398,14 +398,14 @@ var qualityMap = {
         "title": "沉浸环绕声",
         "desc": "影院级空间感 声临其境的环绕",
         "abbr": "3D",
-        "alias": ["24000kmflac", "sky", "viper_atmos", "spatial", "D3", "atmos", "effect"],
+        "alias": ["24000kmflac", "sky", "viper_atmos", "spatial", "Z3D", "atmos", "effect"],
         "sort": 19
     },
     "20201k": {
         "title": "超高清HiFi",
         "desc": "智能音质增强 补全声场小细节",
         "abbr": "ZQ",
-        "alias": ["20201kmflac", "vivid"],
+        "alias": ["20201kmflac", "vivid", "ZQ32"],
         "sort": 18
     },
 
@@ -509,7 +509,7 @@ var qualityMap = {
         "title": "普通音质",
         "desc": "",
         "abbr": "PQ",
-        "alias": ["128kmp3", "standard", "128", "medium", "PQ", "low", "128kwma"],
+        "alias": ["128kmp3", "128kwma", "standard", "128", "medium", "PQ", "low"],
         "sort": 4
     },
     "100k": {
@@ -523,14 +523,14 @@ var qualityMap = {
         "title": "均衡音质",
         "desc": "",
         "abbr": "EQ",
-        "alias": ["mgg", "96kwma"],
+        "alias": ["96kwma"],
         "sort": 2
     },
     "48k": {
         "title": "流畅音质",
         "desc": "",
         "abbr": "LQ",
-        "alias": ["48kaac", "LQ"],
+        "alias": ["48kaac", "LQ", "mgg"],
         "sort": 1
     },
     "24k": {
@@ -539,6 +539,13 @@ var qualityMap = {
         "abbr": "FQ",
         "alias": ["24kaac"],
         "sort": 0
+    },
+    "12k": {
+        "title": "试听音质",
+        "desc": "",
+        "abbr": "ST",
+        "alias": [],
+        "sort": 404
     },
 
 

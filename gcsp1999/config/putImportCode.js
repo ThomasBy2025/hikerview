@@ -193,6 +193,9 @@ if (json.paths) {
         }
     }
     // clearMyVar(json.type + 'Initialization');
-} else {
+} else if (json.type == "collection") {
+    Extra(json.code || json.codes[0], {
+        col_type: "icon_1_left_pic"
+    });
     // return setCollectionData(json.code);
 }
