@@ -46,9 +46,30 @@ function decodeSpadePlayAuth(playAuth) {
     return java.lang.String(decoded, "UTF-8");
 }
 
+function getAudioFileUrl(audioUrl) {
+    let _fileUrl = "hiker://files/_cache/Thomas/gcsp1999/qishuiMusic/";
+    if (audioUrl.match(_fileUrl)) {
+        audioUrl = base64Decode(audioUrl.replace(_fileUrl, ""))
+            .replace(/\_/g, "/").replace(/\-/g, "+");
+    }
+    let audioMat = audioUrl.match(/tos\-cn\-ve\-(\d+)\/[a-z0-9]+/i);
+    if (audioMat[1] == 2774) {
+        audioUrl = "https://sf6-cdn-tos.douyinstatic.com/obj/" + audioMat[0];
+    }
+    _fileUrl += base64Encode(audioUrl).replace(/=+$/, "")
+        .replace(/\//g, "_").replace(/\+/g, "-");
+    showLoading('正在获取资源详情');
+    writeHexFile(_fileUrl, fetch(audioUrl, {
+        toHex: true
+    }));
+    hideLoading();
+    return _fileUrl;
+}
+
 $.exports = function(audioUrl, audioEkey) {
+    audioUrl = getAudioFileUrl(audioUrl);// 把在线资源下载到本地
     audioEkey = decodeSpadePlayAuth(audioEkey) || audioEkey;
-    let purl = startProxyServer($.toString(() => {
+    let purl = startProxyServer($.toString((getAudioFileUrl) => {
         try {
 
             // AES-CTR解密[Java]
@@ -157,12 +178,20 @@ $.exports = function(audioUrl, audioEkey) {
 
 
 
-            toast("汽水音乐：cenc解密已注册\n 需要下载资源，请耐心等待");
+            toast("汽水音乐: CENC解密已注册\n解析需要时间， 请耐心等待");
             let ekey = decodeURIComponent(MY_PARAMS.ekey[0]);
             let purl = decodeURIComponent(MY_PARAMS.purl[0]);
             let bytes = fetch(purl, {
                 inputStream: true
-            }).readAllBytes();
+            });
+            if (bytes.length === 0) {
+                purl = getAudioFileUrl(purl);
+                bytes = fetch(purl, {
+                    inputStream: true
+                }).readAllBytes();
+            } else {
+                bytes = bytes.readAllBytes();
+            }
             let buffer = java.nio.ByteBuffer.wrap(bytes);
             buffer.order(java.nio.ByteOrder.BIG_ENDIAN);
 
@@ -207,7 +236,7 @@ $.exports = function(audioUrl, audioEkey) {
                 body: buffer.array()
             };
         } catch (e) {}
-    }));
+    }, getAudioFileUrl));
     return buildUrl(purl, {
         type: "qishuiDecrypt",
         purl: encodeURIComponent(audioUrl),
