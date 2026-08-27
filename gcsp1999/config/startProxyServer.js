@@ -251,11 +251,13 @@ $.exports = function(musicItem, quality, qualityType) {
                 return n ? ((u.includes("?") ? "&" : "?") + n) : ""
             }) + _url;
         }
-        playUrls[i] = u.replace(/[\?\&]$/, "");
+        playUrls[i] = u.replace(/[\?\&]$/, "") + "#ignoreImg=true#";
     }
+
     return JSON.stringify({
         names: playNames,
         urls: playUrls,
+        musicItem,
         danmu,
         lyric
     });

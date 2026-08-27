@@ -1,4 +1,4 @@
-let _ = MY_PARAMS.item;
+let _ = MY_PARAMS.item || JSON.parse(base64Decode(getParam('musicItem', '{}').replace(/\_/g, "/").replace(/\-/g, "+")));
 let it = Extra(_, {
     col_type: "card_pic_3_center"
 }, true);

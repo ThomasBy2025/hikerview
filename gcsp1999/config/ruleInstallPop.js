@@ -42,10 +42,64 @@ let pop = hikerPop.selectBottomSettingMenu({
         SettingItem("查看温馨提示", "编辑修改"),
         SettingItem("页面标识设置", pageHomeTypes[pageHomeIndex]),
         SettingItem("默认搜索类型", "搜索" + s_type),
+        SettingItem("资源播放扩展", "导入扩展"),
     ],
     click(s, officeItem, change) {
         let isTrue;
         switch (s) {
+            case '资源播放扩展':
+                let rule = {
+                    "js": $.toString(() => {
+    try {
+        let musicItem = JSON.parse(input).musicItem;
+        if (musicItem) {
+            if (!config.preRule || !config.ghproxy) {
+                config = {
+                    ghproxy: getItem("ghproxy", "") + "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/"
+                }
+                config.preRule = config.ghproxy + "config/preRule.js";
+                initConfig(config);
+            }
+            let _type = ["歌曲", "歌曲", "歌单", "榜单", "专辑", "歌手", "用户", "电台", "播客", "视频", "歌词", "评论"][musicItem.type] || "未知";
+            let hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
+            hikerPop.selectCenter({
+                title: "资源播放扩展",
+                options: [
+                    "★ " + _type + "详情 ★",
+                    "★ 收藏" + _type + " ★",
+                    "✩ 分享" + _type + " ✩",
+                ],
+                columns: 1,
+                click(a, i) {
+                    if (i == "0") {
+                        return buildUrl("hiker://page/home", {
+                            p: "nopage",
+                            t: "getMusicInfo",
+                            s: "#noHistory##noRecordHistory#" + getItem('pageHomeType', '#immersiveTheme#'),
+                            rule: MY_RULE.title,
+                            musicItem: base64Encode(JSON.stringify(musicItem))
+                                .replace(/=+$/, "").replace(/\//g, "_").replace(/\+/g, "-")
+                        });
+                    }
+                    require(config.preRule);
+                    if (i == "1") {
+                        return setCollectionData(musicItem);
+                    } else {
+                        return getShareText(musicItem, "collection");
+                    }
+                }
+            });
+        } else {
+            toast("播放链接不存在musicItem参数");
+        }
+    } catch (e) {
+       // log(e.toString());
+    }
+}),
+                    "name": "歌词适配"
+                };
+                return "rule://" + base64Encode("￥projection_screen￥" + JSON.stringify(rule));
+                break;
             case '查看温馨提示':
                 hikerPop.selectCenterIcon({
                     iconList: Array.from({

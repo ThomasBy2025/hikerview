@@ -1776,7 +1776,6 @@ function getMedia(musicItem, quality, qualityType, mediaType) {
                 mediaItem.lyric = mediaPlatform.getLyric(musicItem);
             } catch (e) {}
         }
-        delete mediaItem.artwork;
 
         // 缓存直链数据
         if (isCache) {
@@ -1796,7 +1795,7 @@ function getMedia(musicItem, quality, qualityType, mediaType) {
                 let u = String(mediaItem.urls[i]);
                 // 是否记忆播放进度 &memoryPosition=null
                 if (u) u = u.replace(/$/, (u.includes("?") ? "&" : "?") + getItem('memoryPosition', '')) + _url;
-                mediaItem.urls[i] = u.replace(/[\?\&]$/, "");
+                mediaItem.urls[i] = u.replace(/[\?\&]$/, "") + "#ignoreImg=true#";
             }
         }
 
@@ -1815,6 +1814,9 @@ function getMedia(musicItem, quality, qualityType, mediaType) {
                 saveFile(mediaItem.danmu, danmuLrc);
             }
         }
+
+        delete musicItem.qualitys;
+        mediaItem.musicItem = musicItem;
         return JSON.stringify(mediaItem);
     } else {
         switch (String(mediaType)) {
@@ -2110,6 +2112,7 @@ function getShareText(input, type, len, path) {
                         return "toast://自建歌单无法分享"
                     } else {
                         try {
+                            eval(MY_RULE.preRule);
                             require(config.preRule);
                             code = _getPlatform(code.platform).share_url(code);
                             if (code) {
