@@ -34,7 +34,7 @@ var themeType = getParam('t', '');
 if (!MY_PARAMS.startProxyServer) { // 不是在startProxyServer环境
     getGitHub(["config", "initialization.js"], true); // 初始化
 }
-
+var getRenovateUrl = $.require(getGitHub(["config", "startProxyServer.js"]));
 
 
 
@@ -1455,7 +1455,7 @@ function formatMediaItem(mediaItem, playurl_timeout) {
 
 
 // 获取音质
-function getQuality(musicItem, down, mediaType) {
+function getQuality(musicItem, down, mediaType, qualityKey) {
     let SizetoStr = (size) => {
         if (!Number(size)) return size;
         let units = ['B', 'KB', 'MB', 'GB'];
@@ -1628,7 +1628,7 @@ function getQuality(musicItem, down, mediaType) {
         });
         return "hiker://empty";
     } else if (qualities) {
-        let i = Number(getItem('QualityIndex', '4'));
+        let i = qualityKey ? qualityMap[qualityKey].sort : Number(getItem('QualityIndex', '4'));
 
         // 获取数组中最接近的索引
         i = function _findQualityIdx(Arr, start) {
@@ -1664,7 +1664,7 @@ function getMedia(musicItem, quality, qualityType, mediaType) {
         return switchPluginSource(musicItem);
     }
     if (mediaType != "0" && mediaType != "4" && mediaType != "5" && getItem("startProxyServer", "0") == "1") { // 播放链接加密
-        return $.require(getGitHub(["config", "startProxyServer.js"]))(musicItem, quality, qualityType, mediaType);
+        return getRenovateUrl(musicItem, quality, qualityType, mediaType);
     }
 
 

@@ -49,8 +49,8 @@ function decodeSpadePlayAuth(playAuth) {
 function getAudioFileUrl(audioUrl) {
     let _fileUrl = "hiker://files/_cache/Thomas/gcsp1999/qishuiMusic/";
     if (audioUrl.match(_fileUrl)) {
-        audioUrl = base64Decode(audioUrl.replace(_fileUrl, ""))
-            .replace(/\_/g, "/").replace(/\-/g, "+");
+        audioUrl = base64Decode(audioUrl.replace(_fileUrl, "")
+            .replace(/\_/g, "/").replace(/\-/g, "+"));
     }
     let audioMat = audioUrl.match(/tos\-cn\-ve\-(\d+)\/[a-z0-9]+/i);
     if (audioMat[1] == 2774) {
@@ -67,7 +67,7 @@ function getAudioFileUrl(audioUrl) {
 }
 
 $.exports = function(audioUrl, audioEkey) {
-    audioUrl = getAudioFileUrl(audioUrl);// 把在线资源下载到本地
+    audioUrl = getAudioFileUrl(audioUrl); // 把在线资源下载到本地
     audioEkey = decodeSpadePlayAuth(audioEkey) || audioEkey;
     let purl = startProxyServer($.toString((getAudioFileUrl) => {
         try {
