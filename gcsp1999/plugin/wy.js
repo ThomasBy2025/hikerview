@@ -364,13 +364,19 @@ let platformObj = {
     title: "网易音乐", // 插件名称☆
     type: "音频", // 插件分类☆ 随便写：视频 / 音频 / 其他
     author: "Thomas喲", // 插件作者
-    version: "2026.10.11", // 插件版本
+    version: "2026.11.11", // 插件版本
     icon: "https://android-artworks.25pp.com/fs08/2025/08/29/0/110_e8f7db85c17637c2d54309fcf535cadc_con_130x130.png", //插件封面☆
     srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/wy.js", // 在线链接
     description: [{ // 更新内容/简介☆
-        "title": "2026.10.11",
+        "title": "2026.09.07",
         "records": [
             "““反馈Q群@365976134””",
+            "““更新””: 完善JS函数",
+            "‘‘修复’’: 跟进依赖版本，支持落雪音源调用"
+        ]
+    }, {
+        "title": "2026.08.11",
+        "records": [
             "““更新””: 完善音质函数",
             "‘‘修复’’: 跟进依赖更新，支持导入资源"
         ]
@@ -435,6 +441,12 @@ let platformObj = {
         srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/musicfree/refs/heads/main/plugins/wy.js", // 插件musicfree版本在线链接
         regNames: ["网易音乐", "网易云音乐", "网易云", "小芸音乐", "简繁音乐", "云音乐", "元力WY", "网抑云", "网易", "NeteaseMusic", "wangyiyun"] // 插件在musicfree的同源名称
     },
+    // 插件支持落雪音源
+    // 转成落雪音乐格式
+    getLxMusicInfo: function(musicItem){
+        return getLxMusicInfo(musicItem);
+    },
+    
 
 
 
@@ -910,6 +922,7 @@ let platformObj = {
         let urls = [];
         let mvinfo;
         if (isNaN(Number(mvhash))) {
+            // /api/song/enhance/play/mv/url
             mvinfo = ajax2(`/mlog/detail/v1`, {
                 id: mvhash,
                 resolution: 1080,

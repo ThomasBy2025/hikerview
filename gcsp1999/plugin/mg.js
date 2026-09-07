@@ -38,27 +38,36 @@ function formatMusicItem(_) {
     } else {
         let k2 = (_.newRateFormats || _.audioFormats || [{
             formatType: "PQ"
-        }]).filter(_ => /^(PQ|HQ|SQ|ZQ2?4?)$/i.test(_.formatType))
+        }]) //.filter(_ => /^(PQ|HQ|SQ|ZQ2?4?)$/i.test(_.formatType))        
         for (let k of k2) {
             let _size = k.size || k.androidSize || k.iosSize || k.asize || k.isize;
             if (_size) {
+                let isEncrypt = k.formatType == "Z3D" || undefined;
                 qualitys.push({
                     type: {
+                        LQ: "48k",
                         PQ: "128k",
                         HQ: "320k",
                         SQ: "2000k",
                         ZQ: "4000k",
                         ZQ24: "4000k",
+                        ZQ32: "20201k",
+                        Z3D: "24000k", // #加密
+                        // 3D60: "24000k"
                     }[k.formatType],
-                    size: _size
+                    isEncrypt,
+                    size: _size,
+                    resourceType: k.resourceType
                 });
             }
         }
     }
     let qualities = {};
-    qualitys.map(_ => {
+    qualitys.forEach(_ => {
         qualities[_.type] = {
-            size: _.size
+            size: _.size,
+            isEncrypt: _.isEncrypt,
+            resourceType: _.resourceType
         };
     });
     return {
@@ -91,7 +100,7 @@ function formatMusicItem(_) {
         // artistId, //歌手id
         vid: _.mvId || (_.mvList && _.mvList[0].copyrightId), //视频id video
         // rid, //播客id radio
-
+        lyric: _.lrcUrl,
         resourceType: songId && resourceType,
         copyrightId,
         contentId
@@ -121,7 +130,7 @@ function formatLyricItem(_) {
 
 // 格式化歌单信息
 function formatSheetItem(_) {
-    let artwork = _.img || _.image || _.imageUrl || _.musicListPicUrl || (_.imgItems && _.imgItems[0] && _.imgItems[0].img);
+    let artwork = _.img || _.image || _.imageUrl || _.musicListPicUrl || _.originalImgUrl || (_.imgItem && _.imgItem.img) || (_.imgItems && _.imgItems[0] && _.imgItems[0].img) || _.shareImg;
     if (artwork && /\/\//.test(artwork)) {
         artwork = "https://" + artwork.split("//")[1];
     }
@@ -131,13 +140,13 @@ function formatSheetItem(_) {
         /* 类型 */ // 2歌单
         type: "2",
         /* 歌单id */
-        id: String(_.id || _.playListId || _.rankId || (_.logEvent&&_.logEvent.contentId)),
+        id: String(_.id || _.playListId || _.rankId || _.musicListId || _.albumId || (_.logEvent && _.logEvent.contentId) || _.contentId || _.singerId || _.columnId),
         /* 标识2 - 优先获取✩ */
         // mid,
         /* 标题 */
-        title: _.name || _.title || _.playListName || _.rankName || _.txt,
+        title: _.name || _.title || _.playListName || _.rankName || _.singer || _.txt,
         /* 作者 */
-        artist: _.singer || _.createUserName || _.userName,
+        // artist: _.singer || _.createUserName || _.userName || _.ownerName,
         /* 封面图 */
         // coverImg: "",
         artwork,
@@ -147,11 +156,10 @@ function formatSheetItem(_) {
         worksNum: _.musicNum,
         /* 其他参数 */
         date: _.publishDate || (_.updateTime && _.updateTime.split(" ")[0]), // 更新时间
-        tags: (_.tagLists || _.ts || []).map(_ => _.tagName || _), // 歌单标签
+        tags: (_.tagLists || _.ts || []).map(_ => _.tagName || _) || undefined, // 歌单标签
         // playCount, // 播放数
 
-
-        resourceType: _.resourceType || (_.logEvent&&_.logEvent.contentType)
+        resourceType: _.resourceType || (_.logEvent && _.logEvent.contentType)
     };
 }
 // 格式化榜单信息
@@ -189,7 +197,7 @@ function formatArtistItem(_) {
         /* 歌手名称 */
         title: _.name || _.txt,
         /* 作者名称 */
-        artist: _.name || _.txt,
+        // artist: _.name || _.txt,
         /* 头像 */
         avatar: _.img || _.musicListPicUrl ||
             (_.imgItems && _.imgItems[0] && _.imgItems[0].img) ||
@@ -260,15 +268,22 @@ let platformObj = {
     title: "咪咕音乐", // 插件名称☆
     type: "音频", // 插件分类☆ 随便写：视频 / 音频 / 其他
     author: "Thomas喲", // 插件作者
-    version: "2026.08.12", // 插件版本
+    version: "2026.11.11", // 插件版本
     icon: "https://android-artworks.25pp.com/fs08/2025/08/15/11/110_37674a8ce6c562639a7513517e148bcd_con_130x130.png", //插件封面☆
     srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/mg.js", // 在线链接
     description: [{ // 更新内容/简介☆
-        "title": "2026.08.12",
+        "title": "2026.09.07",
+        "records": [
+            "““反馈Q群@365976134””",
+            "““更新””: 完善JS函数",
+            "‘‘修复’’: 跟进依赖版本，支持落雪音源调用"
+        ]
+    }, {
+        "title": "2026.08.21",
         "records": [
             "““反馈Q群@365976134””",
             "““更新””: 重构插件",
-            "‘‘修复’’: 接口请求"
+            "‘‘修复’’: 接口请求，支持导入资源链接"
         ]
     }, {
         "title": "2025.09.08",
@@ -316,6 +331,13 @@ let platformObj = {
     musicfree: {
         srcUrl: "", // 插件musicfree版本在线链接
         regNames: ["咪咕音乐", "小蜜音乐", "元力MG", "migu"] // 插件在musicfree的同源名称
+    },
+    // 插件支持落雪音源
+    // 转成落雪音乐格式
+    getLxMusicInfo: function(musicItem){
+        let _ = getLxMusicInfo(musicItem);
+        _.copyrightId = musicItem.copyrightId;
+        return _;
     },
 
 
@@ -370,7 +392,7 @@ let platformObj = {
                 "concert": 0, // 现场
             };
             Switch[stype] = 1;
-            
+
             let url = buildUrl("https://jadeite.migu.cn/music_search/v3/search/searchAll", {
                 isCorrect: 0,
                 isCopyright: 1,
@@ -383,13 +405,14 @@ let platformObj = {
             });
             return JSON.parse(fetch(url, {
                 headers: {
-                sign,
-                deviceId,
-                timestamp,
-                channel: '0146921',
-                uiVersion: 'A_music_3.6.1',
-                'User-Agent': 'Mozilla/5.0 (Linux; U; Android 11.0.0; zh-cn; MI 11 Build/OPR1.170623.032) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30',
-            }}))[(spath || stype) + "ResultData"];
+                    sign,
+                    deviceId,
+                    timestamp,
+                    channel: '0146921',
+                    uiVersion: 'A_music_3.6.1',
+                    'User-Agent': 'Mozilla/5.0 (Linux; U; Android 11.0.0; zh-cn; MI 11 Build/OPR1.170623.032) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30',
+                }
+            }))[(spath || stype) + "ResultData"];
         }
         let _ = surl_app(_type.type, _type.path);
         let list = _.items || _.resultList || _.result;
@@ -452,21 +475,16 @@ let platformObj = {
     },
 
     // 获取歌单详情
-    getMusicSheetInfo: function(sheetId, page) {
-        let _ = JSON.parse(fetchPC("https://app.c.nf.migu.cn/resource/playlist/v2.0?playlistId=" + sheetId)).data;
-        // let item = formatSheetItem(_);
-        let total = _.musicNum;
-
-        // https://app.c.nf.migu.cn/MIGUM3.0/resource/playlist/song/v2.0?pageNo=1&pageSize=50&playlistId=169018447
-        _ = ajax("user/queryMusicListSongs.do", {
-            musicListId: sheetId + "",
-            pageNo: page,
-            pageSize: total
+    getMusicSheetInfo: function(playlistId, pageNo) {
+        let url = buildUrl("https://app.c.nf.migu.cn/MIGUM3.0/resource/playlist/song/v2.0", {
+            pageNo,
+            pageSize: 50,
+            playlistId
         });
-        let list = _.items || _.list || _.contents || _.songItems || _.songList || _.songlist || [];
+        let res = JSON.parse(fetch(url)).data;
         return {
-            isEnd: list.length < pageSize,
-            data: list.map(formatMusicItem)
+            isEnd: res.totalCount < (pageNo * 50),
+            data: res.songList.map(formatMusicItem)
         }
     },
 
@@ -489,39 +507,47 @@ let platformObj = {
             "2000k": "SQ",
             "4000k": "ZQ"
         }[quality];
-        let headers = {
-            "channel": "014X031",
-            "referer": "https://musc.migu.cn/",
-            "birth": "h5page",
-        }
-
-        // 只能获取免费歌曲的128k(PQ)
-        let _url = buildUrl("https://app.c.nf.migu.cn/MIGUM3.0/strategy/pc/listen/v1.0", {
+        let params = {
+            toneFlag: toneFlag,
             contentId: musicItem.contentId,
             copyrightId: musicItem.copyrightId,
             resourceType: 2,
-            toneFlag
-        });
-        let res = fetch(_url, {
-            headers
-        });
 
-        if (false) {// WEB接口
+            netType: "01",
+            scene: "",
+            lowerQualityContentId: musicItem.contentId
+        };
+        let headers = {
+            "toHex": true,
+            "headers": {
+                "channel": "014X031",
+                "referer": "https://musc.migu.cn/",
+                "birth": "h5page",
+                // "pacmtoken": pacmtoken, // 用户数据
+                "subchannel": "014X031",
+                "deviceId": R("randomUUID"),
+                "ua": "Android_migu",
+                "version": "6.8.8",
+                "activityId": "MUSIC-WWW",
+                "signature": "1",
+                "timestamp": Date.now() + "",
+            }
+        }
+        let res = "";
+        let _sp = true;
+        let _out = 9E9;
+
+
+        // 这些接口只能获取免费歌曲的128k(PQ)
+        if (true) { // 默认接口
+            headers.toHex = false;
+            res = fetch(buildUrl("https://app.c.nf.migu.cn/MIGUM3.0/strategy/pc/listen/v1.0", params), headers);
+        } else if (0) { // 加密接口
             let migukey = "Jk8qzuePiJ1qE3mDYhLQ3T73DtDoAhLP";
-            let bytes = hexToBytes(fetch(buildUrl("https://app.c.nf.migu.cn/strategy/pc/listen/v2.0", {
-                contentId: musicItem.contentId,
-                copyrightId: musicItem.copyrightId,
-                resourceType: 2,
-                netType: "01",
-                toneFlag: toneFlag,
-                scene: "",
-                lowerQualityContentId: musicItem.contentId
-            }), {
-                "toHex": true,
-                "headers": headers
-            }));
-
-            let res = "";
+            let bytes = hexToBytes(fetch(buildUrl([
+                "https://app.c.nf.migu.cn/strategy/pc/listen/v2.0",
+                "https://c.musicapp.migu.cn/strategy/listen-url/h5/v2.4",
+            ][0], params), headers));
             let seed = bytes[3];
 
             bytes = bytes.slice(4);
@@ -529,12 +555,34 @@ let platformObj = {
                 let n = (bytes[i] + seed - migukey.charCodeAt(i % migukey.length)) & 0xFF;
                 res += String.fromCharCode(n);
             }
+        } else if (0) { // 直链接口
+            params.channel = "0146921";
+            res = fetch(buildUrl([
+                "https://c.musicapp.migu.cn/strategy/listen-song/v2.3", // #报废？
+                "https://app.pd.nf.migu.cn/MIGUM2.0/v1.0/content/sub/listenSong.do",
+            ][1], params), {
+                "onlyHeaders": true,
+                "headers": {
+                    "User-Agent": 'okhttp/3.14.9'
+                }
+            });
+            res = `{"data":${res}}`;
+        } else if (0) { // 下载接口
+            res = fetch("https://app.c.nf.migu.cn/MIGUM2.0/strategy/download-url/by-songid/v1.0?formatType=PQ&songId=" + musicItem.id, {
+                "headers": {
+                    "channel": "0146931",
+                    "version": "7.41.13"
+                }
+            });
+            _sp = false; // 不能split("?")[0]
+            _out = 9E4; // 不是永久链接
         }
 
         res = JSON.parse(res).data || {};
         return res.url && {
-            url: res.url.split("?")[0],
-            lyric: res.lrcUrl
+            url: _sp ? res.url.split("?")[0] : res.url,
+            lyric: res.lrcUrl,
+            timeout: _out
         }
     },
 
@@ -554,6 +602,25 @@ let platformObj = {
 
     // 获取视频链接(mv)☆
     getVideo: function(musicItem) {
+        /*
+        const response = await axios_1.default.get("https://c.musicapp.migu.cn/MIGUM2.0/v1.0/content/mvplayinfo.do", {
+    params: {
+      mvContentId: resource.contentId,
+      mvCopyrightId: resource.copyrightId,
+      format: format.format,
+      url: format.url,
+      size: format.size,
+      resourceType: resource.resourceType || "D",
+    },
+    headers: MIGU_MV_HEADERS,
+    timeout: 20000,
+  });
+  https://app.c.nf.migu.cn/MIGUM2.0/strategy/mv-player/video/v1.0?songId=3790007,{
+  "headers": {
+    "channel": "0146921"
+  }
+}
+  */
         // musicItem = 符合单曲格式的对象 或者 字符串(id);
         /*
                 let mvinfo = ajax("2", String(musicItem.copyrightId)).relatedSongs
@@ -563,7 +630,7 @@ let platformObj = {
         var names = [];
         var urls = [];
         let mvhost = "https://freevod.nf.migu.cn";
-        let mvhash = String(musicItem.vid);
+        let mvhash = musicItem.vid;
         /*
                 let mvhash = mvinfo.productId;
                 mvhost = this_host.replace("v1.0/", "strategy/mvplayinfo/by-priority/v1.0?canFallback=true&contentId=" + mvhash + "&formatType=");
@@ -711,15 +778,92 @@ let platformObj = {
 
 
 
+
     // 导入平台资源☆
-    import_url: function(url) {
+    import_url: function(urlLike) {
         // 匹配链接 返回对象
         // 不成功就返回false
+        if (!/migu\.cn/i.test(urlLike)) {
+            return undefined;
+        }
+
+
+        let id, _;
+        if (id = (urlLike.match(/\/song(\-new)?\/(.*?[\?\&]id=)?([a-z0-9]+)/i) || [])[3]) { // type: 0/1单曲
+            _ = fetch(buildUrl("https://app.c.nf.migu.cn/MIGUM3.0/v1.0/content/resourceinfo.do", {
+                resourceType: 2,
+                resourceId: id
+            }));
+            return formatMusicItem(JSON.parse(_).resource[0]);
+        }
+
+        if (id = (urlLike.match(/\/playlist\/?(.*?[\?\&](playlist)?id=)?(\d+)/i) || [])[3]) { // type: 2歌单
+            _ = fetch("https://c.musicapp.migu.cn/MIGUM3.0/resource/playlist/v2.0?playlistId=" + id);
+            return formatSheetItem(JSON.parse(_).data);
+        }
+
+        if (id = (urlLike.match(/(\/top\-?list\/|\/rankDetail)(.*?[\?\&]id=)?(\d+)/i) || [])[3]) { // type: 3排行
+            _ = fetch("https://app.c.nf.migu.cn/pc/bmw/rank/rank-info/v1.0?rankType=&period=&rankId=" + id);
+            return formatToplistItem(JSON.parse(_).data);
+        }
+
+        if (id = (urlLike.match(/\/dalbum\/(.*?[\?\&]id=)?(\d+)/i) || [])[2]) { // type: 4数字专辑
+            _ = fetch(buildUrl("https://app.c.nf.migu.cn/v1.0/content/resourceinfo.do", {
+                needSimple: "01",
+                resourceType: 5,
+                resourceId: id
+            }));
+            return formatAlbumItem(JSON.parse(_).resource[0]);
+        }
+        if (id = (urlLike.match(/(\/album\/|\/albumDetail)(.*?[\?\&](album)id=)?(\d+)/i) || [])[3]) { // type: 4专辑
+            if (urlLike.match(/(playlist|resource)Type=5/i)) { // 数字专辑
+                return platformObj.import_url("https://h5.nf.migu.cn/app/v4/n/dalbum/detail/index.html?id=" + id);
+            }
+            _ = fetch("https://c.musicapp.migu.cn/MIGUM3.0/resource/album/v2.0?albumId=" + id);
+            return formatAlbumItem(JSON.parse(_).data);
+        }
+
+        if (id = (urlLike.match(/(\/singer\/|\/singerDetail)(.*?[\?\&]id=)?(\d+)/i) || [])[3]) { // type: 5歌手
+            _ = fetch("https://c.musicapp.migu.cn/MIGUM2.0/resource/singer-song/v2.0?singerId=" + id + "&resourceType=D%7C2%7C2003");
+            return formatArtistItem(JSON.parse(_).singer);
+        }
+        
+        if (id = (urlLike.match(/\/mv(\-new)?\/(.*?[\?\&]id=)?(\d+)/i) || [])[2]) { // type: 9歌手
+            _ = fetch("https://c.musicapp.migu.cn/MIGUM3.0/bmw/mv/by-contentId/v1.0?contentId=" + id + "&resourceType=D");
+            return formatVideoItem(JSON.parse(_).data);
+        }
+        return false;
     },
 
     // 获取分享链接☆
     share_url: function(mediaItem) {
-        // 返回平台链接的字符串 或者false
+        switch (String(mediaItem.type)) {
+            case "0":
+            case "1":
+                return "https://h5.nf.migu.cn/app/v4/p/share/song-new/index.html?id=" + mediaItem.contentId;
+                break;
+            case "2":
+                return "https://h5.nf.migu.cn/app/v4/p/share/playlist/index.html?id=" + mediaItem.id;
+                break;
+            case "3":
+                return "https://h5.nf.migu.cn/app/v4/p/share/top-list/index.html?id=" + mediaItem.id;
+                break;
+            case "4":
+                return "https://h5.nf.migu.cn/app/v4/p/share/album/index.html?id=" + mediaItem.id + // 普通专辑
+                    "\n" + "https://h5.nf.migu.cn/app/v4/n/dalbum/detail/index.html?id=" + mediaItem.id; // 数字专辑
+                break;
+            case "5":
+                return "https://h5.nf.migu.cn/app/v4/p/share/singer/index.html?id=" + mediaItem.id;
+                break;
+            case "7":
+                return "https://h5.nf.migu.cn/app/v4/p/share/radio-artist/index.html?id=" + mediaItem.id;
+                break;
+            case "9":
+                return "https://h5.nf.migu.cn/app/v4/p/share/mv-new/index.html?id=" + mediaItem.id;
+                break;
+        }
+        return "";
     },
+
 }
 $.exports = platformObj;

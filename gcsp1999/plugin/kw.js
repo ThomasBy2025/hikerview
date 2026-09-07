@@ -330,13 +330,19 @@ let platformObj = {
     title: "酷我音乐", // 插件名称☆
     type: "音频", // 插件分类☆ 随便写：视频 / 音频 / 其他
     author: "Thomas喲", // 插件作者
-    version: "2026.10.11", // 插件版本
+    version: "2026.11.11", // 插件版本
     icon: "https://android-artworks.25pp.com/fs08/2025/08/19/6/110_7a4a098a92bb3f1b506acfda21a038e4_con_130x130.png", //插件封面☆
     srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/kw.js", // 在线链接
     description: [{ // 更新内容/简介☆
-        "title": "2026.10.11",
+        "title": "2026.09.07",
         "records": [
             "““反馈Q群@365976134””",
+            "““更新””: 完善JS函数",
+            "‘‘修复’’: 跟进依赖版本，支持落雪音源调用"
+        ]
+    }, {
+        "title": "2026.08.11",
+        "records": [
             "““更新””: 完善formatMusicItem函数",
             "‘‘优化’’: 跟进依赖版本，支持导入资源"
         ]
@@ -379,7 +385,11 @@ let platformObj = {
         srcUrl: "", // 插件musicfree版本在线链接
         regNames: ["酷我音乐", "小蜗音乐", "元力KW", "kuwo", "酷我", "K我", "酷我音乐·手机版", "酷我音乐·车机版", "闻音酷我", "惜缘酷我", "酷我(念心音源)", "酷我(Fish音源)", "酷我JHMS", "yibai酷我流式" /*, "爱听", "云音乐"*/ ] // 插件在musicfree的同源名称
     },
-
+    // 插件支持落雪音源
+    // 转成落雪音乐格式
+    getLxMusicInfo: function(musicItem){
+        return getLxMusicInfo(musicItem);
+    },
 
 
     // 搜索支持的类型，默认全部都能搜
@@ -839,6 +849,33 @@ let platformObj = {
     // 获取分享链接☆
     share_url: function(mediaItem) {
         // 返回平台链接的字符串 或者false
+        switch (String(mediaItem.type)) {
+            case "0":
+            case "1":
+                return "https://m.kuwo.cn/newh5app/play_detail/" + mediaItem.id;
+                break;
+            case "2":
+                return "https://m.kuwo.cn/newh5app/playlist_detail/" + mediaItem.id;
+                break;
+            case "3":
+                return "https://m.kuwo.cn/newh5app/ranklist_detail/" + mediaItem.id;
+                break;
+            case "4":
+                return "http://m.kuwo.cn/newh5app/album_detail/" + mediaItem.id;
+                break;
+            case "5":
+                return "http://m.kuwo.cn/newh5app/singers/" + mediaItem.id;
+                break;
+            case "9":
+            let mv_id = mediaItem.vid || mediaItem.id;
+            let mv_type = JSON.parse(fetch("https://m.kuwo.cn/newh5/mv/play?mid="+ mv_id, {
+                withHeaders:true,
+                redirect:false
+            })).headers.location[0].match(/type=(\d+)/i)[1];
+                return "https://m.kuwo.cn/newh5app/mvplay/"+mv_type+"/" + mv_id;
+                break;
+        }
+        return "";
     },
 
     formatMusicItem

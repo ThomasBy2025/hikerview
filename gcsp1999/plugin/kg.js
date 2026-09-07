@@ -491,13 +491,19 @@ let platformObj = {
     title: "酷狗音乐", // 插件名称☆
     type: "音频", // 插件分类☆ 随便写：视频 / 音频 / 其他
     author: "Thomas喲", // 插件作者
-    version: "2026.10.11", // 插件版本
+    version: "2026.11.11", // 插件版本
     icon: "https://android-artworks.25pp.com/fs08/2025/08/27/4/110_76496800e8490c8b2b7e5d94765a0969_con_130x130.png", //插件封面☆
     srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/plugin/kg.js", // 在线链接
     description: [{ // 更新内容/简介☆
-        "title": "2026.10.11",
+        "title": "2026.09.07",
         "records": [
             "““反馈Q群@365976134””",
+            "““更新””: 完善JS函数",
+            "‘‘修复’’: 跟进依赖版本，支持落雪音源调用"
+        ]
+    }, {
+        "title": "2026.08.11",
+        "records": [
             "““更新””: 完善JS函数",
             "‘‘修复’’: 跟进依赖版本，支持导入资源"
         ]
@@ -562,7 +568,15 @@ let platformObj = {
         srcUrl: "https://raw.githubusercontent.com/ThomasBy2025/musicfree/refs/heads/main/plugins/kg.js", // 插件musicfree版本在线链接
         regNames: ["酷狗音乐", "小枸音乐", "元力KG", "kugou", "酷狗", "KugouMusic"] // 插件在musicfree的同源名称
     },
-
+    // 插件支持落雪音源
+    // 转成落雪音乐格式
+    getLxMusicInfo: function(musicItem){
+        let _ = getLxMusicInfo(musicItem);
+        _.hash = musicItem.hash || musicItem.mid;
+        _.mixSongId = musicItem.MixSongID;
+        _.album_audio_id = musicItem.album_audio_id;
+        return _;
+    },
 
 
     // 搜索支持的类型，默认全部都能搜
