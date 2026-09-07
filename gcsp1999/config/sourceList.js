@@ -170,6 +170,7 @@ if (!fetch("hiker://home@nodejs")) {
             title: '音源环境管理',
             content: '点击确定 更新/导入 音源环境',
             confirm: $.toString((targetDir, zipurl) => {
+                showLoading('导入音源环境中...');
                 var newInstance = java.lang.reflect.Array.newInstance;
                 var zis = new java.util.zip.ZipInputStream(fetch(zipurl, {
                     inputStream: true
@@ -190,6 +191,7 @@ if (!fetch("hiker://home@nodejs")) {
                     zis.closeEntry();
                 }
                 zis.close();
+                hideLoading();
                 refreshPage();
                 return "toast://导入成功";
             }, targetDir, zipurl)
