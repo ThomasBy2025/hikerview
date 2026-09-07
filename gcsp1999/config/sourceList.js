@@ -225,7 +225,7 @@ else details.map((_, i) => {
     let isS = selects.indexOf(_id) != -1;
 
     d.push({
-        title: Color(_.title + (" v" + _.version.replace(/^v/i, "")).small().small(), !isS && "#777777").bold(),
+        title: Color(_.title + (" v" + (_.version||"1").replace(/^v/i, "")).small().small(), !isS && "#777777").bold(),
         desc: ("By " + (_.author || "佚名")).small().small().bold(),
         url: $("#noLoading#").lazyRule((_, i, isS) => {
             require(config.preRule);
@@ -495,7 +495,7 @@ else details.map((_, i) => {
         pic_url: _.icon
     });
     d.push({
-        title: _.desc.small(),
+        title: (_.desc||"").small(),
         url: $('#noLoading#').lazyRule((_id) => {
             require(config.preRule);
             let enableds = _getPath(["source", "enableds.json"]) || {};
