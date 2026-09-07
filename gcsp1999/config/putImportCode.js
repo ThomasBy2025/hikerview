@@ -32,6 +32,7 @@ let type = {
     "theme": json.paths ? "主题文件" : "主题元素",
     "plugin": json.paths ? "插件数据" : "用户变量",
     "proxy": json.paths ? "解析代理" : "",
+    "source": json.paths ? "落雪音源" : "",
 } [json.type] || "未知数据";
 let arr1 = [];
 let arr2 = [];
@@ -190,6 +191,27 @@ if (json.paths) {
                 col_type: 'line'
             });
             deleteFile(_importPath);
+        } else if (type == "落雪音源") {
+            _code = extractMetadata(_code);
+            d.push({
+                title: String(_code.title + (" v" + _code.version.replace(/^v/i, "")).small().small()).bold(),
+                desc: ("By " + (_code.author || "佚名")).small().small().bold(),
+                pic_url: "https://lxmusic.toside.cn/img/logo.svg",
+                col_type: "avatar",
+                url: "hiker://empty"
+            });
+            d.push({
+                title: _code.desc.small(),
+                url: "hiker://empty",
+                col_type: 'text_icon',
+                pic_url: getImageUrl(arr2.indexOf(i) != -1 ? "open.svg" : "shut.svg"),
+                extra: {
+                    lineVisible: false
+                }
+            });
+            d.push({
+                col_type: 'line'
+            });
         }
     }
     // clearMyVar(json.type + 'Initialization');

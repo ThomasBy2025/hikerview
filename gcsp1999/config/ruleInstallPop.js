@@ -53,13 +53,6 @@ let pop = hikerPop.selectBottomSettingMenu({
     try {
         let musicItem = JSON.parse(input).musicItem;
         if (musicItem) {
-            if (!config.preRule || !config.ghproxy) {
-                config = {
-                    ghproxy: getItem("ghproxy", "") + "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/"
-                }
-                config.preRule = config.ghproxy + "config/preRule.js";
-                initConfig(config);
-            }
             let _type = ["歌曲", "歌曲", "歌单", "榜单", "专辑", "歌手", "用户", "电台", "播客", "视频", "歌词", "评论"][musicItem.type] || "未知";
             let hikerPop = $.require("http://123.56.105.145/weisyr/js/hikerPop.js");
             hikerPop.selectCenter({
@@ -71,7 +64,7 @@ let pop = hikerPop.selectBottomSettingMenu({
                 ],
                 columns: 1,
                 click(a, i) {
-                    if (i == "0") {
+                    if (i == "0") { // 详情
                         return buildUrl("hiker://page/home", {
                             p: "nopage",
                             t: "getMusicInfo",
@@ -81,10 +74,16 @@ let pop = hikerPop.selectBottomSettingMenu({
                                 .replace(/=+$/, "").replace(/\//g, "_").replace(/\+/g, "-")
                         });
                     }
+                    if (!config.preRule || !config.ghproxy) {
+                        config = {
+                            ghproxy: getItem("ghproxy", "") + "https://raw.githubusercontent.com/ThomasBy2025/hikerview/refs/heads/main/gcsp1999/"
+                        }
+                        config.preRule = config.ghproxy + "config/preRule.js";
+                    }
                     require(config.preRule);
-                    if (i == "1") {
+                    if (i == "1") { // 收藏
                         return setCollectionData(musicItem);
-                    } else {
+                    } else { // 分享
                         return getShareText(musicItem, "collection");
                     }
                 }
@@ -93,7 +92,7 @@ let pop = hikerPop.selectBottomSettingMenu({
             toast("播放链接不存在musicItem参数");
         }
     } catch (e) {
-       // log(e.toString());
+        // log(e.toString());
     }
 }),
                     "name": "歌词适配"

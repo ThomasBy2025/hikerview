@@ -10,6 +10,7 @@
         putMyVar("proxyInitialization", "0");
         putMyVar("collectionInitialization", "0");
         putMyVar("themeInitialization", "0");
+        putMyVar("sourceInitialization", "0");
     }
 
 
@@ -63,7 +64,11 @@
 
         // 插件是通用解析
         let path7 = _getPath(["plugin", "isProxyPlugin.json"], "_cache", 1);
-        let proxyp = []
+        let proxyp = [];
+
+        // 插件支持落雪音源
+        let path8 = _getPath(["plugin", "getLxMusicInfo.json"], "_cache", 1);
+        let sourcep = [];
 
         // 保存插件信息
         for (let platform of filedirs) {
@@ -103,6 +108,9 @@
                         musicfree[regName] = plugin.platform;
                     }
                 }
+                if (plugin.getLxMusicInfo) {
+                    sourcep.push(plugin.platform);
+                }
                 getUserVariables(detail); // 初始化用户变量
                 details.push(detail);
             } catch (e) {
@@ -116,8 +124,33 @@
         saveFile(path5, JSON.stringify(artists));
         saveFile(path6, JSON.stringify(musicfree));
         saveFile(path7, JSON.stringify(proxyp));
+        saveFile(path8, JSON.stringify(sourcep));
         putMyVar("pluginInitialization", hour ? "2" : "1");
         log("插件初始化成功");
+    }
+
+
+
+
+
+    // 落雪音源初始化
+    hour = getMyVar("sourceInitialization", "0") == "3";
+    if (getMyVar("sourceInitialization", "0") == "0" || hour) {
+        let lxscriptIds = getFiledirs(["source", "node_sources"], ["source", "sorted.json"]);
+        let lxscriptPath = _getPath(["source", "details.json"], "_cache", 1);
+        let lxscriptData = [];
+        for (let lxscriptId of lxscriptIds) {
+            try {
+                let scriptRaw = _getPath(["source", "node_sources", lxscriptId], "rules");
+                let scriptMeta = extractMetadata(scriptRaw);
+                scriptMeta.id = lxscriptId;
+                scriptMeta.icon = "https://lxmusic.toside.cn/img/logo.svg";
+                lxscriptData.push(scriptMeta);
+            } catch (e) {}
+        }
+        saveFile(lxscriptPath, JSON.stringify(lxscriptData));
+        putMyVar("sourceInitialization", hour ? "2" : "1");
+        log("音源初始化成功");
     }
 
 
@@ -141,7 +174,7 @@
                     for (let i = 0; i < proxyQs.length; i++) {
                         let proxyQa = proxyQs[i];
                         let f = qualityMap[proxyQa];
-                        proxyQa = f._url || f.url;// 128k
+                        proxyQa = f._url || f.url; // 128k
                         proxyQs[i] = proxyQa;
                         if (!proxyQ[proxyQa]) {
                             proxyQ[proxyQa] = [];
@@ -344,9 +377,50 @@
 
     // 只在首页检测，子页面MY_RULE的version是0
     if (themeType == "home" && MY_RULE.version != 0) {
+        if (getMyVar("sourceInitialization", "0") == "1") { // 加载落雪音源
+            let projectPath = getPath(_getPath(["source", ""], 0, 1)).replace("file://", "");
+            let projectId = md5(projectPath);
+            let _nc = null;
+            if (readFile("file://" + projectPath + "lxserver.js").length) {
+                try {
+                    if (globalMap0.hasVar("AppGlobalMapNodeController")) {
+                        _nc = globalMap0.getVar("AppGlobalMapNodeController");
+                    }
+                } catch (e) {}
+                if (!_nc) {
+                    try {
+                        _nc = $.require("NodeController?rule=nodejs", "NodeController");
+                    } catch (e) {
+                        try {
+                            _nc = $.require("NodeController?rule=nodejs");
+                        } catch (e2) {}
+                    }
+                    try {
+                        globalMap0.putVar("AppGlobalMapNodeController", _nc);
+                    } catch (e) {}
+                }
+                if (_nc) {
+                    if (_nc.isRunning(projectId)) { // 先关闭项目
+                        _nc.terminate(projectId);
+                        java.lang.Thread.sleep(1000);
+                    }
+                    _nc.runProject({
+                        id: projectId,
+                        projectPath: projectPath,
+                        mainIndex: projectPath + "lxserver.js",
+                        name: "lxmusic"
+                    }, projectId, 1, {});
+                    putMyVar("sourceInitialization", "2");
+                }
+            } else {
+                log(" {音源环境缺失}");
+            }
+        }
+
+
         if (Number(getItem("usage_statistics", "20261010")) < new_time) {
             try { // 使用人数统计
-                fetch("https://www.97abc.com/count.php?id=gcsp1999");
+                // fetch("https://www.97abc.com/count.php?id=gcsp1999");
             } catch (e) {}
             setItem("usage_statistics", new_time + "");
         } else if (MY_RULE.version < 20261010) {

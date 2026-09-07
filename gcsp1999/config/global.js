@@ -391,7 +391,7 @@ var qualityMap = {
         "title": "臻音全景声",
         "desc": "自研空间音频 如同在三维空间",
         "abbr": "AT",
-        "alias": ["20501kmflac", "jyeffect",  "viper_hifi",  "atmos_plus", "clear"],
+        "alias": ["20501kmflac", "jyeffect", "viper_hifi", "atmos_plus", "clear"],
         "sort": 20
     },
     "24000k": {
@@ -613,4 +613,113 @@ function hijackQuality(_Key, _Arr) {
         }
     }
     return _Key;
+}
+
+
+// 转成落雪格式
+function getLxMusicInfo(musicItem) {
+    let lxQuality = {
+        "128k": "128k",
+        "320k": "320k",
+        "2000k": "flac",
+        "4000k": "flac24bit",
+        "23000k": "hires", // 4000k
+        "24000k": "atmos",
+        "20501k": "atmos_plus",
+        "20900k": "master"
+    }
+
+    let _qualitys = [];
+    let __qualitys = {};
+    Object.keys(lxQuality).forEach(quality => {
+        let q = musicItem.qualities[quality];
+        if (q) {
+            let key = lxQuality[quality];
+            let val = Array.isArray(q) ? q[0] : q;
+            delete val.title;
+            delete val.abbr;
+            __qualitys[key] = val;
+            val.type = key;
+            _qualitys.push(val);
+        }
+    });
+
+    let _songId = musicItem.mid || musicItem.id;
+    return {
+        "id": musicItem.platform + "_" + _songId,
+        "name": musicItem.title,
+        // "alias": "",
+        "singer": musicItem.artist,
+        // "artists": [],
+        "source": musicItem.platform,
+        "interval": musicItem.duration.replace(/^00\:(\d\d\:\d\d)/i, "$1"),
+        "meta": {
+            "songId": _songId,
+            "albumName": musicItem.album || "",
+            "picUrl": musicItem.artwork || "",
+            "qualitys": _qualitys,
+            "_qualitys": __qualitys,
+            "albumId": musicItem.albumId || "",
+            "vid": musicItem.vid || ""
+        }
+    };
+}
+
+
+// 格式化音源meta
+function extractMetadata(script) {
+    const meta = {}
+    const commentMatch = script.match(/\/\*[*!]([\s\S]*?)\*\//)
+    if (commentMatch) {
+        const comment = commentMatch[1]
+        const nameMatch = comment.match(/@name\s+(.+)/)
+        if (nameMatch) meta.title = nameMatch[1].trim()
+        const descMatch = comment.match(/@description\s+(.+)/)
+        if (descMatch) meta.desc = descMatch[1].trim()
+        const verMatch = comment.match(/@version\s+(.+)/)
+        if (verMatch) meta.version = verMatch[1].trim()
+        const authorMatch = comment.match(/@author\s+(.+)/)
+        if (authorMatch) meta.author = authorMatch[1].trim()
+        const repoMatch = comment.match(/@(?:repository|homepage)\s+(.+)/)
+        if (repoMatch) meta.homepage = repoMatch[1].trim()
+    }
+    if (!meta.name) {
+        const platMatch = script.match(/platform\s*[:=]\s*['"]([^'"]+)['"]/)
+        if (platMatch) meta.title = platMatch[1].trim()
+    }
+    if (!meta.version) {
+        const verMatch2 = script.match(/version\s*[:=]\s*['"]([^'"]+)['"]/)
+        if (verMatch2) meta.version = verMatch2[1].trim()
+    }
+    if (!meta.author) {
+        const authMatch2 = script.match(/author\s*[:=]\s*['"]([^'"]+)['"]/)
+        if (authMatch2) meta.author = authMatch2[1].trim()
+    }
+    return meta
+}
+
+
+// 获取落雪链接
+function getLxMusicUrl(musicItem, quality, platformObj) {
+    let lxQuality = {
+        "128k": "128k",
+        "320k": "320k",
+        "2000k": "flac",
+        "4000k": "flac24bit",
+        "23000k": "hires", // 4000k
+        "24000k": "atmos",
+        "20501k": "atmos_plus",
+        "20900k": "master"
+    } [quality];
+    if (lxQuality === undefined) return "{}"; // 不支持的音质
+    let hijacks = _getPath(_getPath(["plugin", "getLxMusicInfo.json"], "_cache", 1)) || [];
+    if (!hijacks.includes(musicItem.platform)) return "{}"; // 不支持的插件
+    platformObj = platformObj || _getPlatform(musicItem.platform);
+    let lxMusicInfo = platformObj.getLxMusicInfo(musicItem);
+    return post("http://0.0.0.0:1999/lxmusic", {
+        "body": JSON.stringify({
+            "type": lxQuality,
+            "musicInfo": lxMusicInfo
+        })
+    });
 }

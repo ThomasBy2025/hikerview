@@ -47,6 +47,8 @@ var getRenovateUrl = $.require(getGitHub(["config", "startProxyServer.js"]));
 
 
 
+
+
 // ============================================================
 //  主题数据的加工处理
 //  对 themeType 判定
@@ -1154,6 +1156,7 @@ function getThemeData(themeType) {
         case "themeEdit":
         case "pluginList":
         case "proxyList":
+        case "sourceList":
         case "collectionList":
         case "putImportCode":
 
@@ -1747,6 +1750,15 @@ function getMedia(musicItem, quality, qualityType, mediaType) {
         }
 
         mediaItem = formatMediaItem(mediaItem);
+        if (!mediaItem && isMedia && mediaType != "4") { // 通过落雪音源获取链接
+            try {
+                mediaItem = JSON.parse(getLxMusicUrl(musicItem, quality, mediaPlatform));
+            } catch (e) {
+                mediaItem = false;
+            }
+        }
+
+        mediaItem = formatMediaItem(mediaItem);
         if (!mediaItem && isMedia && mediaType != "4") { // 通过公用解析获取链接
             try {
                 mediaItem = switchPluginSource(musicItem, quality, _qualityItem);
@@ -2057,7 +2069,7 @@ function getDanMu(item, danmuLrc) {
 // 分享数据
 function getShareText(input, type, len, path) {
     let arr = getPastes();
-    if (type == "plugin" || type == "collection") {
+    if (type == "collection") { // type == "plugin"
         arr.push("复制链接");
     }
     arr.push("明文口令");
@@ -2137,6 +2149,7 @@ function getShareText(input, type, len, path) {
                 plugin: "插件",
                 proxy: "解析",
                 collection: "收藏",
+                source: "音源",
             } [type];
             let desc = "共「" + len + "」条" + type2;
             if (len == 1 && isObj) {

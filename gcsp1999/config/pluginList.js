@@ -2,7 +2,16 @@ let detailp = _getPath(["plugin", "details.json"], "_cache", 1);
 let selectp = _getPath(["plugin", "selects.json"], "_cache", 1);
 
 getTopImage({
-    url: "hiker://empty",
+    url: $('#noLoading#').lazyRule((_, url) => {
+        if (_.back)
+            return back(true), 'hiker://empty';
+        else
+            return url;
+    }, MY_PARAMS, MY_URL.replace("pluginList", "sourceList")),
+    extra: {
+        pageTitle: "音源管理",
+        back: MY_PARAMS.back ? 0 : 1
+    }
 });
 d.push({
     title: "新增插件",
