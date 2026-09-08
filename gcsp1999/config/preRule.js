@@ -1752,7 +1752,7 @@ function getMedia(musicItem, quality, qualityType, mediaType) {
         mediaItem = formatMediaItem(mediaItem);
         if (!mediaItem && isMedia && mediaType != "4") { // 通过落雪音源获取链接
             try {
-                mediaItem = JSON.parse(getLxMusicUrl(musicItem, quality, mediaPlatform));
+                mediaItem = JSON.parse(getLxMusicUrl(musicItem, _Key, mediaPlatform));
             } catch (e) {
                 mediaItem = false;
             }
